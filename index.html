@@ -128,9 +128,10 @@
     .hint.hide{opacity:0;}
 
     /* ---- Werkzeuge rechts ---- */
-    .tools{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:6;
+    /* Kette/Knoten: oben links, unter der Gedanken-Anzahl */
+    .lefttools{position:fixed;left:14px;top:124px;z-index:6;
       display:flex;flex-direction:column;gap:8px;}
-    .tools .iconbtn{width:38px;height:38px;font-size:18px;background:var(--panel);}
+    .lefttools .iconbtn{width:38px;height:38px;font-size:18px;background:var(--panel);}
     /* Zoom-/Zentrieren-Stapel: ganz rechts, direkt über dem Eingabefeld */
     .zoomtools{position:fixed;right:14px;z-index:6;
       bottom:calc(max(18px, env(safe-area-inset-bottom)) + 72px);
@@ -270,7 +271,7 @@
 
   <div class="linkhint" id="linkHint"></div>
 
-  <div class="tools">
+  <div class="lefttools">
     <button class="iconbtn" id="relinkBtn" title="Verbindungen neu nach Thema ordnen">🔗</button>
     <button class="iconbtn" id="linkBtn" title="Brücke zwischen zwei Themen ziehen">🪢</button>
   </div>
