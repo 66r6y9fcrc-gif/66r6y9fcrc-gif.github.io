@@ -6,6 +6,13 @@ größer wird das Netz.
 
 Live: <https://66r6y9fcrc-gif.github.io/>
 
+## Funktionen (v0.9)
+
+- ✨ **Mini-KI Feintuning**: erkennt mehrdeutige „Vorhaben" (z. B. „ein Buch schreiben",
+  „eine App entwickeln") und sagt ehrlich *„unsicher – bitte wählen"*, statt sich auf eine
+  Kategorie festzulegen. Dann stehen **Idee / Projekt / Aufgabe** gleichberechtigt zur Wahl.
+  Klare Fälle (Frage, zu erledigen, Traum) werden weiterhin direkt vorgeschlagen.
+
 ## Funktionen (v0.8)
 
 - ✨ **Mini-KI für Kategorien** (komplett offline im Browser, keine fremden Server):

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Digitales Gehirn · v0.8</title>
+  <title>Digitales Gehirn · v0.9</title>
   <meta name="description" content="Dein digitales Gehirn: Jede Idee wird ein leuchtender Knotenpunkt im Sternennetz. Alle Gedanken sind miteinander verbunden.">
   <meta name="theme-color" content="#02030a">
   <link rel="manifest" href="manifest.json">
@@ -216,6 +216,8 @@
     .suggest-row .chip.primary{border-color:#fff;background:rgba(255,255,255,.16);font-weight:600;}
     .suggest-row .chip.newcat{border-color:rgba(61,220,151,.6);color:#bfffe0;
       background:rgba(61,220,151,.12);}
+    .suggest-row .chip.maybe{border-color:rgba(255,179,64,.7);color:#ffd9a0;
+      background:rgba(255,179,64,.14);font-weight:600;}
     .suggest-row .chip.cancel{color:var(--muted);}
   </style>
 </head>
@@ -223,7 +225,7 @@
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.8</small></div>
+    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.9</small></div>
     <div class="count" id="count">0 Gedanken</div>
   </div>
 
@@ -258,7 +260,7 @@
 
   <div class="suggest" id="suggestBar">
     <div class="suggest-q" id="suggestText"></div>
-    <div class="suggest-label">Mini-KI schlägt vor – tippe zum Bestätigen:</div>
+    <div class="suggest-label" id="suggestLabel">Mini-KI schlägt vor – tippe zum Bestätigen:</div>
     <div class="suggest-row" id="suggestChips"></div>
   </div>
 
@@ -850,14 +852,18 @@ create policy "zugriff per schluessel"
     }
     return prof;
   }
-  function matchesType(text, cat){
-    const n=cat.name.toLowerCase(), x=text.toLowerCase().trim();
-    if(n.includes('frage')   && (/\?\s*$/.test(text) || /^(was|wer|wie|wo|warum|wann|wieso|weshalb|welche|welcher|welches|kann|soll|darf|ist|sind|gibt|wieviel|wie viel)\b/.test(x))) return true;
-    if((n.includes('aufgabe')||n.includes('todo')||n.includes('to-do')||n.includes('erledig')) && /\b(muss|müssen|musste|kaufen|anrufen|erledigen|machen|besorgen|schreiben|termin|abgeben|bezahlen|aufräumen|putzen|holen|buchen|melden|antworten|fertig)\b/.test(x)) return true;
-    if((n.includes('traum')||n.includes('träum')) && /\b(traum|träum|wünsch|wunsch|irgendwann|eines tages|vision|sehnsucht)\b/.test(x)) return true;
-    if(n.includes('idee')    && /\b(idee|vielleicht|könnte|man könnte|was wäre|wäre cool|konzept|einfall)\b/.test(x)) return true;
-    if(n.includes('projekt') && /\b(projekt|plan|planung|umsetzen|bauen|entwickeln|aufbauen|starten|gründen)\b/.test(x)) return true;
-    return false;
+  function catByKeyword(kw){ return categories.find(c=>c.name.toLowerCase().includes(kw)); }
+
+  // „Vorhaben“: könnte Idee ODER Projekt ODER Aufgabe sein → bewusst mehrdeutig
+  const UNDERTAKING=/\b(schreib|buch|roman|geschicht|bauen|baue|entwickel|erstell|erschaff|gründ|starten|aufbau|lernen|lerne|studier|planen|umsetz|programmier|gestalt|male|malen|komponier|drehen|produzier|organisier|renovier|reise|projekt|app|website|webseite|firma|unternehmen|kanal|podcast|kurs)\b/;
+
+  // Konkreter Typ, der ziemlich eindeutig ist (Frage / zu erledigen / Traum)
+  function concreteType(text){
+    const x=text.toLowerCase().trim();
+    if(/\?\s*$/.test(text) || /^(was|wer|wie|wo|warum|wann|wieso|weshalb|welche|welcher|welches|kann|soll|darf|ist|sind|gibt|wieviel|wie viel)\b/.test(x)) return 'frage';
+    if(/\b(anrufen|kaufen|einkaufen|besorgen|abgeben|bezahlen|abholen|holen|buchen|termin|erledigen|aufräumen|putzen|waschen|melden|antworten|reservieren|mitnehmen|packen|abschicken|mail|email|überweisen|kündigen|absagen|zusagen)\b/.test(x)) return 'aufgabe';
+    if(/\b(traum|träum|träume|wünsche|wunsch|irgendwann|eines tages|vision|sehnsucht)\b/.test(x)) return 'traum';
+    return null;
   }
   function suggestNewName(text){
     const words=(String(text).match(/[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß-]{3,}/g)||[])
@@ -867,31 +873,47 @@ create policy "zugriff per schluessel"
     const pick=noun || words.slice().sort((a,b)=>b.length-a.length)[0];
     return pick.charAt(0).toUpperCase()+pick.slice(1).toLowerCase();
   }
-  // Liefert: {existing:[{id,score}…sortiert], newName, best}
+  // Liefert: { mode, candidates:[{id}], best, ambiguous, newName }
   function classify(text){
     const distinct=new Set(aiTokens(text));
     const prof=categoryProfiles();
+    // 1) Topisches Signal: gemeinsame Stichwörter mit bisherigen Gedanken
     const scored=categories.map(c=>{
-      let s=0; const p=prof[c.id];
-      if(p){ distinct.forEach(w=>{ if(p.has(w)) s++; }); }
-      if(matchesType(text,c)) s+=1.6;
-      return { id:c.id, score:s };
-    }).sort((a,b)=>b.score-a.score);
-    const best=scored[0];
-    const THRESHOLD=1;   // ein klares gemeinsames Stichwort (oder Typ-Treffer) genügt
-    const strong = best && best.score>=THRESHOLD;
-    let newName=null;
-    if(!strong){
-      const nm=suggestNewName(text);
-      if(nm && !categories.some(c=>c.name.toLowerCase()===nm.toLowerCase())) newName=nm;
+      let topic=0; const p=prof[c.id];
+      if(p){ distinct.forEach(w=>{ if(p.has(w)) topic++; }); }
+      return { id:c.id, topic };
+    }).sort((a,b)=>b.topic-a.topic);
+    const top=scored[0], second=scored[1];
+    if(top && top.topic>=1){
+      const tie = second && second.topic>0 && (top.topic===second.topic);
+      return { mode:'topic', best:top.id, ambiguous:!!tie,
+               candidates: scored.filter(s=>s.topic>0) };
     }
-    return { scored, best: strong?best.id:(best?best.id:activeCat), strong, newName };
+    // 2) Mehrdeutiges „Vorhaben“ → Idee / Projekt / Aufgabe gleichberechtigt
+    if(UNDERTAKING.test(text.toLowerCase())){
+      const cands=['idee','projekt','aufgabe','vorhaben']
+        .map(catByKeyword).filter(Boolean)
+        .filter((c,i,a)=>a.indexOf(c)===i);
+      if(cands.length>=2)
+        return { mode:'undertaking', best:cands[0].id, ambiguous:true,
+                 candidates: cands.map(c=>({id:c.id, topic:0})) };
+    }
+    // 3) Konkreter, recht eindeutiger Typ (Frage / Aufgabe / Traum)
+    const ty=concreteType(text);
+    if(ty){ const c=catByKeyword(ty);
+      if(c) return { mode:'type', best:c.id, ambiguous:false, candidates:[{id:c.id, topic:0}] }; }
+    // 4) Nichts passt → neues Thema vorschlagen
+    const nm=suggestNewName(text);
+    if(nm && !categories.some(c=>c.name.toLowerCase()===nm.toLowerCase()))
+      return { mode:'new', best:activeCat, ambiguous:false, newName:nm, candidates:[] };
+    return { mode:'fallback', best:activeCat, ambiguous:false, candidates:[] };
   }
 
   // ---- Vorschlags-Oberfläche ----
   const suggestBar=document.getElementById('suggestBar');
   const suggestText=document.getElementById('suggestText');
   const suggestChips=document.getElementById('suggestChips');
+  const suggestLabel=document.getElementById('suggestLabel');
   let pendingText=null;
   function hideSuggest(){ suggestBar.classList.remove('open'); pendingText=null; }
   function proposeCategory(text){
@@ -907,28 +929,37 @@ create policy "zugriff per schluessel"
       b.onclick=onClick;
       suggestChips.appendChild(b);
     };
-    // 1) Hauptvorschlag
-    if(r.newName){
+    if(r.mode==='new'){
+      // Kein passendes Thema → neues vorschlagen
+      suggestLabel.textContent='Kein passendes Thema gefunden – neues anlegen oder selbst wählen:';
       addChip('✨ Neues Thema „'+r.newName+'"', null, 'newcat primary', ()=>commitNew(r.newName));
-    }else{
+    } else if(r.ambiguous){
+      // Mehrdeutig → mehrere Kandidaten gleichberechtigt anbieten
+      suggestLabel.textContent='Mini-KI ist unsicher – bitte selbst wählen:';
+      (r.candidates||[]).forEach(s=>{
+        if(made.has(s.id)) return; made.add(s.id);
+        const c=catById(s.id);
+        addChip(c.name, c.color, 'maybe', ()=>commitIdea(c.id));
+      });
+    } else {
+      // Klarer Vorschlag
+      suggestLabel.textContent='Mini-KI schlägt vor – tippe zum Bestätigen:';
       const c=catById(r.best); made.add(c.id);
       addChip('✓ '+c.name, c.color, 'primary', ()=>commitIdea(c.id));
+      (r.candidates||[]).forEach(s=>{
+        if(made.has(s.id)) return; made.add(s.id);
+        const cc=catById(s.id);
+        addChip(cc.name, cc.color, '', ()=>commitIdea(cc.id));
+      });
     }
-    // 2) weitere passende vorhandene Themen (max 4)
-    r.scored.filter(s=>s.score>0 && s.id!==r.best).slice(0,4).forEach(s=>{
-      if(made.has(s.id)) return; made.add(s.id);
-      const c=catById(s.id);
-      addChip(c.name, c.color, '', ()=>commitIdea(c.id));
-    });
-    // 3) falls Hauptvorschlag ein neues Thema ist, trotzdem die aktive Kategorie anbieten
-    if(r.newName && !made.has(activeCat)){
-      const c=catById(activeCat); made.add(c.id);
-      addChip(c.name, c.color, '', ()=>commitIdea(c.id));
-    }
-    // 4) alle übrigen Themen über „weitere…“ – hier einfach restliche anhängen
+    // übrige Themen als weitere Auswahl
     categories.forEach(c=>{ if(!made.has(c.id)){ made.add(c.id);
       addChip(c.name, c.color, '', ()=>commitIdea(c.id)); } });
-    // 5) Abbrechen
+    // neues Thema von Hand
+    addChip('✨ Neues Thema …', null, 'newcat', ()=>{
+      const name=(window.prompt('Name des neuen Themas:')||'').trim();
+      if(name) commitNew(name);
+    });
     addChip('✕ Abbrechen', null, 'cancel', ()=>{ input.value=pendingText; hideSuggest(); input.focus(); });
     suggestBar.classList.add('open');
   }
@@ -938,6 +969,8 @@ create policy "zugriff per schluessel"
     input.focus();
   }
   function commitNew(name){
+    const existing=categories.find(c=>c.name.toLowerCase()===name.toLowerCase());
+    if(existing){ commitIdea(existing.id); return; }
     const id='c'+Date.now();
     categories.push({ id, name, color: PALETTE[categories.length % PALETTE.length] });
     renderCats();
