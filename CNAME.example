@@ -1,0 +1,3 @@
+# Nur verwenden, wenn du eine eigene Domain verbinden willst.
+# Dann diese Datei in CNAME umbenennen und deine Domain ohne https:// eintragen, z. B.:
+# www.deine-domain.de
