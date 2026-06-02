@@ -75,6 +75,10 @@
       text-align:left;padding:11px 12px;border-radius:10px;cursor:pointer;}
     .menu-item:hover{background:rgba(255,255,255,.08);}
     .menu-item .mi-ic{font-size:16px;width:20px;text-align:center;flex:none;}
+    .menu-sep{height:1px;background:var(--panel-line);margin:4px 6px;}
+    .authintro{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 14px;}
+    .authemail{color:var(--text);font-size:15px;font-weight:600;word-break:break-all;margin:0 0 10px;}
+    .authnote{color:var(--muted);font-size:13px;line-height:1.5;}
 
     /* ---- Untere Eingabeleiste (wie in der Skizze) ---- */
     .dock{
@@ -115,6 +119,9 @@
     .btn{border:1px solid var(--panel-line);background:rgba(255,255,255,.04);color:var(--text);
       padding:9px 14px;border-radius:11px;cursor:pointer;font-size:14px;}
     .btn:hover{background:rgba(255,255,255,.09);}
+    .btn.primary{background:var(--accent);border-color:transparent;color:#fff;
+      box-shadow:0 0 16px rgba(79,140,255,.45);}
+    .btn.primary:hover{background:#3f7bf0;}
     .btn.danger{color:#ffb4ab;border-color:rgba(255,120,110,.35);background:rgba(255,80,70,.08);}
     .btn.danger:hover{background:rgba(255,80,70,.18);}
 
@@ -255,9 +262,10 @@
   </div>
 
   <div class="menu" id="menu">
+    <button class="menu-item" id="accountBtn"><span class="mi-ic">👤</span> <span id="accountLabel">Anmelden</span></button>
+    <div class="menu-sep"></div>
     <button class="menu-item" id="exportBtn"><span class="mi-ic">⬇</span> Sichern (Backup)</button>
     <button class="menu-item" id="importBtn"><span class="mi-ic">⬆</span> Backup laden</button>
-    <button class="menu-item" id="syncBtn"><span class="mi-ic">☁</span> Cloud-Sync</button>
   </div>
 
   <div class="cats" id="cats"></div>
@@ -345,12 +353,50 @@ create policy "zugriff per schluessel"
     </details>
   </div>
 
+  <div class="card" id="loginSheet">
+    <h2>👤 Konto</h2>
+
+    <div id="authForm">
+      <p class="authintro">Melde dich an, damit deine Gedanken sicher in deinem eigenen Konto gespeichert werden – auch auf anderen Geräten.</p>
+      <p class="label">E-Mail</p>
+      <input id="authEmail" class="field" type="email" inputmode="email" placeholder="du@beispiel.de" autocomplete="email" autocapitalize="off" spellcheck="false">
+      <p class="label">Passwort</p>
+      <input id="authPass" class="field" type="password" placeholder="mindestens 6 Zeichen" autocomplete="current-password">
+      <div class="syncstatus" id="authStatus"></div>
+      <div class="row">
+        <button class="btn primary" id="authLoginBtn">Anmelden</button>
+        <button class="btn" id="authSignupBtn">Registrieren</button>
+        <button class="btn" id="authCloseBtn">Schließen</button>
+      </div>
+    </div>
+
+    <div id="accountInfo" style="display:none">
+      <p class="label">Angemeldet als</p>
+      <div class="authemail" id="accountEmail">—</div>
+      <div class="syncstatus" id="accountStatus"></div>
+      <div class="row">
+        <button class="btn danger" id="authLogoutBtn">Abmelden</button>
+        <button class="btn" id="accountCloseBtn">Schließen</button>
+      </div>
+    </div>
+
+    <div id="authNotConfigured" class="authnote" style="display:none">
+      Der Login ist noch nicht eingerichtet. Sobald der Supabase-Zugang hinterlegt ist, kannst du dich hier registrieren und anmelden.
+    </div>
+  </div>
+
 <script>
 (() => {
   "use strict";
   const canvas = document.getElementById('sky');
   const ctx = canvas.getContext('2d');
   const STORE_KEY = 'digital-brain-v1';
+
+  // ====== Supabase-Zugang für das Login (HIER EINTRAGEN) ======
+  // Projekt-URL und anon-public-Key aus deinem Supabase-Projekt.
+  // Der anon-Key ist öffentlich/unbedenklich und darf im Code stehen.
+  const SUPABASE_URL  = '';   // z. B. 'https://abcdxyz.supabase.co'
+  const SUPABASE_ANON = '';   // z. B. 'eyJhbGciOi...'
 
   // ---- Zustand ----
   let nodes = [];           // {id, text, x, y, vx, vy, t, cat}
@@ -374,6 +420,8 @@ create policy "zugriff per schluessel"
   let dataUpdatedAt = 0;    // Zeitstempel des letzten Datenstands (für Cloud-Abgleich)
   let sync = { url:'', key:'', brain:'', auto:false };  // Supabase-Konfiguration
   let syncTimer = null;
+  let auth = { token:'', refresh:'', email:'', userId:'', expiresAt:0 };  // Login-Sitzung
+  let brainTimer = null;
 
   function catById(id){ return categories.find(c=>c.id===id) || categories[0]; }
   function nodeColor(n){ return catById(n.cat).color; }
@@ -395,6 +443,7 @@ create policy "zugriff per schluessel"
     dataUpdatedAt = Date.now();
     try{ localStorage.setItem(STORE_KEY, JSON.stringify(serialize())); }catch(e){}
     if(sync.auto) scheduleSync();
+    if(loggedIn()) scheduleBrainPush();   // angemeldet: Stand automatisch ins Konto sichern
   }
   function load(){
     try{
@@ -1242,14 +1291,14 @@ create policy "zugriff per schluessel"
   // ---- Cloud-Sync (Supabase REST) ----
   const SYNC_KEY='digital-brain-sync';
   const syncSheet=document.getElementById('syncSheet');
-  const syncBtn=document.getElementById('syncBtn');
+  const syncBtn=document.getElementById('syncBtn');   // optional (manueller Sync, nicht mehr im Menü)
   function loadSync(){
     try{ const s=JSON.parse(localStorage.getItem(SYNC_KEY)||'{}');
       sync={url:s.url||'', key:s.key||'', brain:s.brain||'', auto:!!s.auto}; }catch(e){}
-    syncBtn.classList.toggle('syncBtn-on', syncReady());
+    if(syncBtn) syncBtn.classList.toggle('syncBtn-on', syncReady());
   }
   function saveSync(){ try{ localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); }catch(e){}
-    syncBtn.classList.toggle('syncBtn-on', syncReady()); }
+    if(syncBtn) syncBtn.classList.toggle('syncBtn-on', syncReady()); }
   function syncReady(){ return !!(sync.url && sync.key && sync.brain); }
   function setSyncStatus(t){ const s=document.getElementById('syncStatus'); if(s) s.textContent=t; }
   function timeNow(){ return new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}); }
@@ -1317,12 +1366,153 @@ create policy "zugriff per schluessel"
     sync.auto=document.getElementById('syncAuto').checked;
     saveSync();
   }
-  syncBtn.onclick=openSync;
+  if(syncBtn) syncBtn.onclick=openSync;
   document.getElementById('syncClose').onclick=closeSync;
   document.getElementById('syncSave').onclick=()=>{ readSyncForm(); setSyncStatus(syncReady()?'Gespeichert ✓':'Bitte alle drei Felder ausfüllen.'); };
   document.getElementById('syncPush').onclick=()=>{ readSyncForm(); pushCloud(true); };
   document.getElementById('syncPull').onclick=()=>{ readSyncForm(); pullCloud(true); };
   document.getElementById('syncAuto').onchange=()=>{ readSyncForm(); if(sync.auto) scheduleSync(); };
+
+  // ========================= LOGIN (Supabase Auth) =========================
+  const AUTH_KEY='digital-brain-auth';
+  function authConfigured(){ return !!(SUPABASE_URL && SUPABASE_ANON); }
+  function loggedIn(){ return !!(auth.token && auth.userId); }
+  function loadAuth(){ try{ const a=JSON.parse(localStorage.getItem(AUTH_KEY)||'{}'); if(a && a.token) auth=Object.assign(auth,a); }catch(e){} }
+  function saveAuth(){ try{ localStorage.setItem(AUTH_KEY, JSON.stringify(auth)); }catch(e){} }
+  function clearAuth(){ auth={token:'',refresh:'',email:'',userId:'',expiresAt:0}; try{ localStorage.removeItem(AUTH_KEY); }catch(e){} }
+  function setSession(d){
+    if(!d || !d.access_token) return false;
+    auth.token=d.access_token; auth.refresh=d.refresh_token||auth.refresh;
+    auth.expiresAt=Date.now()+((d.expires_in||3600)*1000);
+    if(d.user){ auth.email=d.user.email||auth.email; auth.userId=d.user.id||auth.userId; }
+    saveAuth(); return true;
+  }
+  function authError(d){ return d && (d.msg || d.error_description || d.error_message || d.error || d.message); }
+
+  async function refreshSession(){
+    if(!auth.refresh) return false;
+    try{
+      const res=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{
+        method:'POST', headers:{'apikey':SUPABASE_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({refresh_token:auth.refresh})
+      });
+      if(!res.ok) return false;
+      return setSession(await res.json());
+    }catch(e){ return false; }
+  }
+  async function authFetch(url, opts){
+    opts=opts||{};
+    if(loggedIn() && auth.expiresAt && Date.now()>auth.expiresAt-60000){ await refreshSession(); }
+    const headers=Object.assign({'apikey':SUPABASE_ANON,'Authorization':'Bearer '+(auth.token||SUPABASE_ANON)}, opts.headers||{});
+    let res=await fetch(url, Object.assign({}, opts, {headers}));
+    if(res.status===401 && auth.refresh){ if(await refreshSession()){ headers.Authorization='Bearer '+auth.token; res=await fetch(url, Object.assign({}, opts, {headers})); } }
+    return res;
+  }
+
+  // Datensync pro Konto: Tabelle „brains", je user_id genau eine Zeile
+  async function pushBrain(){
+    if(!loggedIn()) return;
+    try{
+      await authFetch(SUPABASE_URL+'/rest/v1/brains',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+        body:JSON.stringify([{ user_id:auth.userId, data:serialize(), updated_at:new Date().toISOString() }])
+      });
+    }catch(e){}
+  }
+  async function pullBrain(){
+    if(!loggedIn()) return null;
+    try{
+      const res=await authFetch(SUPABASE_URL+'/rest/v1/brains?select=data,updated_at');
+      if(!res.ok) return null;
+      const rows=await res.json();
+      return rows.length ? rows[0] : null;
+    }catch(e){ return null; }
+  }
+  function scheduleBrainPush(){ if(!loggedIn()) return; clearTimeout(brainTimer); brainTimer=setTimeout(()=>{ pushBrain(); }, 1500); }
+
+  // ---- Login-Oberfläche ----
+  const loginSheet=document.getElementById('loginSheet');
+  const accountBtn=document.getElementById('accountBtn');
+  const accountLabel=document.getElementById('accountLabel');
+  function setAuthStatus(t){ const s=document.getElementById('authStatus'); if(s) s.textContent=t||''; }
+  function setAccountStatus(t){ const s=document.getElementById('accountStatus'); if(s) s.textContent=t||''; }
+  function shortEmail(e){ return e && e.length>22 ? e.slice(0,20)+'…' : (e||'Konto'); }
+  function updateAccountUI(){
+    const inAcc=loggedIn();
+    accountLabel.textContent = inAcc ? shortEmail(auth.email) : 'Anmelden';
+    document.getElementById('authForm').style.display = (!inAcc && authConfigured()) ? 'block' : 'none';
+    document.getElementById('accountInfo').style.display = inAcc ? 'block' : 'none';
+    document.getElementById('authNotConfigured').style.display = (!inAcc && !authConfigured()) ? 'block' : 'none';
+    if(inAcc) document.getElementById('accountEmail').textContent = auth.email||'—';
+  }
+  function openLogin(){ updateAccountUI(); setAuthStatus(''); setAccountStatus(loggedIn()?'Deine Gedanken werden automatisch gesichert.':''); loginSheet.classList.add('open'); }
+  function closeLogin(){ loginSheet.classList.remove('open'); }
+
+  async function afterLogin(){
+    const row=await pullBrain();
+    if(row && row.data && (row.data.nodes||[]).length){ applyPayload(row.data); }
+    else { await pushBrain(); }   // Konto erstmalig mit dem aktuellen Stand füllen
+    setAccountStatus('Angemeldet ✓ – Gedanken werden automatisch gesichert.');
+  }
+  async function doSignIn(){
+    if(!authConfigured()) return;
+    const email=document.getElementById('authEmail').value.trim();
+    const pass=document.getElementById('authPass').value;
+    if(!email || !pass){ setAuthStatus('Bitte E-Mail und Passwort eingeben.'); return; }
+    setAuthStatus('Anmelden …');
+    try{
+      const res=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{
+        method:'POST', headers:{'apikey':SUPABASE_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({email,password:pass})
+      });
+      const d=await res.json().catch(()=>({}));
+      if(!res.ok || !d.access_token){ setAuthStatus(authError(d)||'Anmeldung fehlgeschlagen.'); return; }
+      setSession(d); document.getElementById('authPass').value=''; setAuthStatus(''); updateAccountUI();
+      closeLogin(); await afterLogin();
+    }catch(e){ setAuthStatus('Netzwerkfehler – bist du online?'); }
+  }
+  async function doSignUp(){
+    if(!authConfigured()) return;
+    const email=document.getElementById('authEmail').value.trim();
+    const pass=document.getElementById('authPass').value;
+    if(!email || pass.length<6){ setAuthStatus('E-Mail und Passwort (mind. 6 Zeichen) eingeben.'); return; }
+    setAuthStatus('Konto wird erstellt …');
+    try{
+      const res=await fetch(SUPABASE_URL+'/auth/v1/signup',{
+        method:'POST', headers:{'apikey':SUPABASE_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({email,password:pass})
+      });
+      const d=await res.json().catch(()=>({}));
+      if(!res.ok){ setAuthStatus(authError(d)||'Registrierung fehlgeschlagen.'); return; }
+      if(d.access_token){ setSession(d); document.getElementById('authPass').value=''; setAuthStatus(''); updateAccountUI(); closeLogin(); await afterLogin(); }
+      else { setAuthStatus('Fast geschafft! Bitte bestätige die E-Mail in deinem Postfach und melde dich danach an.'); }
+    }catch(e){ setAuthStatus('Netzwerkfehler – bist du online?'); }
+  }
+  async function doSignOut(){
+    try{ await fetch(SUPABASE_URL+'/auth/v1/logout',{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+auth.token}}); }catch(e){}
+    clearAuth(); updateAccountUI(); setAccountStatus('Abgemeldet.');
+  }
+
+  accountBtn.onclick=openLogin;
+  document.getElementById('authLoginBtn').onclick=doSignIn;
+  document.getElementById('authSignupBtn').onclick=doSignUp;
+  document.getElementById('authCloseBtn').onclick=closeLogin;
+  document.getElementById('accountCloseBtn').onclick=closeLogin;
+  document.getElementById('authLogoutBtn').onclick=doSignOut;
+  document.getElementById('authPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doSignIn(); });
+
+  async function initAuth(){
+    loadAuth();
+    if(loggedIn() && authConfigured() && auth.expiresAt && Date.now()>auth.expiresAt-60000 && navigator.onLine){
+      if(!await refreshSession()) clearAuth();
+    }
+    updateAccountUI();
+    if(loggedIn() && authConfigured() && navigator.onLine){
+      const row=await pullBrain();
+      if(row && row.data && (row.data.nodes||[]).length) applyPayload(row.data);
+    }
+  }
 
   // ---- Werkzeuge ----
   document.getElementById('zoomIn').onclick =()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1.2);
@@ -1347,6 +1537,7 @@ create policy "zugriff per schluessel"
   loop();
   // Beim Start automatisch neueren Cloud-Stand holen
   if(syncReady() && sync.auto){ pullCloud(false); }
+  initAuth();   // Login wiederherstellen & Konto-Stand laden
 
   // ---- Status-Punkt: grün = live, orange = neu laden, rot = offline ----
   const statusDot=document.getElementById('statusDot');
