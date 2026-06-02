@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
 
-# Vor Livegang Domain ersetzen.
-Sitemap: https://DEIN-GITHUB-NAME.github.io/nachtragsretter/sitemap.xml
+Sitemap: https://66r6y9fcrc-gif.github.io/sitemap.xml

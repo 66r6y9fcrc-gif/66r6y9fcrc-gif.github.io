@@ -1,51 +1,28 @@
-# Nachtragsretter – GitHub Pages Website
+# Digitales Gehirn
 
-Statische Demo-Website für ein digitales Produkt im Elektrobereich: **Nachtragsretter für Elektriker**.
+Ein wachsendes „Gehirn" im Weltraum-Look: Jeder Gedanke, jede Idee wird ein leuchtender
+Knotenpunkt (Stern) und verbindet sich über feine Fäden mit dem Rest. Je mehr Ideen, desto
+größer wird das Netz.
 
-## Startseite
+Live: <https://66r6y9fcrc-gif.github.io/>
 
-Die Startseite ist `index.html`. Für GitHub Pages muss diese Datei direkt im Root-Verzeichnis des Repositorys liegen.
+## Funktionen (v0.2)
 
-## Enthaltene Seiten
+- Ideen unten eintippen → erscheinen als leuchtende Sterne, automatisch mit den nächsten
+  Knoten verbunden
+- Kraftbasiertes Layout: die Knoten ordnen sich selbst an und „schweben"
+- Farben & Kategorien (Idee, Frage, Projekt, Aufgabe, Traum + eigene Kategorien)
+- Filter: nur eine Kategorie hervorheben
+- Verschieben (Ziehen), Zoomen (Mausrad / Pinch), Zentrieren
+- Knoten antippen → Detailkarte mit Kategorie ändern und Löschen
+- Speicherung lokal im Browser (`localStorage`) – kein Server nötig
 
-- `index.html` – Landingpage
-- `produkt.html` – Produktseite
-- `checkout.html` – Demo-Checkout mit Pflichtcheckboxen
-- `faq.html` – FAQ
-- `impressum.html` – Impressum-Vorlage mit Platzhaltern
-- `datenschutz.html` – Datenschutz-Vorlage mit Platzhaltern
-- `agb.html` – AGB-Strukturvorlage
-- `widerruf.html` – Widerrufsbelehrung + Muster-Widerrufsformular
-- `widerruf-erklaeren.html` – Demo für elektronische Widerrufsfunktion
-- `kontakt.html` – Kontaktseite
+## Technik
+
+Komplett statisch, eine einzige selbständige Datei:
+
+- `index.html` – die gesamte App (HTML, CSS und JavaScript inline, Canvas-Rendering)
 - `404.html` – Fehlerseite
-- `.nojekyll` – verhindert Jekyll-Verarbeitung auf GitHub Pages
 - `robots.txt`, `sitemap.xml`
-- `assets/css/styles.css`, `assets/js/main.js`
 
-## GitHub Pages Anleitung
-
-Siehe zuerst: `GITHUB_PAGES_START_HERE.md`
-
-## Wichtige Einschränkung
-
-Diese Website ist **keine fertige, anwaltlich geprüfte Shop-Lösung**. Sie ist eine seriöse statische Website-Struktur. Vor Livebetrieb musst du mindestens:
-
-1. alle Platzhalter ersetzen,
-2. Rechtstexte prüfen lassen,
-3. Zahlungsanbieter anschließen,
-4. Downloadversand/Bestellbestätigung einrichten,
-5. Datenschutz auf die eingesetzten Tools anpassen,
-6. Impressum mit echten Pflichtangaben füllen,
-7. elektronische Widerrufsfunktion technisch livefähig machen.
-
-## Datenschutzfreundliche Demo
-
-Die Demo verwendet:
-
-- keine externen Fonts,
-- keine Tracking-Skripte,
-- keine eingebetteten Videos,
-- keine Marketing-Cookies.
-
-Wenn du später Google Analytics, Meta Pixel, TikTok Pixel, YouTube, Newsletter-Tools oder Zahlungsanbieter einbindest, musst du Datenschutz und ggf. Consent entsprechend anpassen.
+Gehostet über GitHub Pages aus dem `main`-Branch.
