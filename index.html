@@ -3,9 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Digitales Gehirn · v0.2</title>
+  <title>Digitales Gehirn · v0.3</title>
   <meta name="description" content="Dein digitales Gehirn: Jede Idee wird ein leuchtender Knotenpunkt im Sternennetz. Alle Gedanken sind miteinander verbunden.">
-  <meta name="theme-color" content="#03040a">
+  <meta name="theme-color" content="#02030a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gehirn">
   <style>
     :root{
       --bg-0:#02030a;
@@ -124,17 +131,38 @@
     .card .label{color:var(--muted);font-size:12px;margin:0 0 6px;}
     .card .cats-edit{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;}
     .card .cats-edit .chip{padding:5px 10px;font-size:12px;}
+
+    /* ---- Suchleiste ---- */
+    .search{
+      position:fixed;top:46px;left:50%;transform:translateX(-50%);z-index:7;
+      width:min(560px,calc(100% - 28px));display:none;align-items:center;gap:6px;
+      background:var(--panel);backdrop-filter:blur(14px);
+      border:1px solid var(--panel-line);border-radius:14px;
+      padding:6px 6px 6px 14px;box-shadow:0 12px 40px rgba(0,0,0,.5);
+    }
+    .search.open{display:flex;}
+    .search input{flex:1;background:transparent;border:0;outline:0;color:var(--text);
+      font-size:16px;padding:8px 4px;min-width:0;}
+    .search input::placeholder{color:var(--muted);}
+    .search .matchinfo{color:var(--muted);font-size:12px;white-space:nowrap;padding:0 2px;}
+    .search .iconbtn{width:34px;height:34px;font-size:15px;}
   </style>
 </head>
 <body>
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.2</small></div>
+    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.3</small></div>
     <div class="count" id="count">0 Gedanken</div>
   </div>
 
   <div class="cats" id="cats"></div>
+
+  <div class="search" id="search">
+    <input id="searchInput" type="text" placeholder="Gedanken durchsuchen …" autocomplete="off" enterkeyhint="search">
+    <span class="matchinfo" id="matchInfo"></span>
+    <button class="iconbtn" id="searchClose" title="Suche schließen">✕</button>
+  </div>
 
   <div class="hint" id="hint">
     <p><b>Tippe deine erste Idee ein.</b><br>
@@ -142,10 +170,14 @@
   </div>
 
   <div class="tools">
+    <button class="iconbtn" id="searchBtn" title="Suchen">🔍</button>
     <button class="iconbtn" id="zoomIn"  title="Heranzoomen">+</button>
     <button class="iconbtn" id="zoomOut" title="Herauszoomen">−</button>
     <button class="iconbtn" id="recenter" title="Zentrieren">⊙</button>
+    <button class="iconbtn" id="exportBtn" title="Sichern (Backup herunterladen)">⬇</button>
+    <button class="iconbtn" id="importBtn" title="Backup laden">⬆</button>
   </div>
+  <input type="file" id="importFile" accept="application/json,.json" style="display:none">
 
   <div class="dock">
     <input id="ideaInput" type="text" placeholder="Neue Idee, neuer Gedanke …" autocomplete="off" enterkeyhint="done">
@@ -188,6 +220,7 @@
   ];
   let activeCat = 'idee';   // Kategorie für neue Knoten
   let focusCat  = null;     // Filter: nur diese Kategorie hervorheben
+  let searchQuery = '';     // aktuelle Suchanfrage
 
   function catById(id){ return categories.find(c=>c.id===id) || categories[0]; }
   function nodeColor(n){ return catById(n.cat).color; }
@@ -375,13 +408,16 @@
     }
 
     // Knoten (leuchtende Sterne in Kategoriefarbe)
+    const q = searchQuery.toLowerCase();
     for(const n of nodes){
       const pulse = 0.6 + 0.4*Math.sin(time*2 + (n.id%100));
       const sel = n.id===selectedId;
-      const faded = focusCat && n.cat!==focusCat;
+      const isMatch = q && n.text.toLowerCase().includes(q);
+      // Abblenden, wenn ein Kategorie-Filter ODER eine Suche aktiv ist und der Knoten nicht passt
+      const faded = (focusCat && n.cat!==focusCat) || (q && !isMatch);
       const col = nodeColor(n);
-      const fa  = faded ? 0.20 : 1;          // Abblendung bei aktivem Filter
-      const baseR = sel ? 7 : 5;
+      const fa  = faded ? (q ? 0.12 : 0.20) : 1;
+      const baseR = (sel||isMatch) ? 7 : 5;
       // Halo
       const g = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,baseR*4);
       g.addColorStop(0, hexToRgba(col, (sel?0.95:0.7)*fa));
@@ -401,11 +437,20 @@
       ctx.beginPath();
       ctx.arc(n.x,n.y,baseR,0,Math.PI*2);
       ctx.fill();
+      // pulsierender Such-Treffer-Ring
+      if(isMatch){
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 2/view.scale;
+        ctx.strokeStyle = hexToRgba('#ffffff', 0.55+0.45*Math.sin(time*4));
+        ctx.beginPath();
+        ctx.arc(n.x,n.y, baseR + (5+1.5*Math.sin(time*4))/view.scale, 0, Math.PI*2);
+        ctx.stroke();
+      }
 
-      // Beschriftung – nur wenn nah genug herangezoomt
-      if(view.scale > 0.55){
+      // Beschriftung – nah genug herangezoomt, oder bei Treffer/Auswahl immer
+      if(view.scale > 0.55 || isMatch || sel){
         ctx.font = `${12/view.scale}px Inter, system-ui, sans-serif`;
-        ctx.fillStyle = sel ? '#ffffff' : 'rgba(220,230,255,.78)';
+        ctx.fillStyle = (sel||isMatch) ? '#ffffff' : 'rgba(220,230,255,.78)';
         ctx.textAlign = 'center';
         const label = n.text.length>26 ? n.text.slice(0,25)+'…' : n.text;
         ctx.fillText(label, n.x, n.y + baseR + 14/view.scale);
@@ -598,6 +643,86 @@
     updateAddColor(); renderCats(); save();
   }
 
+  // ---- Suche ----
+  const searchEl=document.getElementById('search');
+  const searchInput=document.getElementById('searchInput');
+  const matchInfo=document.getElementById('matchInfo');
+  let matchIdx=0;
+  function searchMatches(){
+    if(!searchQuery) return [];
+    const qq=searchQuery.toLowerCase();
+    return nodes.filter(n=>n.text.toLowerCase().includes(qq));
+  }
+  function centerOn(n){
+    const w=canvas.clientWidth, h=canvas.clientHeight;
+    view.scale=Math.max(view.scale, 0.8);
+    view.x=w/2 - n.x*view.scale;
+    view.y=h/2 - n.y*view.scale;
+  }
+  function applySearch(){
+    const m=searchMatches();
+    matchInfo.textContent = searchQuery ? (m.length+(m.length===1?' Treffer':' Treffer')) : '';
+    matchIdx=0;
+    if(m.length){ centerOn(m[0]); selectedId=m[0].id; }
+  }
+  function cycleMatch(){
+    const m=searchMatches(); if(!m.length) return;
+    matchIdx=(matchIdx+1)%m.length;
+    centerOn(m[matchIdx]); selectedId=m[matchIdx].id;
+    matchInfo.textContent=(matchIdx+1)+' / '+m.length;
+  }
+  function openSearch(){ searchEl.classList.add('open'); catsEl.style.display='none'; searchInput.focus(); }
+  function closeSearch(){
+    searchEl.classList.remove('open'); catsEl.style.display='';
+    searchQuery=''; searchInput.value=''; matchInfo.textContent=''; selectedId=null;
+  }
+  searchInput.addEventListener('input', ()=>{ searchQuery=searchInput.value.trim(); applySearch(); });
+  searchInput.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); cycleMatch(); }
+    else if(e.key==='Escape'){ closeSearch(); }
+  });
+  document.getElementById('searchBtn').onclick=()=> searchEl.classList.contains('open') ? closeSearch() : openSearch();
+  document.getElementById('searchClose').onclick=closeSearch;
+
+  // ---- Backup: Export / Import (gegen Datenverlust) ----
+  function exportData(){
+    const payload={
+      version:1,
+      nodes: nodes.map(n=>({id:n.id, text:n.text, x:n.x, y:n.y, t:n.t, cat:n.cat})),
+      edges, categories, activeCat
+    };
+    const blob=new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='digitales-gehirn-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }
+  function importData(file){
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const data=JSON.parse(reader.result);
+        if(!data || !Array.isArray(data.nodes)) throw new Error('ungültig');
+        if(nodes.length && !window.confirm('Aktuelles Gehirn durch das Backup ersetzen? Die jetzigen '+nodes.length+' Gedanken werden überschrieben.')) return;
+        if(Array.isArray(data.categories) && data.categories.length) categories=data.categories;
+        activeCat = (data.activeCat && categories.some(c=>c.id===data.activeCat)) ? data.activeCat : categories[0].id;
+        nodes = data.nodes.map(n=>({...n, vx:0, vy:0, cat: n.cat || categories[0].id}));
+        edges = data.edges || [];
+        idCounter = Math.max(idCounter, ...nodes.map(n=>n.id||0));
+        focusCat=null; selectedId=null;
+        document.getElementById('hint').classList.toggle('hide', nodes.length>0);
+        updateCount(); renderCats(); updateAddColor(); recenter(); save();
+        window.alert('Backup geladen: '+nodes.length+' Gedanken wiederhergestellt.');
+      }catch(err){ window.alert('Diese Datei konnte nicht gelesen werden. Bitte eine vorher exportierte .json-Datei wählen.'); }
+    };
+    reader.readAsText(file);
+  }
+  document.getElementById('exportBtn').onclick=exportData;
+  const importFile=document.getElementById('importFile');
+  document.getElementById('importBtn').onclick=()=>importFile.click();
+  importFile.addEventListener('change', e=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=''; });
+
   // ---- Werkzeuge ----
   document.getElementById('zoomIn').onclick =()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1.2);
   document.getElementById('zoomOut').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1/1.2);
@@ -619,6 +744,11 @@
   load(); resize(); makeStars(); updateCount(); renderCats(); updateAddColor();
   if(nodes.length){ document.getElementById('hint').classList.add('hide'); recenter(); }
   loop();
+
+  // App offline-/installierbar machen
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
 })();
 </script>
 </body>
