@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Digitales Gehirn · v0.7</title>
+  <title>Digitales Gehirn · v0.8</title>
   <meta name="description" content="Dein digitales Gehirn: Jede Idee wird ein leuchtender Knotenpunkt im Sternennetz. Alle Gedanken sind miteinander verbunden.">
   <meta name="theme-color" content="#02030a">
   <link rel="manifest" href="manifest.json">
@@ -196,13 +196,34 @@
       font-size:13px;display:grid;place-items:center;line-height:1;}
     .micmini:hover{background:rgba(255,255,255,.1);}
     .micmini:active{transform:scale(.92);}
+
+    /* ---- Mini-KI Vorschlagsleiste ---- */
+    .suggest{
+      position:fixed;left:50%;bottom:calc(max(18px, env(safe-area-inset-bottom)) + 70px);
+      transform:translateX(-50%);z-index:7;width:min(680px,calc(100% - 28px));
+      background:var(--panel);backdrop-filter:blur(14px);
+      border:1px solid var(--panel-line);border-radius:16px;
+      padding:12px 14px;box-shadow:0 18px 50px rgba(0,0,0,.5);
+      display:none;
+    }
+    .suggest.open{display:block;}
+    .suggest-q{color:var(--text);font-size:14px;font-weight:600;margin-bottom:6px;
+      word-break:break-word;}
+    .suggest-q::before{content:"„";}.suggest-q::after{content:"\201C";}
+    .suggest-label{color:var(--muted);font-size:11.5px;margin-bottom:10px;}
+    .suggest-row{display:flex;flex-wrap:wrap;gap:7px;}
+    .suggest-row .chip{cursor:pointer;}
+    .suggest-row .chip.primary{border-color:#fff;background:rgba(255,255,255,.16);font-weight:600;}
+    .suggest-row .chip.newcat{border-color:rgba(61,220,151,.6);color:#bfffe0;
+      background:rgba(61,220,151,.12);}
+    .suggest-row .chip.cancel{color:var(--muted);}
   </style>
 </head>
 <body>
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.7</small></div>
+    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.8</small></div>
     <div class="count" id="count">0 Gedanken</div>
   </div>
 
@@ -228,11 +249,18 @@
     <button class="iconbtn" id="recenter" title="Zentrieren">⊙</button>
     <button class="iconbtn" id="exportBtn" title="Sichern (Backup herunterladen)">⬇</button>
     <button class="iconbtn" id="importBtn" title="Backup laden">⬆</button>
+    <button class="iconbtn" id="aiBtn" title="Mini-KI: Kategorie automatisch vorschlagen">✨</button>
     <button class="iconbtn" id="relinkBtn" title="Verbindungen neu nach Thema ordnen">🔗</button>
     <button class="iconbtn" id="linkBtn" title="Brücke zwischen zwei Themen ziehen">🪢</button>
     <button class="iconbtn" id="syncBtn" title="Cloud-Sync">☁</button>
   </div>
   <input type="file" id="importFile" accept="application/json,.json" style="display:none">
+
+  <div class="suggest" id="suggestBar">
+    <div class="suggest-q" id="suggestText"></div>
+    <div class="suggest-label">Mini-KI schlägt vor – tippe zum Bestätigen:</div>
+    <div class="suggest-row" id="suggestChips"></div>
+  </div>
 
   <div class="dock">
     <input id="ideaInput" type="text" placeholder="Neue Idee, neuer Gedanke …" autocomplete="off" enterkeyhint="done">
@@ -369,11 +397,12 @@ create policy "zugriff per schluessel"
 
   // ---- Idee hinzufügen ----
   let idCounter = Date.now();
-  function addIdea(text){
+  function addIdea(text, catId){
     text = (text||'').trim();
     if(!text) return;
+    const cat = (catId && categories.some(c=>c.id===catId)) ? catId : activeCat;
     // Knoten möglichst nahe bei seinem eigenen Themen-Cluster platzieren
-    const sameCat = nodes.filter(o => o.cat === activeCat);
+    const sameCat = nodes.filter(o => o.cat === cat);
     let bx, by;
     if(sameCat.length){
       // Schwerpunkt der gleichen Kategorie
@@ -387,7 +416,7 @@ create policy "zugriff per schluessel"
     const ang = Math.random()*Math.PI*2;
     const rad = sameCat.length ? 60 + Math.random()*80 : 0;
     const node = {
-      id: ++idCounter, text, cat: activeCat,
+      id: ++idCounter, text, cat,
       x: bx + Math.cos(ang)*rad,
       y: by + Math.sin(ang)*rad,
       vx: 0, vy: 0, t: Date.now()
@@ -767,9 +796,153 @@ create policy "zugriff per schluessel"
   // ---- Eingabe ----
   const input=document.getElementById('ideaInput');
   const addBtn=document.getElementById('addBtn');
-  function submit(){ addIdea(input.value); input.value=''; input.focus(); }
+  function submit(){
+    const txt=input.value.trim();
+    if(!txt) return;
+    if(aiEnabled){
+      input.value='';
+      proposeCategory(txt);          // Mini-KI: erst vorschlagen
+    }else{
+      addIdea(txt); input.value=''; input.focus();
+    }
+  }
   addBtn.onclick=submit;
   input.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
+
+  // ====== Mini-KI: Kategorie-Vorschlag (komplett offline, im Browser) ======
+  let aiEnabled = true;
+  try{ aiEnabled = localStorage.getItem('digital-brain-ai') !== '0'; }catch(e){}
+  const aiBtn=document.getElementById('aiBtn');
+  function refreshAiBtn(){ aiBtn.classList.toggle('on', aiEnabled); }
+  aiBtn.onclick=()=>{
+    aiEnabled=!aiEnabled;
+    try{ localStorage.setItem('digital-brain-ai', aiEnabled?'1':'0'); }catch(e){}
+    refreshAiBtn();
+    if(!aiEnabled) hideSuggest();
+  };
+  refreshAiBtn();
+
+  // Deutsche Stoppwörter (werden bei der Analyse ignoriert)
+  const STOP=new Set(('und oder aber der die das den dem des ein eine einen einem einer '+
+    'ich du er sie es wir ihr mir mich dir dich uns euch mein dein sein unser euer '+
+    'ist sind war waren bin bist seid sein haben hat habe hatte hatten werden wird '+
+    'für mit von zu im in an auf aus bei nach über unter vor durch um als wie wenn '+
+    'dann noch nur auch schon mal man sich nicht kein keine ja nein so dass diese '+
+    'dieser dieses was wer wo warum wann wieso weshalb denn doch eben halt etwas '+
+    'viel sehr mehr am vom zum zur ob bis ohne gegen je mal mehr weniger hier dort '+
+    'jetzt heute morgen gestern immer nie oft wieder mal').split(/\s+/));
+
+  function aiStem(w){
+    w=w.toLowerCase();
+    const s=w.replace(/(ungen|ung|lichen|lich|ischen|isch|keiten|keit|heiten|heit|nisse|nis|chen|lein|innen|en|er|es|em|nd|st|te|ten|s|e|n)$/,'');
+    return s.length>=3 ? s : w;
+  }
+  function aiTokens(text){
+    return (String(text).toLowerCase().match(/[a-zäöüß0-9]{3,}/g)||[])
+      .filter(w=>!STOP.has(w))
+      .map(aiStem);
+  }
+  function categoryProfiles(){
+    const prof={};
+    for(const n of nodes){
+      const set = prof[n.cat] || (prof[n.cat]=new Set());
+      for(const w of aiTokens(n.text+' '+(n.note||''))) set.add(w);
+    }
+    return prof;
+  }
+  function matchesType(text, cat){
+    const n=cat.name.toLowerCase(), x=text.toLowerCase().trim();
+    if(n.includes('frage')   && (/\?\s*$/.test(text) || /^(was|wer|wie|wo|warum|wann|wieso|weshalb|welche|welcher|welches|kann|soll|darf|ist|sind|gibt|wieviel|wie viel)\b/.test(x))) return true;
+    if((n.includes('aufgabe')||n.includes('todo')||n.includes('to-do')||n.includes('erledig')) && /\b(muss|müssen|musste|kaufen|anrufen|erledigen|machen|besorgen|schreiben|termin|abgeben|bezahlen|aufräumen|putzen|holen|buchen|melden|antworten|fertig)\b/.test(x)) return true;
+    if((n.includes('traum')||n.includes('träum')) && /\b(traum|träum|wünsch|wunsch|irgendwann|eines tages|vision|sehnsucht)\b/.test(x)) return true;
+    if(n.includes('idee')    && /\b(idee|vielleicht|könnte|man könnte|was wäre|wäre cool|konzept|einfall)\b/.test(x)) return true;
+    if(n.includes('projekt') && /\b(projekt|plan|planung|umsetzen|bauen|entwickeln|aufbauen|starten|gründen)\b/.test(x)) return true;
+    return false;
+  }
+  function suggestNewName(text){
+    const words=(String(text).match(/[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß-]{3,}/g)||[])
+      .filter(w=>!STOP.has(w.toLowerCase()));
+    if(!words.length) return null;
+    const noun=words.find(w=>/^[A-ZÄÖÜ]/.test(w));      // Großschreibung = oft ein Substantiv
+    const pick=noun || words.slice().sort((a,b)=>b.length-a.length)[0];
+    return pick.charAt(0).toUpperCase()+pick.slice(1).toLowerCase();
+  }
+  // Liefert: {existing:[{id,score}…sortiert], newName, best}
+  function classify(text){
+    const distinct=new Set(aiTokens(text));
+    const prof=categoryProfiles();
+    const scored=categories.map(c=>{
+      let s=0; const p=prof[c.id];
+      if(p){ distinct.forEach(w=>{ if(p.has(w)) s++; }); }
+      if(matchesType(text,c)) s+=1.6;
+      return { id:c.id, score:s };
+    }).sort((a,b)=>b.score-a.score);
+    const best=scored[0];
+    const THRESHOLD=1;   // ein klares gemeinsames Stichwort (oder Typ-Treffer) genügt
+    const strong = best && best.score>=THRESHOLD;
+    let newName=null;
+    if(!strong){
+      const nm=suggestNewName(text);
+      if(nm && !categories.some(c=>c.name.toLowerCase()===nm.toLowerCase())) newName=nm;
+    }
+    return { scored, best: strong?best.id:(best?best.id:activeCat), strong, newName };
+  }
+
+  // ---- Vorschlags-Oberfläche ----
+  const suggestBar=document.getElementById('suggestBar');
+  const suggestText=document.getElementById('suggestText');
+  const suggestChips=document.getElementById('suggestChips');
+  let pendingText=null;
+  function hideSuggest(){ suggestBar.classList.remove('open'); pendingText=null; }
+  function proposeCategory(text){
+    pendingText=text;
+    suggestText.textContent=text;
+    const r=classify(text);
+    suggestChips.innerHTML='';
+    const made=new Set();
+    const addChip=(label,color,cls,onClick)=>{
+      const b=document.createElement('button');
+      b.className='chip '+(cls||'');
+      b.innerHTML=(color?`<span class="cdot" style="background:${color};color:${color}"></span>`:'')+label;
+      b.onclick=onClick;
+      suggestChips.appendChild(b);
+    };
+    // 1) Hauptvorschlag
+    if(r.newName){
+      addChip('✨ Neues Thema „'+r.newName+'"', null, 'newcat primary', ()=>commitNew(r.newName));
+    }else{
+      const c=catById(r.best); made.add(c.id);
+      addChip('✓ '+c.name, c.color, 'primary', ()=>commitIdea(c.id));
+    }
+    // 2) weitere passende vorhandene Themen (max 4)
+    r.scored.filter(s=>s.score>0 && s.id!==r.best).slice(0,4).forEach(s=>{
+      if(made.has(s.id)) return; made.add(s.id);
+      const c=catById(s.id);
+      addChip(c.name, c.color, '', ()=>commitIdea(c.id));
+    });
+    // 3) falls Hauptvorschlag ein neues Thema ist, trotzdem die aktive Kategorie anbieten
+    if(r.newName && !made.has(activeCat)){
+      const c=catById(activeCat); made.add(c.id);
+      addChip(c.name, c.color, '', ()=>commitIdea(c.id));
+    }
+    // 4) alle übrigen Themen über „weitere…“ – hier einfach restliche anhängen
+    categories.forEach(c=>{ if(!made.has(c.id)){ made.add(c.id);
+      addChip(c.name, c.color, '', ()=>commitIdea(c.id)); } });
+    // 5) Abbrechen
+    addChip('✕ Abbrechen', null, 'cancel', ()=>{ input.value=pendingText; hideSuggest(); input.focus(); });
+    suggestBar.classList.add('open');
+  }
+  function commitIdea(catId){
+    const txt=pendingText; hideSuggest();
+    if(txt){ addIdea(txt, catId); }
+    input.focus();
+  }
+  function commitNew(name){
+    const id='c'+Date.now();
+    categories.push({ id, name, color: PALETTE[categories.length % PALETTE.length] });
+    renderCats();
+    commitIdea(id);
+  }
 
   // ---- Diktieren (Web Speech API) ----
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;

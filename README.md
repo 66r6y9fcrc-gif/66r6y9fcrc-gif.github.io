@@ -6,6 +6,14 @@ größer wird das Netz.
 
 Live: <https://66r6y9fcrc-gif.github.io/>
 
+## Funktionen (v0.8)
+
+- ✨ **Mini-KI für Kategorien** (komplett offline im Browser, keine fremden Server):
+  Beim Hinzufügen eines Gedankens schlägt die App das am besten passende Thema vor
+  (anhand der Wörter deiner bisherigen Gedanken + Typ-Erkennung für Frage/Aufgabe/…).
+  Passt kein Thema, wird ein **neues vorgeschlagen**, benannt nach dem wichtigsten Wort.
+  Du **bestätigst** mit einem Tippen oder wählst ein anderes Thema. Per ✨-Knopf abschaltbar.
+
 ## Funktionen (v0.7)
 
 - 🎤 **Diktieren statt Tippen**: Mikrofon in der Eingabeleiste und im Notizfeld.
