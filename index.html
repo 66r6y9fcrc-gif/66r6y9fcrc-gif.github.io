@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Digitales Gehirn · v0.1</title>
+  <title>Digitales Gehirn · v0.2</title>
   <meta name="description" content="Dein digitales Gehirn: Jede Idee wird ein leuchtender Knotenpunkt im Sternennetz. Alle Gedanken sind miteinander verbunden.">
   <meta name="theme-color" content="#03040a">
   <style>
@@ -99,15 +99,42 @@
     .tools{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:6;
       display:flex;flex-direction:column;gap:8px;}
     .tools .iconbtn{width:38px;height:38px;font-size:18px;background:var(--panel);}
+
+    /* ---- Kategorie-Leiste ---- */
+    .cats{
+      position:fixed;top:50px;left:0;right:0;z-index:5;
+      display:flex;gap:8px;align-items:center;
+      padding:6px 14px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    }
+    .cats::-webkit-scrollbar{display:none;}
+    .chip{
+      flex:none;display:inline-flex;align-items:center;gap:7px;
+      padding:7px 12px;border-radius:999px;cursor:pointer;font-size:13px;line-height:1;
+      background:var(--panel);border:1px solid var(--panel-line);color:var(--text);
+      backdrop-filter:blur(10px);white-space:nowrap;
+      transition:border-color .15s, background .15s, transform .1s;
+    }
+    .chip:active{transform:scale(.95);}
+    .chip .cdot{width:10px;height:10px;border-radius:50%;box-shadow:0 0 8px 1px currentColor;}
+    .chip.sel{border-color:#fff;background:rgba(255,255,255,.14);}
+    .chip.active-add{box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);}
+    .chip.add{color:var(--muted);}
+
+    /* Kategorie-Auswahl in der Detailkarte */
+    .card .label{color:var(--muted);font-size:12px;margin:0 0 6px;}
+    .card .cats-edit{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;}
+    .card .cats-edit .chip{padding:5px 10px;font-size:12px;}
   </style>
 </head>
 <body>
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.1</small></div>
+    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.2</small></div>
     <div class="count" id="count">0 Gedanken</div>
   </div>
+
+  <div class="cats" id="cats"></div>
 
   <div class="hint" id="hint">
     <p><b>Tippe deine erste Idee ein.</b><br>
@@ -128,6 +155,8 @@
   <div class="card" id="card">
     <h2 id="cardTitle"></h2>
     <div class="meta" id="cardMeta"></div>
+    <p class="label">Kategorie ändern:</p>
+    <div class="cats-edit" id="cardCats"></div>
     <div class="row">
       <button class="btn danger" id="delBtn">Löschen</button>
       <button class="btn" id="closeBtn">Schließen</button>
@@ -142,18 +171,39 @@
   const STORE_KEY = 'digital-brain-v1';
 
   // ---- Zustand ----
-  let nodes = [];           // {id, text, x, y, vx, vy, t}
+  let nodes = [];           // {id, text, x, y, vx, vy, t, cat}
   let edges = [];           // {a, b}
   let view = { x: 0, y: 0, scale: 1 };   // Kamera
   let stars = [];           // dekorativer Hintergrund
   let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
+  // ---- Kategorien & Farben ----
+  const PALETTE = ['#4f8cff','#b07cff','#3ddc97','#ffb340','#ff6fae','#5ad1e6','#ffd84f','#ff7a59','#9bff6f','#c2a3ff'];
+  let categories = [
+    {id:'idee',    name:'Idee',    color:'#4f8cff'},
+    {id:'frage',   name:'Frage',   color:'#b07cff'},
+    {id:'projekt', name:'Projekt', color:'#3ddc97'},
+    {id:'aufgabe', name:'Aufgabe', color:'#ffb340'},
+    {id:'traum',   name:'Traum',   color:'#ff6fae'},
+  ];
+  let activeCat = 'idee';   // Kategorie für neue Knoten
+  let focusCat  = null;     // Filter: nur diese Kategorie hervorheben
+
+  function catById(id){ return categories.find(c=>c.id===id) || categories[0]; }
+  function nodeColor(n){ return catById(n.cat).color; }
+  function findNode(id){ return nodes.find(n=>n.id===id); }
+  function hexToRgba(hex, a){
+    const h = hex.replace('#','');
+    const r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
   // ---- Speichern / Laden ----
   function save(){
     try{
       localStorage.setItem(STORE_KEY, JSON.stringify({
-        nodes: nodes.map(n => ({id:n.id, text:n.text, x:n.x, y:n.y, t:n.t})),
-        edges
+        nodes: nodes.map(n => ({id:n.id, text:n.text, x:n.x, y:n.y, t:n.t, cat:n.cat})),
+        edges, categories, activeCat
       }));
     }catch(e){}
   }
@@ -162,8 +212,11 @@
       const raw = localStorage.getItem(STORE_KEY);
       if(!raw) return;
       const data = JSON.parse(raw);
-      nodes = (data.nodes||[]).map(n => ({...n, vx:0, vy:0}));
+      if(Array.isArray(data.categories) && data.categories.length) categories = data.categories;
+      if(data.activeCat) activeCat = data.activeCat;
+      nodes = (data.nodes||[]).map(n => ({...n, vx:0, vy:0, cat: n.cat || categories[0].id}));
       edges = data.edges||[];
+      if(!categories.some(c=>c.id===activeCat)) activeCat = categories[0].id;
     }catch(e){}
   }
 
@@ -193,7 +246,7 @@
     const ang = Math.random()*Math.PI*2;
     const rad = nodes.length ? 60 + Math.random()*80 : 0;
     const node = {
-      id: ++idCounter, text,
+      id: ++idCounter, text, cat: activeCat,
       x: cx + Math.cos(ang)*rad,
       y: cy + Math.sin(ang)*rad,
       vx: 0, vy: 0, t: Date.now()
@@ -305,15 +358,15 @@
 
     idMap = _byId();
 
-    // Fäden
+    // Fäden – Farbverlauf zwischen den Kategoriefarben der Endpunkte
     ctx.lineWidth = 1/view.scale;
     for(const e of edges){
       const a=nodeById(e.a), b=nodeById(e.b);
       if(!a||!b) continue;
+      const dim = (focusCat && a.cat!==focusCat && b.cat!==focusCat) ? .05 : .30;
       const grad = ctx.createLinearGradient(a.x,a.y,b.x,b.y);
-      grad.addColorStop(0,'rgba(120,170,255,.30)');
-      grad.addColorStop(.5,'rgba(120,170,255,.10)');
-      grad.addColorStop(1,'rgba(120,170,255,.30)');
+      grad.addColorStop(0, hexToRgba(nodeColor(a), dim));
+      grad.addColorStop(1, hexToRgba(nodeColor(b), dim));
       ctx.strokeStyle = grad;
       ctx.beginPath();
       ctx.moveTo(a.x,a.y);
@@ -321,20 +374,29 @@
       ctx.stroke();
     }
 
-    // Knoten (leuchtende Sterne)
+    // Knoten (leuchtende Sterne in Kategoriefarbe)
     for(const n of nodes){
       const pulse = 0.6 + 0.4*Math.sin(time*2 + (n.id%100));
       const sel = n.id===selectedId;
+      const faded = focusCat && n.cat!==focusCat;
+      const col = nodeColor(n);
+      const fa  = faded ? 0.20 : 1;          // Abblendung bei aktivem Filter
       const baseR = sel ? 7 : 5;
       // Halo
       const g = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,baseR*4);
-      g.addColorStop(0, sel?'rgba(120,200,255,.9)':'rgba(140,184,255,.7)');
-      g.addColorStop(1, 'rgba(140,184,255,0)');
+      g.addColorStop(0, hexToRgba(col, (sel?0.95:0.7)*fa));
+      g.addColorStop(1, hexToRgba(col, 0));
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.arc(n.x,n.y,baseR*4*(0.8+pulse*0.2),0,Math.PI*2);
       ctx.fill();
-      // Kern
+      // farbiger Ring + weißer Kern
+      ctx.globalAlpha = fa;
+      ctx.lineWidth = 2/view.scale;
+      ctx.strokeStyle = hexToRgba(col, 0.95);
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,baseR+1.5/view.scale,0,Math.PI*2);
+      ctx.stroke();
       ctx.fillStyle = '#fff';
       ctx.beginPath();
       ctx.arc(n.x,n.y,baseR,0,Math.PI*2);
@@ -348,6 +410,7 @@
         const label = n.text.length>26 ? n.text.slice(0,25)+'…' : n.text;
         ctx.fillText(label, n.x, n.y + baseR + 14/view.scale);
       }
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -453,12 +516,29 @@
 
   // ---- Detail-Karte ----
   const card=document.getElementById('card');
+  const cardCatsEl=document.getElementById('cardCats');
+  function renderCardCats(){
+    const n=findNode(selectedId);
+    cardCatsEl.innerHTML='';
+    for(const c of categories){
+      const chip=document.createElement('div');
+      chip.className='chip'+(n && n.cat===c.id?' sel':'');
+      chip.innerHTML=`<span class="cdot" style="background:${c.color};color:${c.color}"></span>${c.name}`;
+      chip.onclick=()=>{ if(n){ n.cat=c.id; renderCardCats(); openCardMeta(n); save(); } };
+      cardCatsEl.appendChild(chip);
+    }
+  }
+  function openCardMeta(n){
+    const d=new Date(n.t||Date.now());
+    document.getElementById('cardMeta').textContent='Kategorie: '+catById(n.cat).name+
+      ' · erfasst am '+d.toLocaleDateString('de-DE')+
+      ' · '+(edges.filter(e=>e.a===n.id||e.b===n.id).length)+' Verbindungen';
+  }
   function openCard(n){
     selectedId=n.id;
     document.getElementById('cardTitle').textContent=n.text;
-    const d=new Date(n.t||Date.now());
-    document.getElementById('cardMeta').textContent='Erfasst am '+d.toLocaleDateString('de-DE')+
-      ' · '+(edges.filter(e=>e.a===n.id||e.b===n.id).length)+' Verbindungen';
+    openCardMeta(n);
+    renderCardCats();
     card.classList.add('open');
   }
   function closeCard(){ selectedId=null; card.classList.remove('open'); }
@@ -467,9 +547,56 @@
 
   // ---- Eingabe ----
   const input=document.getElementById('ideaInput');
+  const addBtn=document.getElementById('addBtn');
   function submit(){ addIdea(input.value); input.value=''; input.focus(); }
-  document.getElementById('addBtn').onclick=submit;
+  addBtn.onclick=submit;
   input.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
+
+  // ---- Kategorie-Leiste ----
+  const catsEl=document.getElementById('cats');
+  function updateAddColor(){
+    const c=catById(activeCat);
+    addBtn.style.background=c.color;
+    addBtn.style.boxShadow='0 0 18px '+hexToRgba(c.color,0.55);
+    input.placeholder='Neue/r '+c.name+' …';
+  }
+  function renderCats(){
+    catsEl.innerHTML='';
+    // "Alle" hebt den Filter auf
+    const all=document.createElement('div');
+    all.className='chip'+(focusCat===null?' sel':'');
+    all.innerHTML='<span class="cdot" style="background:#dce6ff;color:#dce6ff"></span>Alle';
+    all.title='Filter aufheben – alles anzeigen';
+    all.onclick=()=>{ focusCat=null; renderCats(); };
+    catsEl.appendChild(all);
+
+    for(const c of categories){
+      const chip=document.createElement('div');
+      chip.className='chip'+(focusCat===c.id?' sel':'')+(activeCat===c.id?' active-add':'');
+      chip.innerHTML=`<span class="cdot" style="background:${c.color};color:${c.color}"></span>${c.name}${activeCat===c.id?' ✎':''}`;
+      chip.title='Tippen: nur „'+c.name+'" zeigen · neue Ideen werden „'+c.name+'"';
+      chip.onclick=()=>{
+        activeCat=c.id;                              // neue Ideen erhalten diese Kategorie
+        focusCat = (focusCat===c.id) ? null : c.id;  // erneut tippen hebt den Filter auf
+        updateAddColor(); renderCats(); save();
+      };
+      catsEl.appendChild(chip);
+    }
+    const add=document.createElement('div');
+    add.className='chip add';
+    add.textContent='＋ Kategorie';
+    add.title='Neue Kategorie anlegen';
+    add.onclick=addCategory;
+    catsEl.appendChild(add);
+  }
+  function addCategory(){
+    const name=(window.prompt('Name der neuen Kategorie:')||'').trim();
+    if(!name) return;
+    const id='c'+Date.now();
+    categories.push({id, name, color: PALETTE[categories.length % PALETTE.length]});
+    activeCat=id; focusCat=null;
+    updateAddColor(); renderCats(); save();
+  }
 
   // ---- Werkzeuge ----
   document.getElementById('zoomIn').onclick =()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1.2);
@@ -489,7 +616,7 @@
 
   // ---- Start ----
   window.addEventListener('resize', resize);
-  load(); resize(); makeStars(); updateCount();
+  load(); resize(); makeStars(); updateCount(); renderCats(); updateAddColor();
   if(nodes.length){ document.getElementById('hint').classList.add('hide'); recenter(); }
   loop();
 })();
