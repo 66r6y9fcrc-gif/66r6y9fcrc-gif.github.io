@@ -201,6 +201,7 @@
     <button class="iconbtn" id="recenter" title="Zentrieren">⊙</button>
     <button class="iconbtn" id="exportBtn" title="Sichern (Backup herunterladen)">⬇</button>
     <button class="iconbtn" id="importBtn" title="Backup laden">⬆</button>
+    <button class="iconbtn" id="relinkBtn" title="Verbindungen neu nach Thema ordnen">🔗</button>
     <button class="iconbtn" id="syncBtn" title="Cloud-Sync">☁</button>
   </div>
   <input type="file" id="importFile" accept="application/json,.json" style="display:none">
@@ -342,21 +343,31 @@ create policy "zugriff per schluessel"
   function addIdea(text){
     text = (text||'').trim();
     if(!text) return;
-    // Position: nahe der Bildschirmmitte (in Welt-Koordinaten)
-    const cx = (canvas.clientWidth/2  - view.x)/view.scale;
-    const cy = (canvas.clientHeight/2 - view.y)/view.scale;
+    // Knoten möglichst nahe bei seinem eigenen Themen-Cluster platzieren
+    const sameCat = nodes.filter(o => o.cat === activeCat);
+    let bx, by;
+    if(sameCat.length){
+      // Schwerpunkt der gleichen Kategorie
+      bx = sameCat.reduce((s,o)=>s+o.x,0)/sameCat.length;
+      by = sameCat.reduce((s,o)=>s+o.y,0)/sameCat.length;
+    }else{
+      // Erster Gedanke eines Themas: nahe der Bildschirmmitte (Welt-Koordinaten)
+      bx = (canvas.clientWidth/2  - view.x)/view.scale;
+      by = (canvas.clientHeight/2 - view.y)/view.scale;
+    }
     const ang = Math.random()*Math.PI*2;
-    const rad = nodes.length ? 60 + Math.random()*80 : 0;
+    const rad = sameCat.length ? 60 + Math.random()*80 : 0;
     const node = {
       id: ++idCounter, text, cat: activeCat,
-      x: cx + Math.cos(ang)*rad,
-      y: cy + Math.sin(ang)*rad,
+      x: bx + Math.cos(ang)*rad,
+      y: by + Math.sin(ang)*rad,
       vx: 0, vy: 0, t: Date.now()
     };
 
-    // Mit den nächstgelegenen vorhandenen Knoten verbinden (feine Fäden)
-    if(nodes.length){
-      const dists = nodes.map(o => ({o, d: (o.x-node.x)**2 + (o.y-node.y)**2}));
+    // Nur mit den nächsten Knoten DESSELBEN Themas verbinden (feine Fäden).
+    // So bildet jedes Thema sein eigenes Netz, ausgehend vom ersten Basis-Gedanken.
+    if(sameCat.length){
+      const dists = sameCat.map(o => ({o, d: (o.x-node.x)**2 + (o.y-node.y)**2}));
       dists.sort((a,b)=>a.d-b.d);
       const links = Math.min(3, dists.length);
       for(let i=0;i<links;i++){
@@ -804,6 +815,30 @@ create policy "zugriff per schluessel"
     };
     reader.readAsText(file);
   }
+  // Alle Verbindungen verwerfen und neu pro Thema (Kategorie) aufbauen
+  function rebuildEdges(){
+    edges=[];
+    const byCat={};
+    nodes.forEach(n=>{ (byCat[n.cat]=byCat[n.cat]||[]).push(n); });
+    Object.values(byCat).forEach(group=>{
+      group.forEach(node=>{
+        const dists=group.filter(o=>o.id!==node.id).map(o=>({o,d:(o.x-node.x)**2+(o.y-node.y)**2}));
+        dists.sort((a,b)=>a.d-b.d);
+        const links=Math.min(3,dists.length);
+        for(let i=0;i<links;i++){
+          const a=node.id, b=dists[i].o.id;
+          if(!edges.some(e=>(e.a===a&&e.b===b)||(e.a===b&&e.b===a))) edges.push({a,b});
+        }
+      });
+    });
+    save();
+  }
+  document.getElementById('relinkBtn').onclick=()=>{
+    if(!nodes.length) return;
+    if(window.confirm('Alle Verbindungen neu nach Thema ordnen? Gedanken bleiben erhalten, nur die Fäden werden innerhalb gleicher Themen neu gezogen.'))
+      rebuildEdges();
+  };
+
   document.getElementById('exportBtn').onclick=exportData;
   const importFile=document.getElementById('importFile');
   document.getElementById('importBtn').onclick=()=>importFile.click();
