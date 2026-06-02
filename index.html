@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Digitales Gehirn · v0.9</title>
+  <title>Digitales Gehirn · v1.0</title>
   <meta name="description" content="Dein digitales Gehirn: Jede Idee wird ein leuchtender Knotenpunkt im Sternennetz. Alle Gedanken sind miteinander verbunden.">
   <meta name="theme-color" content="#02030a">
   <link rel="manifest" href="manifest.json">
@@ -225,7 +225,7 @@
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.9</small></div>
+    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v1.0</small></div>
     <div class="count" id="count">0 Gedanken</div>
   </div>
 
@@ -757,7 +757,7 @@ create policy "zugriff per schluessel"
       const chip=document.createElement('div');
       chip.className='chip'+(n && n.cat===c.id?' sel':'');
       chip.innerHTML=`<span class="cdot" style="background:${c.color};color:${c.color}"></span>${c.name}`;
-      chip.onclick=()=>{ if(n){ n.cat=c.id; renderCardCats(); openCardMeta(n); save(); } };
+      chip.onclick=()=>{ if(n){ n.cat=c.id; learnFrom(n.text+' '+(n.note||''), c.id); renderCardCats(); openCardMeta(n); save(); } };
       cardCatsEl.appendChild(chip);
     }
   }
@@ -824,6 +824,22 @@ create policy "zugriff per schluessel"
   };
   refreshAiBtn();
 
+  // Gelerntes Gedächtnis: Stichwort -> { kategorieId: Gewicht }.
+  // Wächst jedes Mal, wenn du einen Vorschlag bestätigst/korrigierst.
+  const LEARN_KEY='digital-brain-learn';
+  let learned={};
+  try{ learned=JSON.parse(localStorage.getItem(LEARN_KEY)||'{}')||{}; }catch(e){ learned={}; }
+  function saveLearned(){ try{ localStorage.setItem(LEARN_KEY, JSON.stringify(learned)); }catch(e){} }
+  function learnFrom(text, catId){
+    if(!catId) return;
+    const CAP=6;
+    for(const w of new Set(aiTokens(text))){
+      const m = learned[w] || (learned[w]={});
+      m[catId] = Math.min(CAP, (m[catId]||0)+1);
+    }
+    saveLearned();
+  }
+
   // Deutsche Stoppwörter (werden bei der Analyse ignoriert)
   const STOP=new Set(('und oder aber der die das den dem des ein eine einen einem einer '+
     'ich du er sie es wir ihr mir mich dir dich uns euch mein dein sein unser euer '+
@@ -877,17 +893,19 @@ create policy "zugriff per schluessel"
   function classify(text){
     const distinct=new Set(aiTokens(text));
     const prof=categoryProfiles();
-    // 1) Topisches Signal: gemeinsame Stichwörter mit bisherigen Gedanken
+    // 1) Signal aus (a) bisherigen Gedanken + (b) Gelerntem aus deinen Bestätigungen
     const scored=categories.map(c=>{
       let topic=0; const p=prof[c.id];
       if(p){ distinct.forEach(w=>{ if(p.has(w)) topic++; }); }
-      return { id:c.id, topic };
-    }).sort((a,b)=>b.topic-a.topic);
+      let mem=0;
+      distinct.forEach(w=>{ const m=learned[w]; if(m && m[c.id]) mem+=m[c.id]; });
+      return { id:c.id, topic, mem, score: topic + mem };
+    }).sort((a,b)=>b.score-a.score);
     const top=scored[0], second=scored[1];
-    if(top && top.topic>=1){
-      const tie = second && second.topic>0 && (top.topic===second.topic);
+    if(top && top.score>=1){
+      const tie = second && second.score>0 && (top.score===second.score);
       return { mode:'topic', best:top.id, ambiguous:!!tie,
-               candidates: scored.filter(s=>s.topic>0) };
+               candidates: scored.filter(s=>s.score>0) };
     }
     // 2) Mehrdeutiges „Vorhaben“ → Idee / Projekt / Aufgabe gleichberechtigt
     if(UNDERTAKING.test(text.toLowerCase())){
@@ -965,7 +983,7 @@ create policy "zugriff per schluessel"
   }
   function commitIdea(catId){
     const txt=pendingText; hideSuggest();
-    if(txt){ addIdea(txt, catId); }
+    if(txt){ learnFrom(txt, catId); addIdea(txt, catId); }
     input.focus();
   }
   function commitNew(name){

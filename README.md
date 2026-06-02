@@ -6,6 +6,14 @@ größer wird das Netz.
 
 Live: <https://66r6y9fcrc-gif.github.io/>
 
+## Funktionen (v1.0)
+
+- 🧠 **Die Mini-KI lernt aus deinen Entscheidungen**: Jedes bestätigte (oder in der
+  Detailkarte korrigierte) Thema merkt sie sich als „diese Stichwörter → dieses Thema".
+  Beim nächsten Mal schlägt sie es direkt vor – mehrdeutige Fälle wie „ein Buch schreiben"
+  fragt sie also nur so lange, bis du ihr deine Vorliebe gezeigt hast. Das Gelernte liegt
+  lokal auf dem Gerät.
+
 ## Funktionen (v0.9)
 
 - ✨ **Mini-KI Feintuning**: erkennt mehrdeutige „Vorhaben" (z. B. „ein Buch schreiben",
