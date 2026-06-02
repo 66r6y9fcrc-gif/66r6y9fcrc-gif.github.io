@@ -6,19 +6,41 @@ größer wird das Netz.
 
 Live: <https://66r6y9fcrc-gif.github.io/>
 
-## Funktionen (v0.3)
+## Funktionen (v0.5)
 
 - Ideen unten eintippen → erscheinen als leuchtende Sterne, automatisch mit den nächsten
   Knoten verbunden
 - Kraftbasiertes Layout: die Knoten ordnen sich selbst an und „schweben"
 - Farben & Kategorien (Idee, Frage, Projekt, Aufgabe, Traum + eigene Kategorien)
 - Filter: nur eine Kategorie hervorheben
-- **Suche**: Gedanken finden, Treffer werden hervorgehoben, Enter springt durch
+- **Suche**: Gedanken und Notizen finden, Treffer hervorgehoben, Enter springt durch
+- **Notizen pro Knoten** + editierbarer Titel (in der Detailkarte)
 - Verschieben (Ziehen), Zoomen (Mausrad / Pinch), Zentrieren
-- Knoten antippen → Detailkarte mit Kategorie ändern und Löschen
+- Knoten antippen → Detailkarte mit Kategorie ändern, Notiz und Löschen
 - Speicherung lokal im Browser (`localStorage`) – kein Server nötig
-- **Backup**: Export/Import als `.json` gegen Datenverlust und für den Wechsel zwischen Geräten
+- **Backup**: Export/Import als `.json` gegen Datenverlust
+- **Cloud-Sync** (optional, via Supabase): automatischer Abgleich zwischen Geräten
 - **Installierbar als App (PWA)**: „Zum Home-Bildschirm hinzufügen", funktioniert offline
+
+## Cloud-Sync einrichten (optional)
+
+Im ☁-Menü der App stehen die Schritte. Kurz:
+
+1. Kostenloses Projekt auf [supabase.com](https://supabase.com) anlegen.
+2. Im SQL Editor ausführen:
+   ```sql
+   create table if not exists brains (
+     id text primary key,
+     data jsonb,
+     updated_at timestamptz default now()
+   );
+   alter table brains enable row level security;
+   create policy "zugriff per schluessel"
+     on brains for all using (true) with check (true);
+   ```
+3. In der App unter ☁ die **Project URL** und den **anon public** Key (Project Settings → API)
+   eintragen, einen geheimen **Gehirn-Schlüssel** wählen (auf allen Geräten gleich) und
+   „Automatisch synchronisieren" aktivieren.
 
 ## Technik
 

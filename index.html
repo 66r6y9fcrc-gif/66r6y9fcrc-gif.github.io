@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Digitales Gehirn · v0.4</title>
+  <title>Digitales Gehirn · v0.5</title>
   <meta name="description" content="Dein digitales Gehirn: Jede Idee wird ein leuchtender Knotenpunkt im Sternennetz. Alle Gedanken sind miteinander verbunden.">
   <meta name="theme-color" content="#02030a">
   <link rel="manifest" href="manifest.json">
@@ -86,7 +86,7 @@
     .card.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
     .card h2{margin:0 0 6px;font-size:18px;line-height:1.35;word-break:break-word;}
     .card .meta{color:var(--muted);font-size:12px;margin-bottom:14px;}
-    .card .row{display:flex;gap:8px;justify-content:flex-end;}
+    .card .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
     .btn{border:1px solid var(--panel-line);background:rgba(255,255,255,.04);color:var(--text);
       padding:9px 14px;border-radius:11px;cursor:pointer;font-size:14px;}
     .btn:hover{background:rgba(255,255,255,.09);}
@@ -155,13 +155,29 @@
     .search input::placeholder{color:var(--muted);}
     .search .matchinfo{color:var(--muted);font-size:12px;white-space:nowrap;padding:0 2px;}
     .search .iconbtn{width:34px;height:34px;font-size:15px;}
+
+    /* ---- Cloud-Sync-Fenster ---- */
+    .card h2{margin:0 0 12px;font-size:18px;}
+    .field{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--panel-line);
+      border-radius:11px;color:var(--text);font-family:inherit;font-size:14px;
+      padding:10px 12px;margin:0 0 12px;outline:none;}
+    .field:focus{border-color:rgba(120,170,255,.5);}
+    .check{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text);margin:2px 0 14px;cursor:pointer;}
+    .check input{width:18px;height:18px;}
+    .syncstatus{color:var(--muted);font-size:12px;min-height:16px;margin:0 0 12px;}
+    .help{color:var(--muted);font-size:12px;margin-top:10px;}
+    .help summary{cursor:pointer;color:var(--text);}
+    .help code{background:rgba(255,255,255,.06);padding:1px 5px;border-radius:5px;}
+    .help pre{white-space:pre-wrap;background:rgba(0,0,0,.4);padding:10px;border-radius:8px;
+      overflow:auto;color:#cfe0ff;font-size:11.5px;line-height:1.45;}
+    .syncBtn-on{box-shadow:inset 0 0 0 1px rgba(61,220,151,.6) !important;color:#9bffd0 !important;}
   </style>
 </head>
 <body>
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.4</small></div>
+    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.5</small></div>
     <div class="count" id="count">0 Gedanken</div>
   </div>
 
@@ -185,6 +201,7 @@
     <button class="iconbtn" id="recenter" title="Zentrieren">⊙</button>
     <button class="iconbtn" id="exportBtn" title="Sichern (Backup herunterladen)">⬇</button>
     <button class="iconbtn" id="importBtn" title="Backup laden">⬆</button>
+    <button class="iconbtn" id="syncBtn" title="Cloud-Sync">☁</button>
   </div>
   <input type="file" id="importFile" accept="application/json,.json" style="display:none">
 
@@ -204,6 +221,40 @@
       <button class="btn danger" id="delBtn">Löschen</button>
       <button class="btn" id="closeBtn">Schließen</button>
     </div>
+  </div>
+
+  <div class="card" id="syncSheet">
+    <h2>☁ Cloud-Sync</h2>
+    <p class="label">Supabase Projekt-URL</p>
+    <input id="syncUrl" class="field" placeholder="https://xxxx.supabase.co" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <p class="label">anon public Key</p>
+    <input id="syncKey" class="field" placeholder="eyJhbGci…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <p class="label">Gehirn-Schlüssel (geheim, frei wählbar – auf allen Geräten gleich)</p>
+    <input id="syncBrain" class="field" placeholder="z. B. mein-geheimes-gehirn-7421" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <label class="check"><input type="checkbox" id="syncAuto"> Automatisch synchronisieren</label>
+    <div class="syncstatus" id="syncStatus"></div>
+    <div class="row">
+      <button class="btn" id="syncPull">↓ Laden</button>
+      <button class="btn" id="syncPush">↑ Hochladen</button>
+      <button class="btn" id="syncSave">Speichern</button>
+      <button class="btn" id="syncClose">Schließen</button>
+    </div>
+    <details class="help">
+      <summary>Einrichtung (einmalig) &amp; Datenschutz</summary>
+      <p>1. Kostenloses Projekt auf <code>supabase.com</code> anlegen.<br>
+      2. Links im <b>SQL Editor</b> diesen Code ausführen:</p>
+      <pre>create table if not exists brains (
+  id text primary key,
+  data jsonb,
+  updated_at timestamptz default now()
+);
+alter table brains enable row level security;
+create policy "zugriff per schluessel"
+  on brains for all using (true) with check (true);</pre>
+      <p>3. Unter <b>Project Settings → API</b> die <b>Project URL</b> und den <b>anon public</b> Key kopieren und oben einfügen.<br>
+      4. Einen geheimen <b>Gehirn-Schlüssel</b> wählen und auf jedem Gerät identisch eintragen.</p>
+      <p><b>Datenschutz:</b> Dein Gehirn ist durch den geheimen Schlüssel geschützt. Wer URL, Key und Schlüssel kennt, kann die Daten lesen. Für rein persönliche Nutzung mit einem schwer zu erratenden Schlüssel ist das in Ordnung; ein echter Login pro Person wäre ein späterer Ausbau.</p>
+    </details>
   </div>
 
 <script>
@@ -232,6 +283,9 @@
   let activeCat = 'idee';   // Kategorie für neue Knoten
   let focusCat  = null;     // Filter: nur diese Kategorie hervorheben
   let searchQuery = '';     // aktuelle Suchanfrage
+  let dataUpdatedAt = 0;    // Zeitstempel des letzten Datenstands (für Cloud-Abgleich)
+  let sync = { url:'', key:'', brain:'', auto:false };  // Supabase-Konfiguration
+  let syncTimer = null;
 
   function catById(id){ return categories.find(c=>c.id===id) || categories[0]; }
   function nodeColor(n){ return catById(n.cat).color; }
@@ -243,13 +297,16 @@
   }
 
   // ---- Speichern / Laden ----
+  function serialize(){
+    return {
+      nodes: nodes.map(n => ({id:n.id, text:n.text, note:n.note||'', x:n.x, y:n.y, t:n.t, cat:n.cat})),
+      edges, categories, activeCat, updatedAt: dataUpdatedAt
+    };
+  }
   function save(){
-    try{
-      localStorage.setItem(STORE_KEY, JSON.stringify({
-        nodes: nodes.map(n => ({id:n.id, text:n.text, note:n.note||'', x:n.x, y:n.y, t:n.t, cat:n.cat})),
-        edges, categories, activeCat
-      }));
-    }catch(e){}
+    dataUpdatedAt = Date.now();
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(serialize())); }catch(e){}
+    if(sync.auto) scheduleSync();
   }
   function load(){
     try{
@@ -260,6 +317,7 @@
       if(data.activeCat) activeCat = data.activeCat;
       nodes = (data.nodes||[]).map(n => ({...n, vx:0, vy:0, cat: n.cat || categories[0].id}));
       edges = data.edges||[];
+      dataUpdatedAt = data.updatedAt || 0;
       if(!categories.some(c=>c.id===activeCat)) activeCat = categories[0].id;
     }catch(e){}
   }
@@ -751,6 +809,91 @@
   document.getElementById('importBtn').onclick=()=>importFile.click();
   importFile.addEventListener('change', e=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=''; });
 
+  // ---- Cloud-Sync (Supabase REST) ----
+  const SYNC_KEY='digital-brain-sync';
+  const syncSheet=document.getElementById('syncSheet');
+  const syncBtn=document.getElementById('syncBtn');
+  function loadSync(){
+    try{ const s=JSON.parse(localStorage.getItem(SYNC_KEY)||'{}');
+      sync={url:s.url||'', key:s.key||'', brain:s.brain||'', auto:!!s.auto}; }catch(e){}
+    syncBtn.classList.toggle('syncBtn-on', syncReady());
+  }
+  function saveSync(){ try{ localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); }catch(e){}
+    syncBtn.classList.toggle('syncBtn-on', syncReady()); }
+  function syncReady(){ return !!(sync.url && sync.key && sync.brain); }
+  function setSyncStatus(t){ const s=document.getElementById('syncStatus'); if(s) s.textContent=t; }
+  function timeNow(){ return new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}); }
+  function syncHeaders(){ return {'apikey':sync.key,'Authorization':'Bearer '+sync.key,'Content-Type':'application/json'}; }
+  function scheduleSync(){ if(!syncReady()) return; clearTimeout(syncTimer); syncTimer=setTimeout(()=>pushCloud(false), 1500); }
+
+  function applyPayload(data){
+    if(Array.isArray(data.categories) && data.categories.length) categories=data.categories;
+    activeCat=(data.activeCat && categories.some(c=>c.id===data.activeCat)) ? data.activeCat : categories[0].id;
+    nodes=(data.nodes||[]).map(n=>({...n, vx:0, vy:0, cat:n.cat||categories[0].id}));
+    edges=data.edges||[];
+    dataUpdatedAt=data.updatedAt || Date.now();
+    idCounter=Math.max(idCounter, 0, ...nodes.map(n=>n.id||0));
+    focusCat=null; selectedId=null;
+    document.getElementById('hint').classList.toggle('hide', nodes.length>0);
+    updateCount(); renderCats(); updateAddColor(); recenter();
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(serialize())); }catch(e){}
+  }
+  async function pushCloud(manual){
+    if(!syncReady()){ if(manual) setSyncStatus('Bitte zuerst alle Felder ausfüllen & speichern.'); return; }
+    setSyncStatus('Lade hoch …');
+    try{
+      const body=[{ id: sync.brain, data: serialize(), updated_at: new Date().toISOString() }];
+      const res=await fetch(sync.url+'/rest/v1/brains', {
+        method:'POST',
+        headers:{...syncHeaders(), 'Prefer':'resolution=merge-duplicates,return=minimal'},
+        body: JSON.stringify(body)
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status+' '+(await res.text()).slice(0,120));
+      setSyncStatus('In der Cloud gesichert ✓ '+timeNow());
+    }catch(e){ setSyncStatus('Fehler beim Hochladen: '+e.message); }
+  }
+  async function pullCloud(manual){
+    if(!syncReady()){ if(manual) setSyncStatus('Bitte zuerst alle Felder ausfüllen & speichern.'); return; }
+    setSyncStatus('Hole aus der Cloud …');
+    try{
+      const url=sync.url+'/rest/v1/brains?id=eq.'+encodeURIComponent(sync.brain)+'&select=data,updated_at';
+      const res=await fetch(url, { headers: syncHeaders() });
+      if(!res.ok) throw new Error('HTTP '+res.status+' '+(await res.text()).slice(0,120));
+      const rows=await res.json();
+      if(!rows.length){ setSyncStatus('Noch nichts in der Cloud für diesen Schlüssel.'); return; }
+      const remote=rows[0].data || {};
+      const remoteAt=remote.updatedAt || Date.parse(rows[0].updated_at) || 0;
+      if(!manual && remoteAt <= dataUpdatedAt){ setSyncStatus('Bereits aktuell ✓ '+timeNow()); return; }
+      if(manual && nodes.length && remoteAt < dataUpdatedAt &&
+         !window.confirm('Die Cloud-Version ist ÄLTER als dein lokaler Stand. Trotzdem laden und lokal ersetzen?')) return;
+      applyPayload(remote);
+      setSyncStatus('Aus der Cloud geladen ✓ '+timeNow());
+    }catch(e){ setSyncStatus('Fehler beim Laden: '+e.message); }
+  }
+
+  function openSync(){
+    document.getElementById('syncUrl').value=sync.url;
+    document.getElementById('syncKey').value=sync.key;
+    document.getElementById('syncBrain').value=sync.brain;
+    document.getElementById('syncAuto').checked=sync.auto;
+    setSyncStatus(syncReady() ? 'Bereit.' : 'Felder ausfüllen und „Speichern".');
+    syncSheet.classList.add('open');
+  }
+  function closeSync(){ syncSheet.classList.remove('open'); }
+  function readSyncForm(){
+    sync.url=document.getElementById('syncUrl').value.trim().replace(/\/+$/,'');
+    sync.key=document.getElementById('syncKey').value.trim();
+    sync.brain=document.getElementById('syncBrain').value.trim();
+    sync.auto=document.getElementById('syncAuto').checked;
+    saveSync();
+  }
+  syncBtn.onclick=openSync;
+  document.getElementById('syncClose').onclick=closeSync;
+  document.getElementById('syncSave').onclick=()=>{ readSyncForm(); setSyncStatus(syncReady()?'Gespeichert ✓':'Bitte alle drei Felder ausfüllen.'); };
+  document.getElementById('syncPush').onclick=()=>{ readSyncForm(); pushCloud(true); };
+  document.getElementById('syncPull').onclick=()=>{ readSyncForm(); pullCloud(true); };
+  document.getElementById('syncAuto').onchange=()=>{ readSyncForm(); if(sync.auto) scheduleSync(); };
+
   // ---- Werkzeuge ----
   document.getElementById('zoomIn').onclick =()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1.2);
   document.getElementById('zoomOut').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1/1.2);
@@ -769,9 +912,11 @@
 
   // ---- Start ----
   window.addEventListener('resize', resize);
-  load(); resize(); makeStars(); updateCount(); renderCats(); updateAddColor();
+  load(); loadSync(); resize(); makeStars(); updateCount(); renderCats(); updateAddColor();
   if(nodes.length){ document.getElementById('hint').classList.add('hide'); recenter(); }
   loop();
+  // Beim Start automatisch neueren Cloud-Stand holen
+  if(syncReady() && sync.auto){ pullCloud(false); }
 
   // App offline-/installierbar machen
   if('serviceWorker' in navigator){
