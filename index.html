@@ -112,6 +112,11 @@
     .tools{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:6;
       display:flex;flex-direction:column;gap:8px;}
     .tools .iconbtn{width:38px;height:38px;font-size:18px;background:var(--panel);}
+    /* Zoom-/Zentrieren-Stapel: ganz rechts, direkt über dem Eingabefeld */
+    .zoomtools{position:fixed;right:14px;z-index:6;
+      bottom:calc(max(18px, env(safe-area-inset-bottom)) + 72px);
+      display:flex;flex-direction:column;gap:8px;}
+    .zoomtools .iconbtn{width:38px;height:38px;font-size:18px;background:var(--panel);}
 
     /* ---- Kategorie-Leiste ---- */
     .cats{
@@ -239,9 +244,6 @@
   <div class="linkhint" id="linkHint"></div>
 
   <div class="tools">
-    <button class="iconbtn" id="zoomIn"  title="Heranzoomen">+</button>
-    <button class="iconbtn" id="zoomOut" title="Herauszoomen">−</button>
-    <button class="iconbtn" id="recenter" title="Zentrieren">⊙</button>
     <button class="iconbtn" id="exportBtn" title="Sichern (Backup herunterladen)">⬇</button>
     <button class="iconbtn" id="importBtn" title="Backup laden">⬆</button>
     <button class="iconbtn" id="relinkBtn" title="Verbindungen neu nach Thema ordnen">🔗</button>
@@ -254,6 +256,12 @@
     <div class="suggest-q" id="suggestText"></div>
     <div class="suggest-label" id="suggestLabel">Mini-KI schlägt vor – tippe zum Bestätigen:</div>
     <div class="suggest-row" id="suggestChips"></div>
+  </div>
+
+  <div class="zoomtools">
+    <button class="iconbtn" id="recenter" title="Zentrieren">⊙</button>
+    <button class="iconbtn" id="zoomIn"  title="Heranzoomen">+</button>
+    <button class="iconbtn" id="zoomOut" title="Herauszoomen">−</button>
   </div>
 
   <div class="dock empty" id="dock">
