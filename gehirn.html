@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Digitales Gehirn · v0.1</title>
+  <meta name="description" content="Dein digitales Gehirn: Jede Idee wird ein leuchtender Knotenpunkt im Sternennetz. Alle Gedanken sind miteinander verbunden.">
+  <meta name="theme-color" content="#03040a">
+  <style>
+    :root{
+      --bg-0:#02030a;
+      --bg-1:#070b1c;
+      --star:#bcd4ff;
+      --node:#8fb8ff;
+      --node-core:#ffffff;
+      --edge:rgba(120,170,255,.22);
+      --accent:#4f8cff;
+      --panel:rgba(10,16,34,.82);
+      --panel-line:rgba(120,170,255,.20);
+      --text:#dce6ff;
+      --muted:#7f8db3;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    html,body{height:100%;margin:0;overflow:hidden;}
+    body{
+      background:radial-gradient(140% 120% at 50% 0%, var(--bg-1) 0%, var(--bg-0) 60%);
+      color:var(--text);
+      font-family:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+      touch-action:none;
+    }
+    canvas{display:block;position:fixed;inset:0;width:100%;height:100%;}
+
+    /* ---- Kopfzeile ---- */
+    .topbar{
+      position:fixed;top:0;left:0;right:0;z-index:5;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 18px;
+      background:linear-gradient(180deg, rgba(2,3,10,.7), rgba(2,3,10,0));
+      pointer-events:none;
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.3px;}
+    .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);
+      box-shadow:0 0 14px 3px rgba(79,140,255,.8);}
+    .brand small{color:var(--muted);font-weight:500;}
+    .count{color:var(--muted);font-size:13px;pointer-events:none;}
+
+    /* ---- Untere Eingabeleiste (wie in der Skizze) ---- */
+    .dock{
+      position:fixed;left:50%;bottom:max(18px, env(safe-area-inset-bottom));
+      transform:translateX(-50%);z-index:6;width:min(680px,calc(100% - 28px));
+      display:flex;align-items:center;gap:8px;
+      background:var(--panel);backdrop-filter:blur(14px);
+      border:1px solid var(--panel-line);border-radius:18px;
+      padding:8px 8px 8px 14px;box-shadow:0 18px 50px rgba(0,0,0,.5);
+    }
+    .dock input{
+      flex:1;background:transparent;border:0;outline:0;color:var(--text);
+      font-size:16px;padding:10px 4px;min-width:0;
+    }
+    .dock input::placeholder{color:var(--muted);}
+    .iconbtn{
+      flex:none;width:42px;height:42px;border-radius:12px;border:1px solid var(--panel-line);
+      background:rgba(79,140,255,.12);color:var(--text);font-size:20px;cursor:pointer;
+      display:grid;place-items:center;transition:background .15s, transform .1s;
+    }
+    .iconbtn:hover{background:rgba(79,140,255,.25);}
+    .iconbtn:active{transform:scale(.94);}
+    .iconbtn.add{background:var(--accent);color:#fff;box-shadow:0 0 18px rgba(79,140,255,.55);border-color:transparent;}
+
+    /* ---- Detail-Karte beim Antippen eines Knotens ---- */
+    .card{
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);
+      z-index:8;width:min(420px,calc(100% - 32px));
+      background:var(--panel);backdrop-filter:blur(16px);
+      border:1px solid var(--panel-line);border-radius:18px;padding:18px;
+      box-shadow:0 24px 70px rgba(0,0,0,.6);
+      opacity:0;pointer-events:none;transition:opacity .18s, transform .18s;
+    }
+    .card.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+    .card h2{margin:0 0 6px;font-size:18px;line-height:1.35;word-break:break-word;}
+    .card .meta{color:var(--muted);font-size:12px;margin-bottom:14px;}
+    .card .row{display:flex;gap:8px;justify-content:flex-end;}
+    .btn{border:1px solid var(--panel-line);background:rgba(255,255,255,.04);color:var(--text);
+      padding:9px 14px;border-radius:11px;cursor:pointer;font-size:14px;}
+    .btn:hover{background:rgba(255,255,255,.09);}
+    .btn.danger{color:#ffb4ab;border-color:rgba(255,120,110,.35);background:rgba(255,80,70,.08);}
+    .btn.danger:hover{background:rgba(255,80,70,.18);}
+
+    /* ---- Hilfe / leerer Zustand ---- */
+    .hint{
+      position:fixed;left:50%;top:46%;transform:translateX(-50%);z-index:4;
+      text-align:center;color:var(--muted);max-width:300px;pointer-events:none;
+      transition:opacity .4s;
+    }
+    .hint b{color:var(--text);font-weight:600;}
+    .hint.hide{opacity:0;}
+
+    /* ---- Werkzeuge rechts ---- */
+    .tools{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:6;
+      display:flex;flex-direction:column;gap:8px;}
+    .tools .iconbtn{width:38px;height:38px;font-size:18px;background:var(--panel);}
+  </style>
+</head>
+<body>
+  <canvas id="sky"></canvas>
+
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.1</small></div>
+    <div class="count" id="count">0 Gedanken</div>
+  </div>
+
+  <div class="hint" id="hint">
+    <p><b>Tippe deine erste Idee ein.</b><br>
+    Jeder Gedanke wird ein Stern – und verbindet sich mit dem Rest deines Gehirns.</p>
+  </div>
+
+  <div class="tools">
+    <button class="iconbtn" id="zoomIn"  title="Heranzoomen">+</button>
+    <button class="iconbtn" id="zoomOut" title="Herauszoomen">−</button>
+    <button class="iconbtn" id="recenter" title="Zentrieren">⊙</button>
+  </div>
+
+  <div class="dock">
+    <input id="ideaInput" type="text" placeholder="Neue Idee, neuer Gedanke …" autocomplete="off" enterkeyhint="done">
+    <button class="iconbtn add" id="addBtn" title="Hinzufügen (Enter)">+</button>
+  </div>
+
+  <div class="card" id="card">
+    <h2 id="cardTitle"></h2>
+    <div class="meta" id="cardMeta"></div>
+    <div class="row">
+      <button class="btn danger" id="delBtn">Löschen</button>
+      <button class="btn" id="closeBtn">Schließen</button>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+  const canvas = document.getElementById('sky');
+  const ctx = canvas.getContext('2d');
+  const STORE_KEY = 'digital-brain-v1';
+
+  // ---- Zustand ----
+  let nodes = [];           // {id, text, x, y, vx, vy, t}
+  let edges = [];           // {a, b}
+  let view = { x: 0, y: 0, scale: 1 };   // Kamera
+  let stars = [];           // dekorativer Hintergrund
+  let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  // ---- Speichern / Laden ----
+  function save(){
+    try{
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        nodes: nodes.map(n => ({id:n.id, text:n.text, x:n.x, y:n.y, t:n.t})),
+        edges
+      }));
+    }catch(e){}
+  }
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      if(!raw) return;
+      const data = JSON.parse(raw);
+      nodes = (data.nodes||[]).map(n => ({...n, vx:0, vy:0}));
+      edges = data.edges||[];
+    }catch(e){}
+  }
+
+  // ---- Hintergrund-Sterne ----
+  function makeStars(){
+    stars = [];
+    const n = 220;
+    for(let i=0;i<n;i++){
+      stars.push({
+        x: Math.random(), y: Math.random(),
+        r: Math.random()*1.3 + 0.2,
+        a: Math.random()*0.6 + 0.15,
+        tw: Math.random()*Math.PI*2,
+        depth: Math.random()*0.6 + 0.2   // Parallaxe
+      });
+    }
+  }
+
+  // ---- Idee hinzufügen ----
+  let idCounter = Date.now();
+  function addIdea(text){
+    text = (text||'').trim();
+    if(!text) return;
+    // Position: nahe der Bildschirmmitte (in Welt-Koordinaten)
+    const cx = (canvas.clientWidth/2  - view.x)/view.scale;
+    const cy = (canvas.clientHeight/2 - view.y)/view.scale;
+    const ang = Math.random()*Math.PI*2;
+    const rad = nodes.length ? 60 + Math.random()*80 : 0;
+    const node = {
+      id: ++idCounter, text,
+      x: cx + Math.cos(ang)*rad,
+      y: cy + Math.sin(ang)*rad,
+      vx: 0, vy: 0, t: Date.now()
+    };
+
+    // Mit den nächstgelegenen vorhandenen Knoten verbinden (feine Fäden)
+    if(nodes.length){
+      const dists = nodes.map(o => ({o, d: (o.x-node.x)**2 + (o.y-node.y)**2}));
+      dists.sort((a,b)=>a.d-b.d);
+      const links = Math.min(3, dists.length);
+      for(let i=0;i<links;i++){
+        edges.push({ a: node.id, b: dists[i].o.id });
+      }
+    }
+    nodes.push(node);
+    document.getElementById('hint').classList.add('hide');
+    updateCount();
+    save();
+  }
+
+  function deleteNode(id){
+    nodes = nodes.filter(n => n.id !== id);
+    edges = edges.filter(e => e.a !== id && e.b !== id);
+    updateCount();
+    save();
+  }
+
+  function updateCount(){
+    const c = document.getElementById('count');
+    c.textContent = nodes.length + (nodes.length===1 ? ' Gedanke' : ' Gedanken');
+  }
+
+  // ---- Physik (kraftbasiertes Layout) ----
+  function simulate(){
+    const REP = 2600;     // Abstoßung zwischen Knoten
+    const SPRING = 0.012; // Federkraft entlang der Fäden
+    const REST = 130;     // Ruhelänge eines Fadens
+    const CENTER = 0.0009;// sanfter Zug zur Mitte
+    const DAMP = 0.86;
+
+    // Mittelpunkt aller Knoten = Schwerpunkt
+    let gx=0, gy=0;
+    for(const n of nodes){ gx+=n.x; gy+=n.y; }
+    gx/=(nodes.length||1); gy/=(nodes.length||1);
+
+    for(let i=0;i<nodes.length;i++){
+      const a = nodes[i];
+      if(a===dragNode) continue;
+      for(let j=i+1;j<nodes.length;j++){
+        const b = nodes[j];
+        let dx=a.x-b.x, dy=a.y-b.y;
+        let d2=dx*dx+dy*dy || 0.01;
+        if(d2 < 90000){ // nur nahe Knoten abstoßen (Performance)
+          const f = REP/d2;
+          const d=Math.sqrt(d2);
+          const fx=dx/d*f, fy=dy/d*f;
+          a.vx+=fx; a.vy+=fy; b.vx-=fx; b.vy-=fy;
+        }
+      }
+      // Zug zur Mitte
+      a.vx += (gx - a.x)*CENTER;
+      a.vy += (gy - a.y)*CENTER;
+    }
+    // Federn
+    for(const e of edges){
+      const a=nodeById(e.a), b=nodeById(e.b);
+      if(!a||!b) continue;
+      let dx=b.x-a.x, dy=b.y-a.y;
+      let d=Math.sqrt(dx*dx+dy*dy)||0.01;
+      const f=(d-REST)*SPRING;
+      const fx=dx/d*f, fy=dy/d*f;
+      if(a!==dragNode){ a.vx+=fx; a.vy+=fy; }
+      if(b!==dragNode){ b.vx-=fx; b.vy-=fy; }
+    }
+    for(const n of nodes){
+      if(n===dragNode) continue;
+      n.vx*=DAMP; n.vy*=DAMP;
+      n.x+=n.vx; n.y+=n.vy;
+    }
+  }
+  const _byId = () => { const m=new Map(); for(const n of nodes) m.set(n.id,n); return m; };
+  let idMap = new Map();
+  function nodeById(id){ return idMap.get(id); }
+
+  // ---- Zeichnen ----
+  let time = 0;
+  function draw(){
+    time += 0.016;
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+
+    // Hintergrund-Sterne mit leichter Parallaxe zur Kamera
+    for(const s of stars){
+      const px = (s.x*W + view.x*s.depth*0.08) % W;
+      const py = (s.y*H + view.y*s.depth*0.08) % H;
+      const x = (px+W)%W, y=(py+H)%H;
+      const tw = 0.5 + 0.5*Math.sin(time*1.5 + s.tw);
+      ctx.globalAlpha = s.a * (0.5 + tw*0.5);
+      ctx.fillStyle = '#bcd4ff';
+      ctx.beginPath();
+      ctx.arc(x, y, s.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Welt-Transformation
+    ctx.setTransform(dpr*view.scale,0,0,dpr*view.scale, view.x*dpr, view.y*dpr);
+
+    idMap = _byId();
+
+    // Fäden
+    ctx.lineWidth = 1/view.scale;
+    for(const e of edges){
+      const a=nodeById(e.a), b=nodeById(e.b);
+      if(!a||!b) continue;
+      const grad = ctx.createLinearGradient(a.x,a.y,b.x,b.y);
+      grad.addColorStop(0,'rgba(120,170,255,.30)');
+      grad.addColorStop(.5,'rgba(120,170,255,.10)');
+      grad.addColorStop(1,'rgba(120,170,255,.30)');
+      ctx.strokeStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(a.x,a.y);
+      ctx.lineTo(b.x,b.y);
+      ctx.stroke();
+    }
+
+    // Knoten (leuchtende Sterne)
+    for(const n of nodes){
+      const pulse = 0.6 + 0.4*Math.sin(time*2 + (n.id%100));
+      const sel = n.id===selectedId;
+      const baseR = sel ? 7 : 5;
+      // Halo
+      const g = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,baseR*4);
+      g.addColorStop(0, sel?'rgba(120,200,255,.9)':'rgba(140,184,255,.7)');
+      g.addColorStop(1, 'rgba(140,184,255,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,baseR*4*(0.8+pulse*0.2),0,Math.PI*2);
+      ctx.fill();
+      // Kern
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,baseR,0,Math.PI*2);
+      ctx.fill();
+
+      // Beschriftung – nur wenn nah genug herangezoomt
+      if(view.scale > 0.55){
+        ctx.font = `${12/view.scale}px Inter, system-ui, sans-serif`;
+        ctx.fillStyle = sel ? '#ffffff' : 'rgba(220,230,255,.78)';
+        ctx.textAlign = 'center';
+        const label = n.text.length>26 ? n.text.slice(0,25)+'…' : n.text;
+        ctx.fillText(label, n.x, n.y + baseR + 14/view.scale);
+      }
+    }
+  }
+
+  function loop(){
+    if(nodes.length) simulate();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // ---- Größe / Auflösung ----
+  function resize(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = canvas.clientWidth*dpr;
+    canvas.height = canvas.clientHeight*dpr;
+  }
+
+  // ---- Interaktion: Pan, Zoom, Knoten ziehen, Auswahl ----
+  let dragNode = null, panning = false, moved = false;
+  let last = {x:0,y:0};
+  let selectedId = null;
+
+  function screenToWorld(px,py){
+    return { x:(px - view.x)/view.scale, y:(py - view.y)/view.scale };
+  }
+  function hitNode(px,py){
+    const w = screenToWorld(px,py);
+    let best=null, bestD=Infinity;
+    for(const n of nodes){
+      const d=(n.x-w.x)**2+(n.y-w.y)**2;
+      const r=(14/view.scale)**2;
+      if(d<r && d<bestD){ best=n; bestD=d; }
+    }
+    return best;
+  }
+
+  function pointerDown(px,py){
+    moved=false;
+    const n=hitNode(px,py);
+    if(n){ dragNode=n; }
+    else { panning=true; }
+    last={x:px,y:py};
+  }
+  function pointerMove(px,py){
+    const dx=px-last.x, dy=py-last.y;
+    if(Math.abs(dx)+Math.abs(dy)>3) moved=true;
+    if(dragNode){
+      dragNode.x += dx/view.scale;
+      dragNode.y += dy/view.scale;
+      dragNode.vx=0; dragNode.vy=0;
+    } else if(panning){
+      view.x+=dx; view.y+=dy;
+    }
+    last={x:px,y:py};
+  }
+  function pointerUp(px,py){
+    if(dragNode && !moved){ openCard(dragNode); }
+    else if(!dragNode && !moved){ closeCard(); }
+    if(dragNode) save();
+    dragNode=null; panning=false;
+  }
+
+  // Maus
+  canvas.addEventListener('mousedown', e=>pointerDown(e.clientX,e.clientY));
+  window.addEventListener('mousemove', e=>{ if(dragNode||panning) pointerMove(e.clientX,e.clientY); });
+  window.addEventListener('mouseup', e=>{ if(dragNode||panning) pointerUp(e.clientX,e.clientY); });
+  // Touch
+  canvas.addEventListener('touchstart', e=>{
+    if(e.touches.length===1){ const t=e.touches[0]; pointerDown(t.clientX,t.clientY); }
+    else if(e.touches.length===2){ panning=false; dragNode=null; pinchStart(e); }
+  }, {passive:true});
+  canvas.addEventListener('touchmove', e=>{
+    if(e.touches.length===1 && (dragNode||panning)){ const t=e.touches[0]; pointerMove(t.clientX,t.clientY); }
+    else if(e.touches.length===2){ pinchMove(e); }
+  }, {passive:true});
+  canvas.addEventListener('touchend', e=>{
+    if(e.touches.length===0) pointerUp(last.x,last.y);
+  });
+
+  // Zoom per Mausrad
+  canvas.addEventListener('wheel', e=>{
+    e.preventDefault();
+    zoomAt(e.clientX, e.clientY, e.deltaY<0 ? 1.12 : 1/1.12);
+  }, {passive:false});
+
+  function zoomAt(px,py,factor){
+    const before = screenToWorld(px,py);
+    view.scale = Math.max(0.15, Math.min(4, view.scale*factor));
+    const after = screenToWorld(px,py);
+    view.x += (after.x-before.x)*view.scale;
+    view.y += (after.y-before.y)*view.scale;
+  }
+
+  // Pinch-Zoom
+  let pinchD=0, pinchMid={x:0,y:0};
+  function dist(a,b){ return Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY); }
+  function pinchStart(e){ pinchD=dist(e.touches[0],e.touches[1]);
+    pinchMid={x:(e.touches[0].clientX+e.touches[1].clientX)/2, y:(e.touches[0].clientY+e.touches[1].clientY)/2}; }
+  function pinchMove(e){
+    const d=dist(e.touches[0],e.touches[1]);
+    if(pinchD){ zoomAt(pinchMid.x, pinchMid.y, d/pinchD); }
+    pinchD=d;
+  }
+
+  // ---- Detail-Karte ----
+  const card=document.getElementById('card');
+  function openCard(n){
+    selectedId=n.id;
+    document.getElementById('cardTitle').textContent=n.text;
+    const d=new Date(n.t||Date.now());
+    document.getElementById('cardMeta').textContent='Erfasst am '+d.toLocaleDateString('de-DE')+
+      ' · '+(edges.filter(e=>e.a===n.id||e.b===n.id).length)+' Verbindungen';
+    card.classList.add('open');
+  }
+  function closeCard(){ selectedId=null; card.classList.remove('open'); }
+  document.getElementById('closeBtn').onclick=closeCard;
+  document.getElementById('delBtn').onclick=()=>{ if(selectedId){ deleteNode(selectedId); closeCard(); } };
+
+  // ---- Eingabe ----
+  const input=document.getElementById('ideaInput');
+  function submit(){ addIdea(input.value); input.value=''; input.focus(); }
+  document.getElementById('addBtn').onclick=submit;
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
+
+  // ---- Werkzeuge ----
+  document.getElementById('zoomIn').onclick =()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1.2);
+  document.getElementById('zoomOut').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1/1.2);
+  document.getElementById('recenter').onclick=recenter;
+  function recenter(){
+    if(!nodes.length){ view={x:0,y:0,scale:1}; return; }
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    for(const n of nodes){ minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);maxX=Math.max(maxX,n.x);maxY=Math.max(maxY,n.y); }
+    const cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+    const w=canvas.clientWidth, h=canvas.clientHeight;
+    const span=Math.max(maxX-minX, maxY-minY, 200);
+    view.scale=Math.max(0.3, Math.min(1.4, Math.min(w,h)/(span+260)));
+    view.x=w/2 - cx*view.scale;
+    view.y=h/2 - cy*view.scale;
+  }
+
+  // ---- Start ----
+  window.addEventListener('resize', resize);
+  load(); resize(); makeStars(); updateCount();
+  if(nodes.length){ document.getElementById('hint').classList.add('hide'); recenter(); }
+  loop();
+})();
+</script>
+</body>
+</html>
