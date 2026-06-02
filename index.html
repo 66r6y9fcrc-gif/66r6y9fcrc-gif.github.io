@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Digitales Gehirn · v1.0</title>
+  <title>Digitales Gehirn · v1.1</title>
   <meta name="description" content="Dein digitales Gehirn: Jede Idee wird ein leuchtender Knotenpunkt im Sternennetz. Alle Gedanken sind miteinander verbunden.">
   <meta name="theme-color" content="#02030a">
   <link rel="manifest" href="manifest.json">
@@ -109,7 +109,7 @@
 
     /* ---- Kategorie-Leiste ---- */
     .cats{
-      position:fixed;top:50px;left:0;right:0;z-index:5;
+      position:fixed;top:102px;left:0;right:0;z-index:5;
       display:flex;gap:8px;align-items:center;
       padding:6px 14px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
     }
@@ -141,20 +141,22 @@
       font-family:inherit;font-size:14px;line-height:1.5;padding:10px 12px;margin:0 0 16px;outline:none;}
     .card .note:focus{border-color:rgba(120,170,255,.5);}
 
-    /* ---- Suchleiste ---- */
+    /* ---- Suchleiste (dauerhaft, zwischen Kopfzeile und Kategorien) ---- */
     .search{
-      position:fixed;top:46px;left:50%;transform:translateX(-50%);z-index:7;
-      width:min(560px,calc(100% - 28px));display:none;align-items:center;gap:6px;
+      position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:6;
+      width:min(560px,calc(100% - 28px));display:flex;align-items:center;gap:6px;
       background:var(--panel);backdrop-filter:blur(14px);
       border:1px solid var(--panel-line);border-radius:14px;
-      padding:6px 6px 6px 14px;box-shadow:0 12px 40px rgba(0,0,0,.5);
+      padding:5px 6px 5px 12px;box-shadow:0 12px 40px rgba(0,0,0,.45);
     }
-    .search.open{display:flex;}
+    .search .searchicon{font-size:14px;opacity:.7;flex:none;}
     .search input{flex:1;background:transparent;border:0;outline:0;color:var(--text);
       font-size:16px;padding:8px 4px;min-width:0;}
     .search input::placeholder{color:var(--muted);}
     .search .matchinfo{color:var(--muted);font-size:12px;white-space:nowrap;padding:0 2px;}
-    .search .iconbtn{width:34px;height:34px;font-size:15px;}
+    .search .iconbtn{width:32px;height:32px;font-size:15px;background:transparent;border-color:transparent;}
+    .search .iconbtn:hover{background:rgba(255,255,255,.08);}
+    .search.empty .iconbtn{visibility:hidden;}
 
     /* ---- Cloud-Sync-Fenster ---- */
     .card h2{margin:0 0 12px;font-size:18px;}
@@ -225,17 +227,18 @@
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v1.0</small></div>
+    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v1.1</small></div>
     <div class="count" id="count">0 Gedanken</div>
   </div>
 
-  <div class="cats" id="cats"></div>
-
   <div class="search" id="search">
+    <span class="searchicon">🔍</span>
     <input id="searchInput" type="text" placeholder="Gedanken durchsuchen …" autocomplete="off" enterkeyhint="search">
     <span class="matchinfo" id="matchInfo"></span>
-    <button class="iconbtn" id="searchClose" title="Suche schließen">✕</button>
+    <button class="iconbtn" id="searchClose" title="Suche leeren">✕</button>
   </div>
+
+  <div class="cats" id="cats"></div>
 
   <div class="hint" id="hint">
     <p><b>Tippe deine erste Idee ein.</b><br>
@@ -245,7 +248,6 @@
   <div class="linkhint" id="linkHint"></div>
 
   <div class="tools">
-    <button class="iconbtn" id="searchBtn" title="Suchen">🔍</button>
     <button class="iconbtn" id="zoomIn"  title="Heranzoomen">+</button>
     <button class="iconbtn" id="zoomOut" title="Herauszoomen">−</button>
     <button class="iconbtn" id="recenter" title="Zentrieren">⊙</button>
@@ -1110,18 +1112,21 @@ create policy "zugriff per schluessel"
     centerOn(m[matchIdx]); selectedId=m[matchIdx].id;
     matchInfo.textContent=(matchIdx+1)+' / '+m.length;
   }
-  function openSearch(){ searchEl.classList.add('open'); catsEl.style.display='none'; searchInput.focus(); }
-  function closeSearch(){
-    searchEl.classList.remove('open'); catsEl.style.display='';
+  function clearSearch(){
     searchQuery=''; searchInput.value=''; matchInfo.textContent=''; selectedId=null;
+    searchEl.classList.add('empty');
   }
-  searchInput.addEventListener('input', ()=>{ searchQuery=searchInput.value.trim(); applySearch(); });
+  searchInput.addEventListener('input', ()=>{
+    searchQuery=searchInput.value.trim();
+    searchEl.classList.toggle('empty', !searchQuery);
+    applySearch();
+  });
   searchInput.addEventListener('keydown', e=>{
     if(e.key==='Enter'){ e.preventDefault(); cycleMatch(); }
-    else if(e.key==='Escape'){ closeSearch(); }
+    else if(e.key==='Escape'){ clearSearch(); searchInput.blur(); }
   });
-  document.getElementById('searchBtn').onclick=()=> searchEl.classList.contains('open') ? closeSearch() : openSearch();
-  document.getElementById('searchClose').onclick=closeSearch;
+  document.getElementById('searchClose').onclick=()=>{ clearSearch(); searchInput.focus(); };
+  searchEl.classList.add('empty');   // ✕ erst zeigen, wenn etwas eingegeben wurde
 
   // ---- Backup: Export / Import (gegen Datenverlust) ----
   function exportData(){
