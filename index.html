@@ -1314,7 +1314,7 @@ create policy "zugriff per schluessel"
     if(!statusDot) return;
     let cls, title;
     if(!navigator.onLine){ cls='offline'; title='Offline – läuft weiter, alles wird lokal gespeichert'; }
-    else if(updateReady){ cls='update'; title='Neue Version verfügbar – tippen zum Neuladen'; }
+    else if(updateReady){ cls='update'; title='Neue Version – wird automatisch neu geladen …'; }
     else { cls='online'; title='Live – aktuell'; }
     statusDot.className='dot '+cls;
     statusDot.title=title;
@@ -1339,8 +1339,10 @@ create policy "zugriff per schluessel"
         setInterval(()=>{ reg.update().catch(()=>{}); }, 60000);   // regelmäßig nach Updates schauen
       }).catch(()=>{});
     });
+    let refreshing=false;
     navigator.serviceWorker.addEventListener('controllerchange', ()=>{
-      if(hadController){ updateReady=true; setStatus(); }
+      // neue Version hat übernommen → App automatisch einmal neu laden
+      if(hadController && !refreshing){ refreshing=true; updateReady=true; setStatus(); location.reload(); }
     });
   }
 })();
