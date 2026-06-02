@@ -109,7 +109,7 @@
 
     /* ---- Kategorie-Leiste ---- */
     .cats{
-      position:fixed;top:102px;left:0;right:0;z-index:5;
+      position:fixed;top:56px;left:0;right:0;z-index:5;
       display:flex;gap:8px;align-items:center;
       padding:6px 14px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
     }
@@ -141,22 +141,14 @@
       font-family:inherit;font-size:14px;line-height:1.5;padding:10px 12px;margin:0 0 16px;outline:none;}
     .card .note:focus{border-color:rgba(120,170,255,.5);}
 
-    /* ---- Suchleiste (dauerhaft, zwischen Kopfzeile und Kategorien) ---- */
-    .search{
-      position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:6;
-      width:min(560px,calc(100% - 28px));display:flex;align-items:center;gap:6px;
-      background:var(--panel);backdrop-filter:blur(14px);
-      border:1px solid var(--panel-line);border-radius:14px;
-      padding:5px 6px 5px 12px;box-shadow:0 12px 40px rgba(0,0,0,.45);
-    }
-    .search .searchicon{font-size:14px;opacity:.7;flex:none;}
-    .search input{flex:1;background:transparent;border:0;outline:0;color:var(--text);
-      font-size:16px;padding:8px 4px;min-width:0;}
-    .search input::placeholder{color:var(--muted);}
-    .search .matchinfo{color:var(--muted);font-size:12px;white-space:nowrap;padding:0 2px;}
-    .search .iconbtn{width:32px;height:32px;font-size:15px;background:transparent;border-color:transparent;}
-    .search .iconbtn:hover{background:rgba(255,255,255,.08);}
-    .search.empty .iconbtn{visibility:hidden;}
+    /* ---- Suche im Dock unten (eine Leiste: Suchen UND Hinzufügen) ---- */
+    .dock .searchicon{font-size:15px;opacity:.7;flex:none;padding-left:2px;}
+    .dock .matchinfo{color:var(--muted);font-size:12px;white-space:nowrap;flex:none;
+      padding:0 2px;cursor:pointer;}
+    .dock #searchClose{width:36px;height:36px;font-size:15px;
+      background:transparent;border-color:transparent;}
+    .dock #searchClose:hover{background:rgba(255,255,255,.08);}
+    .dock.empty #searchClose, .dock.empty .matchinfo{display:none;}
 
     /* ---- Cloud-Sync-Fenster ---- */
     .card h2{margin:0 0 12px;font-size:18px;}
@@ -231,13 +223,6 @@
     <div class="count" id="count">0 Gedanken</div>
   </div>
 
-  <div class="search" id="search">
-    <span class="searchicon">🔍</span>
-    <input id="searchInput" type="text" placeholder="Gedanken durchsuchen …" autocomplete="off" enterkeyhint="search">
-    <span class="matchinfo" id="matchInfo"></span>
-    <button class="iconbtn" id="searchClose" title="Suche leeren">✕</button>
-  </div>
-
   <div class="cats" id="cats"></div>
 
   <div class="hint" id="hint">
@@ -265,8 +250,11 @@
     <div class="suggest-row" id="suggestChips"></div>
   </div>
 
-  <div class="dock">
-    <input id="ideaInput" type="text" placeholder="Neue Idee, neuer Gedanke …" autocomplete="off" enterkeyhint="done">
+  <div class="dock empty" id="dock">
+    <span class="searchicon">🔍</span>
+    <input id="ideaInput" type="text" placeholder="Suchen oder neuen Gedanken eingeben …" autocomplete="off" enterkeyhint="done">
+    <span class="matchinfo" id="matchInfo" title="Zum nächsten Treffer"></span>
+    <button class="iconbtn" id="searchClose" title="Leeren">✕</button>
     <button class="iconbtn" id="micBtn" title="Diktieren (sprechen statt tippen)">🎤</button>
     <button class="iconbtn add" id="addBtn" title="Hinzufügen (Enter)">+</button>
   </div>
@@ -802,15 +790,18 @@ create policy "zugriff per schluessel"
   function submit(){
     const txt=input.value.trim();
     if(!txt) return;
+    clearSearch();                   // Eingabefeld + Live-Suche zurücksetzen
     if(aiEnabled){
-      input.value='';
       proposeCategory(txt);          // Mini-KI: erst vorschlagen
     }else{
-      addIdea(txt); input.value=''; input.focus();
+      addIdea(txt); input.focus();
     }
   }
   addBtn.onclick=submit;
-  input.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ submit(); }
+    else if(e.key==='Escape'){ clearSearch(); input.blur(); }
+  });
 
   // ====== Mini-KI: Kategorie-Vorschlag (komplett offline, im Browser) ======
   // Mini-KI ist dauerhaft aktiv – die Vorschläge erscheinen direkt über dem
@@ -1076,8 +1067,8 @@ create policy "zugriff per schluessel"
   }
 
   // ---- Suche ----
-  const searchEl=document.getElementById('search');
-  const searchInput=document.getElementById('searchInput');
+  const searchEl=document.getElementById('dock');   // eine Leiste unten: Suchen UND Hinzufügen
+  const searchInput=input;                          // dasselbe Eingabefeld wie zum Hinzufügen
   const matchInfo=document.getElementById('matchInfo');
   let matchIdx=0;
   function searchMatches(){
@@ -1112,12 +1103,10 @@ create policy "zugriff per schluessel"
     searchEl.classList.toggle('empty', !searchQuery);
     applySearch();
   });
-  searchInput.addEventListener('keydown', e=>{
-    if(e.key==='Enter'){ e.preventDefault(); cycleMatch(); }
-    else if(e.key==='Escape'){ clearSearch(); searchInput.blur(); }
-  });
+  // Tippen auf die Trefferzahl springt zum nächsten Treffer (Enter fügt hinzu)
+  matchInfo.onclick=cycleMatch;
   document.getElementById('searchClose').onclick=()=>{ clearSearch(); searchInput.focus(); };
-  searchEl.classList.add('empty');   // ✕ erst zeigen, wenn etwas eingegeben wurde
+  searchEl.classList.add('empty');   // ✕/Treffer erst zeigen, wenn etwas eingegeben wurde
 
   // ---- Backup: Export / Import (gegen Datenverlust) ----
   function exportData(){
