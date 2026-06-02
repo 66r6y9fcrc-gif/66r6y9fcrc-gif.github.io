@@ -79,6 +79,9 @@
     .authintro{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 14px;}
     .authemail{color:var(--text);font-size:15px;font-weight:600;word-break:break-all;margin:0 0 10px;}
     .authnote{color:var(--muted);font-size:13px;line-height:1.5;}
+    .langlist{display:flex;flex-direction:column;gap:8px;margin:0 0 14px;}
+    .lang-opt{text-align:left;font-size:15px;}
+    .lang-opt.active{border-color:var(--accent);color:#fff;background:rgba(79,140,255,.16);}
 
     /* ---- Untere Eingabeleiste (wie in der Skizze) ---- */
     .dock{
@@ -257,15 +260,18 @@
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot online" id="statusDot" title="Live – aktuell"></span>Digitales Gehirn <small>v1.1</small></div>
-    <button class="menubtn" id="menuBtn" title="Menü" aria-label="Menü">☰</button>
+    <div class="brand"><span class="dot online" id="statusDot" title="Live – aktuell"></span><span data-i18n="brand_name">Digitales Gehirn</span> <small>v1.1</small></div>
+    <button class="menubtn" id="menuBtn" data-i18n-title="title_menu" title="Menü" aria-label="Menü">☰</button>
   </div>
 
   <div class="menu" id="menu">
     <button class="menu-item" id="accountBtn"><span class="mi-ic">👤</span> <span id="accountLabel">Anmelden</span></button>
     <div class="menu-sep"></div>
-    <button class="menu-item" id="exportBtn"><span class="mi-ic">⬇</span> Sichern (Backup)</button>
-    <button class="menu-item" id="importBtn"><span class="mi-ic">⬆</span> Backup laden</button>
+    <button class="menu-item" id="exportBtn"><span class="mi-ic">⬇</span> <span data-i18n="menu_backup_save">Sichern (Backup)</span></button>
+    <button class="menu-item" id="importBtn"><span class="mi-ic">⬆</span> <span data-i18n="menu_backup_load">Backup laden</span></button>
+    <div class="menu-sep"></div>
+    <button class="menu-item" id="languageBtn"><span class="mi-ic">🌐</span> <span data-i18n="menu_language">Sprache</span></button>
+    <button class="menu-item" id="supportBtn"><span class="mi-ic">✉️</span> <span data-i18n="menu_support">Support</span></button>
   </div>
 
   <div class="cats" id="cats"></div>
@@ -273,49 +279,49 @@
   <div class="count" id="count">0 Gedanken</div>
 
   <div class="hint" id="hint">
-    <p><b>Tippe deine erste Idee ein.</b><br>
+    <p data-i18n-html="hint_html"><b>Tippe deine erste Idee ein.</b><br>
     Jeder Gedanke wird ein Stern – und verbindet sich mit dem Rest deines Gehirns.</p>
   </div>
 
   <div class="linkhint" id="linkHint"></div>
 
   <div class="lefttools">
-    <button class="iconbtn" id="relinkBtn" title="Verbindungen neu nach Thema ordnen">🔗</button>
-    <button class="iconbtn" id="linkBtn" title="Brücke zwischen zwei Themen ziehen">🪢</button>
+    <button class="iconbtn" id="relinkBtn" data-i18n-title="title_relink" title="Verbindungen neu nach Thema ordnen">🔗</button>
+    <button class="iconbtn" id="linkBtn" data-i18n-title="title_bridge" title="Brücke zwischen zwei Themen ziehen">🪢</button>
   </div>
   <input type="file" id="importFile" accept="application/json,.json" style="display:none">
 
   <div class="suggest" id="suggestBar">
     <div class="suggest-q" id="suggestText"></div>
-    <div class="suggest-label" id="suggestLabel">Mini-KI schlägt vor – tippe zum Bestätigen:</div>
+    <div class="suggest-label" id="suggestLabel" data-i18n="suggest_default">Mini-KI schlägt vor – tippe zum Bestätigen:</div>
     <div class="suggest-row" id="suggestChips"></div>
   </div>
 
   <div class="zoomtools">
-    <button class="iconbtn" id="recenter" title="Zentrieren">⊙</button>
-    <button class="iconbtn" id="zoomIn"  title="Heranzoomen">+</button>
-    <button class="iconbtn" id="zoomOut" title="Herauszoomen">−</button>
+    <button class="iconbtn" id="recenter" data-i18n-title="title_recenter" title="Zentrieren">⊙</button>
+    <button class="iconbtn" id="zoomIn"  data-i18n-title="title_zoomin" title="Heranzoomen">+</button>
+    <button class="iconbtn" id="zoomOut" data-i18n-title="title_zoomout" title="Herauszoomen">−</button>
   </div>
 
   <div class="dock empty" id="dock">
     <span class="searchicon">🔍</span>
-    <input id="ideaInput" type="text" placeholder="Suchen oder neuen Gedanken eingeben …" autocomplete="off" enterkeyhint="done">
-    <span class="matchinfo" id="matchInfo" title="Zum nächsten Treffer"></span>
-    <button class="iconbtn" id="searchClose" title="Leeren">✕</button>
-    <button class="iconbtn" id="micBtn" title="Diktieren (sprechen statt tippen)">🎤</button>
-    <button class="iconbtn add" id="addBtn" title="Hinzufügen (Enter)">+</button>
+    <input id="ideaInput" type="text" data-i18n-ph="ph_search" placeholder="Suchen oder neuen Gedanken eingeben …" autocomplete="off" enterkeyhint="done">
+    <span class="matchinfo" id="matchInfo" data-i18n-title="title_next_match" title="Zum nächsten Treffer"></span>
+    <button class="iconbtn" id="searchClose" data-i18n-title="title_clear" title="Leeren">✕</button>
+    <button class="iconbtn" id="micBtn" data-i18n-title="title_mic" title="Diktieren (sprechen statt tippen)">🎤</button>
+    <button class="iconbtn add" id="addBtn" data-i18n-title="title_add" title="Hinzufügen (Enter)">+</button>
   </div>
 
   <div class="card" id="card">
-    <input id="cardTitle" class="titleInput" placeholder="Gedanke" aria-label="Titel des Gedankens">
+    <input id="cardTitle" class="titleInput" data-i18n-ph="ph_thought" data-i18n-aria="aria_thought_title" placeholder="Gedanke" aria-label="Titel des Gedankens">
     <div class="meta" id="cardMeta"></div>
-    <p class="label">Kategorie:</p>
+    <p class="label" data-i18n="label_category">Kategorie:</p>
     <div class="cats-edit" id="cardCats"></div>
-    <p class="label labelrow">Notiz: <button class="micmini" id="noteMic" title="Notiz diktieren">🎤</button></p>
-    <textarea id="cardNote" class="note" placeholder="Details, Verknüpfungen, Links … (wird automatisch gespeichert)"></textarea>
+    <p class="label labelrow"><span data-i18n="label_note">Notiz:</span> <button class="micmini" id="noteMic" data-i18n-title="title_note_mic" title="Notiz diktieren">🎤</button></p>
+    <textarea id="cardNote" class="note" data-i18n-ph="ph_note" placeholder="Details, Verknüpfungen, Links … (wird automatisch gespeichert)"></textarea>
     <div class="row">
-      <button class="btn danger" id="delBtn">Löschen</button>
-      <button class="btn" id="closeBtn">Schließen</button>
+      <button class="btn danger" id="delBtn" data-i18n="btn_delete">Löschen</button>
+      <button class="btn" id="closeBtn" data-i18n="btn_close">Schließen</button>
     </div>
   </div>
 
@@ -354,34 +360,47 @@ create policy "zugriff per schluessel"
   </div>
 
   <div class="card" id="loginSheet">
-    <h2>👤 Konto</h2>
+    <h2 data-i18n="login_title">👤 Konto</h2>
 
     <div id="authForm">
-      <p class="authintro">Melde dich an, damit deine Gedanken sicher in deinem eigenen Konto gespeichert werden – auch auf anderen Geräten.</p>
-      <p class="label">E-Mail</p>
-      <input id="authEmail" class="field" type="email" inputmode="email" placeholder="du@beispiel.de" autocomplete="email" autocapitalize="off" spellcheck="false">
-      <p class="label">Passwort</p>
-      <input id="authPass" class="field" type="password" placeholder="mindestens 6 Zeichen" autocomplete="current-password">
+      <p class="authintro" data-i18n="auth_intro">Melde dich an, damit deine Gedanken sicher in deinem eigenen Konto gespeichert werden – auch auf anderen Geräten.</p>
+      <p class="label" data-i18n="label_email">E-Mail</p>
+      <input id="authEmail" class="field" type="email" inputmode="email" data-i18n-ph="ph_email" placeholder="du@beispiel.de" autocomplete="email" autocapitalize="off" spellcheck="false">
+      <p class="label" data-i18n="label_password">Passwort</p>
+      <input id="authPass" class="field" type="password" data-i18n-ph="ph_password" placeholder="mindestens 6 Zeichen" autocomplete="current-password">
       <div class="syncstatus" id="authStatus"></div>
       <div class="row">
-        <button class="btn primary" id="authLoginBtn">Anmelden</button>
-        <button class="btn" id="authSignupBtn">Registrieren</button>
-        <button class="btn" id="authCloseBtn">Schließen</button>
+        <button class="btn primary" id="authLoginBtn" data-i18n="btn_login">Anmelden</button>
+        <button class="btn" id="authSignupBtn" data-i18n="btn_register">Registrieren</button>
+        <button class="btn" id="authCloseBtn" data-i18n="btn_close">Schließen</button>
       </div>
     </div>
 
     <div id="accountInfo" style="display:none">
-      <p class="label">Angemeldet als</p>
+      <p class="label" data-i18n="label_logged_as">Angemeldet als</p>
       <div class="authemail" id="accountEmail">—</div>
       <div class="syncstatus" id="accountStatus"></div>
       <div class="row">
-        <button class="btn danger" id="authLogoutBtn">Abmelden</button>
-        <button class="btn" id="accountCloseBtn">Schließen</button>
+        <button class="btn danger" id="authLogoutBtn" data-i18n="btn_logout">Abmelden</button>
+        <button class="btn" id="accountCloseBtn" data-i18n="btn_close">Schließen</button>
       </div>
     </div>
 
-    <div id="authNotConfigured" class="authnote" style="display:none">
+    <div id="authNotConfigured" class="authnote" data-i18n="auth_not_configured" style="display:none">
       Der Login ist noch nicht eingerichtet. Sobald der Supabase-Zugang hinterlegt ist, kannst du dich hier registrieren und anmelden.
+    </div>
+  </div>
+
+  <div class="card" id="languageSheet">
+    <h2 data-i18n="language_title">🌐 Sprache</h2>
+    <div class="langlist">
+      <button class="btn lang-opt" data-lang="de">🇩🇪 Deutsch</button>
+      <button class="btn lang-opt" data-lang="en">🇬🇧 English</button>
+      <button class="btn lang-opt" data-lang="es">🇪🇸 Español</button>
+      <button class="btn lang-opt" data-lang="fr">🇫🇷 Français</button>
+    </div>
+    <div class="row">
+      <button class="btn" id="languageCloseBtn" data-i18n="btn_close">Schließen</button>
     </div>
   </div>
 
@@ -397,6 +416,127 @@ create policy "zugriff per schluessel"
   // Der anon-Key ist öffentlich/unbedenklich und darf im Code stehen.
   const SUPABASE_URL  = 'https://znrudjvezprtflbwxcif.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpucnVkanZlenBydGZsYnd4Y2lmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MjM3MTYsImV4cCI6MjA5NTk5OTcxNn0.DiPskuv4NK6-2MsP6mC0_ngilABB_pUaNKqIaLqbDwY';
+
+  // ========================= Mehrsprachigkeit (i18n) =========================
+  const LANGS=['de','en','es','fr'];
+  const LANG_KEY='digital-brain-lang';
+  let lang='de';
+  try{
+    const saved=localStorage.getItem(LANG_KEY);
+    if(saved && LANGS.includes(saved)) lang=saved;
+    else { const b=(navigator.language||'de').slice(0,2).toLowerCase(); if(LANGS.includes(b)) lang=b; }
+  }catch(e){}
+
+  const I18N={
+   de:{
+    brand_name:'Digitales Gehirn', title_menu:'Menü',
+    status_live:'Live – aktuell', status_offline:'Offline – läuft weiter, alles wird lokal gespeichert', status_update:'Neue Version – wird automatisch neu geladen …',
+    menu_login:'Anmelden', menu_backup_save:'Sichern (Backup)', menu_backup_load:'Backup laden', menu_language:'Sprache', menu_support:'Support',
+    count_one:'{n} Gedanke', count_many:'{n} Gedanken',
+    hint_html:'<b>Tippe deine erste Idee ein.</b><br>Jeder Gedanke wird ein Stern – und verbindet sich mit dem Rest deines Gehirns.',
+    ph_search:'Suchen oder neuen Gedanken eingeben …', title_next_match:'Zum nächsten Treffer', title_clear:'Leeren', title_mic:'Diktieren (sprechen statt tippen)', title_add:'Hinzufügen (Enter)', match_hits:'{n} Treffer',
+    title_recenter:'Zentrieren', title_zoomin:'Heranzoomen', title_zoomout:'Herauszoomen', title_relink:'Verbindungen neu nach Thema ordnen', title_bridge:'Brücke zwischen zwei Themen ziehen',
+    cat_all:'Alle', title_new_category:'Neue Kategorie anlegen', cat_chip_title:'Tippen: nur „{name}“ zeigen · neue Ideen werden „{name}“',
+    cat_idee:'Idee', cat_frage:'Frage', cat_projekt:'Projekt', cat_aufgabe:'Aufgabe', cat_traum:'Traum',
+    ph_thought:'Gedanke', aria_thought_title:'Titel des Gedankens', label_category:'Kategorie:', label_note:'Notiz:', title_note_mic:'Notiz diktieren', ph_note:'Details, Verknüpfungen, Links … (wird automatisch gespeichert)', btn_delete:'Löschen', btn_close:'Schließen',
+    meta_category:'Kategorie', meta_captured:'erfasst am', meta_connections_one:'{n} Verbindung', meta_connections_many:'{n} Verbindungen', meta_note:'📝 Notiz',
+    login_title:'👤 Konto', auth_intro:'Melde dich an, damit deine Gedanken sicher in deinem eigenen Konto gespeichert werden – auch auf anderen Geräten.', label_email:'E-Mail', label_password:'Passwort', ph_email:'du@beispiel.de', ph_password:'mindestens 6 Zeichen', btn_login:'Anmelden', btn_register:'Registrieren', label_logged_as:'Angemeldet als', btn_logout:'Abmelden',
+    auth_not_configured:'Der Login ist noch nicht eingerichtet. Sobald der Supabase-Zugang hinterlegt ist, kannst du dich hier registrieren und anmelden.',
+    auth_need_both:'Bitte E-Mail und Passwort eingeben.', auth_signing_in:'Anmelden …', auth_failed:'Anmeldung fehlgeschlagen.', auth_need_valid:'E-Mail und Passwort (mind. 6 Zeichen) eingeben.', auth_creating:'Konto wird erstellt …', auth_register_failed:'Registrierung fehlgeschlagen.', auth_confirm_email:'Fast geschafft! Bitte bestätige die E-Mail in deinem Postfach und melde dich danach an.', auth_network:'Netzwerkfehler – bist du online?', auth_logged_out:'Abgemeldet.', account_autosaved:'Deine Gedanken werden automatisch gesichert.', account_logged_in_ok:'Angemeldet ✓ – Gedanken werden automatisch gesichert.',
+    suggest_default:'Mini-KI schlägt vor – tippe zum Bestätigen:', suggest_new:'Kein passendes Thema gefunden – neues anlegen oder selbst wählen:', suggest_unsure:'Mini-KI ist unsicher – bitte selbst wählen:', suggest_newtheme:'✨ Neues Thema „{name}“', suggest_newtheme_manual:'✨ Neues Thema …', suggest_cancel:'✕ Abbrechen', prompt_new_theme:'Name des neuen Themas:', prompt_new_category:'Name der neuen Kategorie:',
+    link_mode_start:'Brücken-Modus: zwei Sterne nacheinander antippen.', link_mode_first:'Brücken-Modus: ersten Stern antippen.', link_first_selected:'Erster Stern gewählt – jetzt den zweiten antippen.', link_cleared:'Auswahl aufgehoben. Ersten Stern antippen.', link_created:'Brücke erstellt ✓ – nächste? Stern antippen oder 🪢 zum Beenden.',
+    confirm_import:'Aktuelles Gehirn durch das Backup ersetzen? Die jetzigen {n} Gedanken werden überschrieben.', alert_import_done:'Backup geladen: {n} Gedanken wiederhergestellt.', alert_import_fail:'Diese Datei konnte nicht gelesen werden. Bitte eine vorher exportierte .json-Datei wählen.', confirm_relink:'Alle Verbindungen neu nach Thema ordnen? Gedanken bleiben erhalten, nur die Fäden werden innerhalb gleicher Themen neu gezogen.',
+    alert_no_speech:'Dein Browser unterstützt leider keine Spracherkennung. Am besten klappt es in Google Chrome (Android oder Desktop).', alert_mic_blocked:'Der Mikrofon-Zugriff wurde blockiert. Bitte erlaube ihn in den Browser-Einstellungen und versuche es erneut.',
+    language_title:'🌐 Sprache', support_subject:'Support – Digitales Gehirn', support_body:'Hallo,\n\nich brauche Hilfe mit folgender Sache:\n\n'
+   },
+   en:{
+    brand_name:'Digital Brain', title_menu:'Menu',
+    status_live:'Live – up to date', status_offline:'Offline – still running, everything is saved locally', status_update:'New version – reloading automatically …',
+    menu_login:'Sign in', menu_backup_save:'Save (backup)', menu_backup_load:'Load backup', menu_language:'Language', menu_support:'Support',
+    count_one:'{n} thought', count_many:'{n} thoughts',
+    hint_html:'<b>Type your first idea.</b><br>Every thought becomes a star – and connects with the rest of your brain.',
+    ph_search:'Search or enter a new thought …', title_next_match:'Next match', title_clear:'Clear', title_mic:'Dictate (speak instead of type)', title_add:'Add (Enter)', match_hits:'{n} hits',
+    title_recenter:'Recenter', title_zoomin:'Zoom in', title_zoomout:'Zoom out', title_relink:'Reorganize connections by topic', title_bridge:'Draw a bridge between two topics',
+    cat_all:'All', title_new_category:'Create new category', cat_chip_title:'Tap: show only "{name}" · new ideas become "{name}"',
+    cat_idee:'Idea', cat_frage:'Question', cat_projekt:'Project', cat_aufgabe:'Task', cat_traum:'Dream',
+    ph_thought:'Thought', aria_thought_title:'Thought title', label_category:'Category:', label_note:'Note:', title_note_mic:'Dictate note', ph_note:'Details, links, references … (saved automatically)', btn_delete:'Delete', btn_close:'Close',
+    meta_category:'Category', meta_captured:'created on', meta_connections_one:'{n} connection', meta_connections_many:'{n} connections', meta_note:'📝 Note',
+    login_title:'👤 Account', auth_intro:'Sign in so your thoughts are safely stored in your own account – across devices, too.', label_email:'Email', label_password:'Password', ph_email:'you@example.com', ph_password:'at least 6 characters', btn_login:'Sign in', btn_register:'Sign up', label_logged_as:'Signed in as', btn_logout:'Sign out',
+    auth_not_configured:'Login is not set up yet. Once the Supabase access is configured, you can register and sign in here.',
+    auth_need_both:'Please enter email and password.', auth_signing_in:'Signing in …', auth_failed:'Sign-in failed.', auth_need_valid:'Enter an email and password (at least 6 characters).', auth_creating:'Creating account …', auth_register_failed:'Sign-up failed.', auth_confirm_email:'Almost done! Please confirm the email in your inbox and then sign in.', auth_network:'Network error – are you online?', auth_logged_out:'Signed out.', account_autosaved:'Your thoughts are saved automatically.', account_logged_in_ok:'Signed in ✓ – thoughts are saved automatically.',
+    suggest_default:'Mini-AI suggests – tap to confirm:', suggest_new:'No matching topic found – create a new one or choose yourself:', suggest_unsure:'Mini-AI is unsure – please choose yourself:', suggest_newtheme:'✨ New topic "{name}"', suggest_newtheme_manual:'✨ New topic …', suggest_cancel:'✕ Cancel', prompt_new_theme:'Name of the new topic:', prompt_new_category:'Name of the new category:',
+    link_mode_start:'Bridge mode: tap two stars one after another.', link_mode_first:'Bridge mode: tap the first star.', link_first_selected:'First star selected – now tap the second.', link_cleared:'Selection cleared. Tap the first star.', link_created:'Bridge created ✓ – next? Tap a star or 🪢 to finish.',
+    confirm_import:'Replace the current brain with the backup? The current {n} thoughts will be overwritten.', alert_import_done:'Backup loaded: {n} thoughts restored.', alert_import_fail:'This file could not be read. Please choose a .json file you exported earlier.', confirm_relink:'Reorganize all connections by topic? Thoughts are kept, only the threads are redrawn within the same topics.',
+    alert_no_speech:'Unfortunately your browser does not support speech recognition. It works best in Google Chrome (Android or desktop).', alert_mic_blocked:'Microphone access was blocked. Please allow it in your browser settings and try again.',
+    language_title:'🌐 Language', support_subject:'Support – Digital Brain', support_body:'Hello,\n\nI need help with the following:\n\n'
+   },
+   es:{
+    brand_name:'Cerebro Digital', title_menu:'Menú',
+    status_live:'En línea – actualizado', status_offline:'Sin conexión – sigue funcionando, todo se guarda localmente', status_update:'Nueva versión – recargando automáticamente …',
+    menu_login:'Iniciar sesión', menu_backup_save:'Guardar (copia)', menu_backup_load:'Cargar copia', menu_language:'Idioma', menu_support:'Soporte',
+    count_one:'{n} pensamiento', count_many:'{n} pensamientos',
+    hint_html:'<b>Escribe tu primera idea.</b><br>Cada pensamiento se convierte en una estrella y se conecta con el resto de tu cerebro.',
+    ph_search:'Buscar o escribir un nuevo pensamiento …', title_next_match:'Siguiente resultado', title_clear:'Borrar', title_mic:'Dictar (hablar en vez de escribir)', title_add:'Añadir (Enter)', match_hits:'{n} resultados',
+    title_recenter:'Centrar', title_zoomin:'Acercar', title_zoomout:'Alejar', title_relink:'Reorganizar conexiones por tema', title_bridge:'Trazar un puente entre dos temas',
+    cat_all:'Todos', title_new_category:'Crear nueva categoría', cat_chip_title:'Tocar: mostrar solo "{name}" · las nuevas ideas serán "{name}"',
+    cat_idee:'Idea', cat_frage:'Pregunta', cat_projekt:'Proyecto', cat_aufgabe:'Tarea', cat_traum:'Sueño',
+    ph_thought:'Pensamiento', aria_thought_title:'Título del pensamiento', label_category:'Categoría:', label_note:'Nota:', title_note_mic:'Dictar nota', ph_note:'Detalles, enlaces, referencias … (se guarda automáticamente)', btn_delete:'Eliminar', btn_close:'Cerrar',
+    meta_category:'Categoría', meta_captured:'creado el', meta_connections_one:'{n} conexión', meta_connections_many:'{n} conexiones', meta_note:'📝 Nota',
+    login_title:'👤 Cuenta', auth_intro:'Inicia sesión para que tus pensamientos se guarden de forma segura en tu propia cuenta, también en otros dispositivos.', label_email:'Correo electrónico', label_password:'Contraseña', ph_email:'tu@ejemplo.com', ph_password:'al menos 6 caracteres', btn_login:'Iniciar sesión', btn_register:'Registrarse', label_logged_as:'Sesión iniciada como', btn_logout:'Cerrar sesión',
+    auth_not_configured:'El inicio de sesión aún no está configurado. Cuando se añada el acceso de Supabase, podrás registrarte e iniciar sesión aquí.',
+    auth_need_both:'Introduce correo y contraseña.', auth_signing_in:'Iniciando sesión …', auth_failed:'Error al iniciar sesión.', auth_need_valid:'Introduce un correo y una contraseña (mín. 6 caracteres).', auth_creating:'Creando cuenta …', auth_register_failed:'Error en el registro.', auth_confirm_email:'¡Casi listo! Confirma el correo en tu bandeja de entrada y luego inicia sesión.', auth_network:'Error de red, ¿estás conectado?', auth_logged_out:'Sesión cerrada.', account_autosaved:'Tus pensamientos se guardan automáticamente.', account_logged_in_ok:'Sesión iniciada ✓ – los pensamientos se guardan automáticamente.',
+    suggest_default:'La mini-IA sugiere – toca para confirmar:', suggest_new:'No se encontró un tema adecuado – crea uno nuevo o elige tú:', suggest_unsure:'La mini-IA no está segura – elige tú:', suggest_newtheme:'✨ Nuevo tema "{name}"', suggest_newtheme_manual:'✨ Nuevo tema …', suggest_cancel:'✕ Cancelar', prompt_new_theme:'Nombre del nuevo tema:', prompt_new_category:'Nombre de la nueva categoría:',
+    link_mode_start:'Modo puente: toca dos estrellas una tras otra.', link_mode_first:'Modo puente: toca la primera estrella.', link_first_selected:'Primera estrella elegida – ahora toca la segunda.', link_cleared:'Selección anulada. Toca la primera estrella.', link_created:'Puente creado ✓ – ¿el siguiente? Toca una estrella o 🪢 para terminar.',
+    confirm_import:'¿Reemplazar el cerebro actual con la copia? Los {n} pensamientos actuales se sobrescribirán.', alert_import_done:'Copia cargada: {n} pensamientos restaurados.', alert_import_fail:'No se pudo leer este archivo. Elige un archivo .json exportado anteriormente.', confirm_relink:'¿Reorganizar todas las conexiones por tema? Los pensamientos se mantienen, solo se vuelven a trazar los hilos dentro de los mismos temas.',
+    alert_no_speech:'Lamentablemente tu navegador no admite el reconocimiento de voz. Funciona mejor en Google Chrome (Android o escritorio).', alert_mic_blocked:'Se bloqueó el acceso al micrófono. Permítelo en los ajustes del navegador e inténtalo de nuevo.',
+    language_title:'🌐 Idioma', support_subject:'Soporte – Cerebro Digital', support_body:'Hola:\n\nNecesito ayuda con lo siguiente:\n\n'
+   },
+   fr:{
+    brand_name:'Cerveau Numérique', title_menu:'Menu',
+    status_live:'En ligne – à jour', status_offline:'Hors ligne – continue de fonctionner, tout est enregistré localement', status_update:'Nouvelle version – rechargement automatique …',
+    menu_login:'Se connecter', menu_backup_save:'Sauvegarder', menu_backup_load:'Charger une sauvegarde', menu_language:'Langue', menu_support:'Support',
+    count_one:'{n} pensée', count_many:'{n} pensées',
+    hint_html:'<b>Saisis ta première idée.</b><br>Chaque pensée devient une étoile – et se connecte au reste de ton cerveau.',
+    ph_search:'Rechercher ou saisir une nouvelle pensée …', title_next_match:'Résultat suivant', title_clear:'Effacer', title_mic:'Dicter (parler au lieu d’écrire)', title_add:'Ajouter (Entrée)', match_hits:'{n} résultats',
+    title_recenter:'Recentrer', title_zoomin:'Zoomer', title_zoomout:'Dézoomer', title_relink:'Réorganiser les connexions par thème', title_bridge:'Tracer un pont entre deux thèmes',
+    cat_all:'Tous', title_new_category:'Créer une nouvelle catégorie', cat_chip_title:'Toucher : afficher seulement « {name} » · les nouvelles idées deviennent « {name} »',
+    cat_idee:'Idée', cat_frage:'Question', cat_projekt:'Projet', cat_aufgabe:'Tâche', cat_traum:'Rêve',
+    ph_thought:'Pensée', aria_thought_title:'Titre de la pensée', label_category:'Catégorie :', label_note:'Note :', title_note_mic:'Dicter la note', ph_note:'Détails, liens, références … (enregistré automatiquement)', btn_delete:'Supprimer', btn_close:'Fermer',
+    meta_category:'Catégorie', meta_captured:'créé le', meta_connections_one:'{n} connexion', meta_connections_many:'{n} connexions', meta_note:'📝 Note',
+    login_title:'👤 Compte', auth_intro:'Connecte-toi pour que tes pensées soient enregistrées en sécurité dans ton propre compte – aussi sur d’autres appareils.', label_email:'E-mail', label_password:'Mot de passe', ph_email:'toi@exemple.com', ph_password:'au moins 6 caractères', btn_login:'Se connecter', btn_register:'S’inscrire', label_logged_as:'Connecté en tant que', btn_logout:'Se déconnecter',
+    auth_not_configured:'La connexion n’est pas encore configurée. Une fois l’accès Supabase ajouté, tu pourras t’inscrire et te connecter ici.',
+    auth_need_both:'Saisis l’e-mail et le mot de passe.', auth_signing_in:'Connexion …', auth_failed:'Échec de la connexion.', auth_need_valid:'Saisis un e-mail et un mot de passe (au moins 6 caractères).', auth_creating:'Création du compte …', auth_register_failed:'Échec de l’inscription.', auth_confirm_email:'Presque fini ! Confirme l’e-mail dans ta boîte de réception, puis connecte-toi.', auth_network:'Erreur réseau – es-tu en ligne ?', auth_logged_out:'Déconnecté.', account_autosaved:'Tes pensées sont enregistrées automatiquement.', account_logged_in_ok:'Connecté ✓ – les pensées sont enregistrées automatiquement.',
+    suggest_default:'La mini-IA propose – touche pour confirmer :', suggest_new:'Aucun thème correspondant – crées-en un ou choisis toi-même :', suggest_unsure:'La mini-IA n’est pas sûre – choisis toi-même :', suggest_newtheme:'✨ Nouveau thème « {name} »', suggest_newtheme_manual:'✨ Nouveau thème …', suggest_cancel:'✕ Annuler', prompt_new_theme:'Nom du nouveau thème :', prompt_new_category:'Nom de la nouvelle catégorie :',
+    link_mode_start:'Mode pont : touche deux étoiles l’une après l’autre.', link_mode_first:'Mode pont : touche la première étoile.', link_first_selected:'Première étoile choisie – touche maintenant la deuxième.', link_cleared:'Sélection annulée. Touche la première étoile.', link_created:'Pont créé ✓ – le suivant ? Touche une étoile ou 🪢 pour terminer.',
+    confirm_import:'Remplacer le cerveau actuel par la sauvegarde ? Les {n} pensées actuelles seront écrasées.', alert_import_done:'Sauvegarde chargée : {n} pensées restaurées.', alert_import_fail:'Ce fichier n’a pas pu être lu. Choisis un fichier .json exporté précédemment.', confirm_relink:'Réorganiser toutes les connexions par thème ? Les pensées sont conservées, seuls les fils sont retracés au sein des mêmes thèmes.',
+    alert_no_speech:'Malheureusement, ton navigateur ne prend pas en charge la reconnaissance vocale. Cela fonctionne mieux dans Google Chrome (Android ou ordinateur).', alert_mic_blocked:'L’accès au microphone a été bloqué. Autorise-le dans les paramètres du navigateur et réessaie.',
+    language_title:'🌐 Langue', support_subject:'Support – Cerveau Numérique', support_body:'Bonjour,\n\nj’ai besoin d’aide concernant :\n\n'
+   }
+  };
+  function t(k, vars){
+    let s=(I18N[lang] && I18N[lang][k]); if(s===undefined) s=I18N.de[k]; if(s===undefined) s=k;
+    if(vars){ for(const p in vars) s=s.split('{'+p+'}').join(vars[p]); }
+    return s;
+  }
+  function localeOf(l){ return {de:'de-DE',en:'en-US',es:'es-ES',fr:'fr-FR'}[l]||'de-DE'; }
+  const DEFAULT_CATS=['idee','frage','projekt','aufgabe','traum'];
+  function catName(c){ return c && DEFAULT_CATS.includes(c.id) ? t('cat_'+c.id) : (c?c.name:''); }
+  function applyStaticI18n(){
+    document.documentElement.lang=lang;
+    document.title=t('brand_name');
+    document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent=t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-html]').forEach(el=>{ el.innerHTML=t(el.dataset.i18nHtml); });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.setAttribute('placeholder', t(el.dataset.i18nPh)); });
+    document.querySelectorAll('[data-i18n-title]').forEach(el=>{ el.setAttribute('title', t(el.dataset.i18nTitle)); });
+    document.querySelectorAll('[data-i18n-aria]').forEach(el=>{ el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+  }
+  function setLang(l){
+    if(!LANGS.includes(l)) l='de';
+    lang=l; try{ localStorage.setItem(LANG_KEY, l); }catch(e){}
+    applyStaticI18n();
+    updateCount(); renderCats(); renderCardCats(); setStatus(); updateAccountUI();
+    if(rec){ try{ rec.lang=localeOf(lang); }catch(e){} }
+  }
 
   // ---- Zustand ----
   let nodes = [];           // {id, text, x, y, vx, vy, t, cat}
@@ -526,7 +666,7 @@ create policy "zugriff per schluessel"
 
   function updateCount(){
     const c = document.getElementById('count');
-    c.textContent = nodes.length + (nodes.length===1 ? ' Gedanke' : ' Gedanken');
+    c.textContent = t(nodes.length===1 ? 'count_one' : 'count_many', {n:nodes.length});
   }
 
   // ---- Physik (kraftbasiertes Layout) ----
@@ -759,7 +899,7 @@ create policy "zugriff per schluessel"
       else openCard(dragNode);
     }
     else if(!dragNode && !moved){
-      if(linkMode){ linkFrom=null; setLinkHint('Brücken-Modus: ersten Stern antippen.'); }
+      if(linkMode){ linkFrom=null; setLinkHint(t('link_mode_first')); }
       else closeCard();
     }
     if(dragNode && moved) save();
@@ -769,16 +909,16 @@ create policy "zugriff per schluessel"
   function handleLinkTap(n){
     if(linkFrom===null){
       linkFrom=n.id;
-      setLinkHint('Erster Stern gewählt – jetzt den zweiten antippen.');
+      setLinkHint(t('link_first_selected'));
     } else if(linkFrom===n.id){
       linkFrom=null;
-      setLinkHint('Auswahl aufgehoben. Ersten Stern antippen.');
+      setLinkHint(t('link_cleared'));
     } else {
       const a=linkFrom, b=n.id;
       if(!edges.some(e=>(e.a===a&&e.b===b)||(e.a===b&&e.b===a)))
         edges.push({a, b, bridge:true});
       linkFrom=null; save();
-      setLinkHint('Brücke erstellt ✓ – nächste? Stern antippen oder 🪢 zum Beenden.');
+      setLinkHint(t('link_created'));
     }
   }
 
@@ -833,17 +973,18 @@ create policy "zugriff per schluessel"
     for(const c of categories){
       const chip=document.createElement('div');
       chip.className='chip'+(n && n.cat===c.id?' sel':'');
-      chip.innerHTML=`<span class="cdot" style="background:${c.color};color:${c.color}"></span>${c.name}`;
+      chip.innerHTML=`<span class="cdot" style="background:${c.color};color:${c.color}"></span>${catName(c)}`;
       chip.onclick=()=>{ if(n){ n.cat=c.id; learnFrom(n.text+' '+(n.note||''), c.id); renderCardCats(); openCardMeta(n); save(); } };
       cardCatsEl.appendChild(chip);
     }
   }
   function openCardMeta(n){
     const d=new Date(n.t||Date.now());
-    document.getElementById('cardMeta').textContent='Kategorie: '+catById(n.cat).name+
-      ' · erfasst am '+d.toLocaleDateString('de-DE')+
-      ' · '+(edges.filter(e=>e.a===n.id||e.b===n.id).length)+' Verbindungen'+
-      ((n.note&&n.note.trim())?' · 📝 Notiz':'');
+    const conn=edges.filter(e=>e.a===n.id||e.b===n.id).length;
+    document.getElementById('cardMeta').textContent=t('meta_category')+': '+catName(catById(n.cat))+
+      ' · '+t('meta_captured')+' '+d.toLocaleDateString(localeOf(lang))+
+      ' · '+t(conn===1?'meta_connections_one':'meta_connections_many',{n:conn})+
+      ((n.note&&n.note.trim())?' · '+t('meta_note'):'');
   }
   const cardTitle=document.getElementById('cardTitle');
   const cardNote=document.getElementById('cardNote');
@@ -1021,36 +1162,36 @@ create policy "zugriff per schluessel"
     };
     if(r.mode==='new'){
       // Kein passendes Thema → neues vorschlagen
-      suggestLabel.textContent='Kein passendes Thema gefunden – neues anlegen oder selbst wählen:';
-      addChip('✨ Neues Thema „'+r.newName+'"', null, 'newcat primary', ()=>commitNew(r.newName));
+      suggestLabel.textContent=t('suggest_new');
+      addChip(t('suggest_newtheme',{name:r.newName}), null, 'newcat primary', ()=>commitNew(r.newName));
     } else if(r.ambiguous){
       // Mehrdeutig → mehrere Kandidaten gleichberechtigt anbieten
-      suggestLabel.textContent='Mini-KI ist unsicher – bitte selbst wählen:';
+      suggestLabel.textContent=t('suggest_unsure');
       (r.candidates||[]).forEach(s=>{
         if(made.has(s.id)) return; made.add(s.id);
         const c=catById(s.id);
-        addChip(c.name, c.color, 'maybe', ()=>commitIdea(c.id));
+        addChip(catName(c), c.color, 'maybe', ()=>commitIdea(c.id));
       });
     } else {
       // Klarer Vorschlag
-      suggestLabel.textContent='Mini-KI schlägt vor – tippe zum Bestätigen:';
+      suggestLabel.textContent=t('suggest_default');
       const c=catById(r.best); made.add(c.id);
-      addChip('✓ '+c.name, c.color, 'primary', ()=>commitIdea(c.id));
+      addChip('✓ '+catName(c), c.color, 'primary', ()=>commitIdea(c.id));
       (r.candidates||[]).forEach(s=>{
         if(made.has(s.id)) return; made.add(s.id);
         const cc=catById(s.id);
-        addChip(cc.name, cc.color, '', ()=>commitIdea(cc.id));
+        addChip(catName(cc), cc.color, '', ()=>commitIdea(cc.id));
       });
     }
     // übrige Themen als weitere Auswahl
     categories.forEach(c=>{ if(!made.has(c.id)){ made.add(c.id);
-      addChip(c.name, c.color, '', ()=>commitIdea(c.id)); } });
+      addChip(catName(c), c.color, '', ()=>commitIdea(c.id)); } });
     // neues Thema von Hand
-    addChip('✨ Neues Thema …', null, 'newcat', ()=>{
-      const name=(window.prompt('Name des neuen Themas:')||'').trim();
+    addChip(t('suggest_newtheme_manual'), null, 'newcat', ()=>{
+      const name=(window.prompt(t('prompt_new_theme'))||'').trim();
       if(name) commitNew(name);
     });
-    addChip('✕ Abbrechen', null, 'cancel', ()=>{ input.value=pendingText; hideSuggest(); input.focus(); });
+    addChip(t('suggest_cancel'), null, 'cancel', ()=>{ input.value=pendingText; hideSuggest(); input.focus(); });
     suggestBar.classList.add('open');
   }
   function commitIdea(catId){
@@ -1073,11 +1214,11 @@ create policy "zugriff per schluessel"
   function toggleDictation(targetEl, btn, autoSubmit){
     if(rec){ rec.stop(); return; }          // läuft schon → beenden
     if(!SpeechRec){
-      window.alert('Dein Browser unterstützt leider keine Spracherkennung. Am besten klappt es in Google Chrome (Android oder Desktop).');
+      window.alert(t('alert_no_speech'));
       return;
     }
     rec=new SpeechRec();
-    rec.lang='de-DE';
+    rec.lang=localeOf(lang);
     rec.continuous=true;
     rec.interimResults=true;
     // an bestehenden Text anhängen (mit Leerzeichen)
@@ -1091,7 +1232,7 @@ create policy "zugriff per schluessel"
     };
     rec.onerror=(e)=>{
       if(e.error==='not-allowed' || e.error==='service-not-allowed')
-        window.alert('Der Mikrofon-Zugriff wurde blockiert. Bitte erlaube ihn in den Browser-Einstellungen und versuche es erneut.');
+        window.alert(t('alert_mic_blocked'));
     };
     rec.onend=()=>{
       btn.classList.remove('listening');
@@ -1121,7 +1262,7 @@ create policy "zugriff per schluessel"
     // "Alle" hebt den Filter auf
     const all=document.createElement('div');
     all.className='chip'+(focusCat===null?' sel':'');
-    all.innerHTML='<span class="cdot" style="background:#dce6ff;color:#dce6ff"></span>Alle';
+    all.innerHTML='<span class="cdot" style="background:#dce6ff;color:#dce6ff"></span>'+t('cat_all');
     all.title='Filter aufheben – alles anzeigen';
     all.onclick=()=>{ focusCat=null; renderCats(); };
     catsEl.appendChild(all);
@@ -1129,8 +1270,8 @@ create policy "zugriff per schluessel"
     for(const c of categories){
       const chip=document.createElement('div');
       chip.className='chip'+(focusCat===c.id?' sel':'')+(activeCat===c.id?' active-add':'');
-      chip.innerHTML=`<span class="cdot" style="background:${c.color};color:${c.color}"></span>${c.name}${activeCat===c.id?' ✎':''}`;
-      chip.title='Tippen: nur „'+c.name+'" zeigen · neue Ideen werden „'+c.name+'"';
+      chip.innerHTML=`<span class="cdot" style="background:${c.color};color:${c.color}"></span>${catName(c)}${activeCat===c.id?' ✎':''}`;
+      chip.title=t('cat_chip_title',{name:catName(c)});
       chip.onclick=()=>{
         activeCat=c.id;                              // neue Ideen erhalten diese Kategorie
         focusCat = (focusCat===c.id) ? null : c.id;  // erneut tippen hebt den Filter auf
@@ -1141,12 +1282,12 @@ create policy "zugriff per schluessel"
     const add=document.createElement('div');
     add.className='chip add';
     add.textContent='＋ Kategorie';
-    add.title='Neue Kategorie anlegen';
+    add.title=t('title_new_category');
     add.onclick=addCategory;
     catsEl.appendChild(add);
   }
   function addCategory(){
-    const name=(window.prompt('Name der neuen Kategorie:')||'').trim();
+    const name=(window.prompt(t('prompt_new_category'))||'').trim();
     if(!name) return;
     const id='c'+Date.now();
     categories.push({id, name, color: PALETTE[categories.length % PALETTE.length]});
@@ -1172,7 +1313,7 @@ create policy "zugriff per schluessel"
   }
   function applySearch(){
     const m=searchMatches();
-    matchInfo.textContent = searchQuery ? (m.length+(m.length===1?' Treffer':' Treffer')) : '';
+    matchInfo.textContent = searchQuery ? t('match_hits',{n:m.length}) : '';
     matchIdx=0;
     if(m.length){ centerOn(m[0]); selectedId=m[0].id; }
   }
@@ -1216,7 +1357,7 @@ create policy "zugriff per schluessel"
       try{
         const data=JSON.parse(reader.result);
         if(!data || !Array.isArray(data.nodes)) throw new Error('ungültig');
-        if(nodes.length && !window.confirm('Aktuelles Gehirn durch das Backup ersetzen? Die jetzigen '+nodes.length+' Gedanken werden überschrieben.')) return;
+        if(nodes.length && !window.confirm(t('confirm_import',{n:nodes.length}))) return;
         if(Array.isArray(data.categories) && data.categories.length) categories=data.categories;
         activeCat = (data.activeCat && categories.some(c=>c.id===data.activeCat)) ? data.activeCat : categories[0].id;
         nodes = data.nodes.map(n=>({...n, vx:0, vy:0, cat: n.cat || categories[0].id}));
@@ -1225,8 +1366,8 @@ create policy "zugriff per schluessel"
         focusCat=null; selectedId=null;
         document.getElementById('hint').classList.toggle('hide', nodes.length>0);
         updateCount(); renderCats(); updateAddColor(); recenter(); save();
-        window.alert('Backup geladen: '+nodes.length+' Gedanken wiederhergestellt.');
-      }catch(err){ window.alert('Diese Datei konnte nicht gelesen werden. Bitte eine vorher exportierte .json-Datei wählen.'); }
+        window.alert(t('alert_import_done',{n:nodes.length}));
+      }catch(err){ window.alert(t('alert_import_fail')); }
     };
     reader.readAsText(file);
   }
@@ -1240,7 +1381,7 @@ create policy "zugriff per schluessel"
   function setLinkMode(on){
     linkMode=on; linkFrom=null;
     linkBtn.classList.toggle('on', on);
-    if(on){ closeCard(); setLinkHint('Brücken-Modus: zwei Sterne nacheinander antippen.'); }
+    if(on){ closeCard(); setLinkHint(t('link_mode_start')); }
     else setLinkHint('');
   }
   linkBtn.onclick=()=>setLinkMode(!linkMode);
@@ -1271,7 +1412,7 @@ create policy "zugriff per schluessel"
   }
   document.getElementById('relinkBtn').onclick=()=>{
     if(!nodes.length) return;
-    if(window.confirm('Alle Verbindungen neu nach Thema ordnen? Gedanken bleiben erhalten, nur die Fäden werden innerhalb gleicher Themen neu gezogen.'))
+    if(window.confirm(t('confirm_relink')))
       rebuildEdges();
   };
 
@@ -1440,58 +1581,58 @@ create policy "zugriff per schluessel"
   function shortEmail(e){ return e && e.length>22 ? e.slice(0,20)+'…' : (e||'Konto'); }
   function updateAccountUI(){
     const inAcc=loggedIn();
-    accountLabel.textContent = inAcc ? shortEmail(auth.email) : 'Anmelden';
+    accountLabel.textContent = inAcc ? shortEmail(auth.email) : t('menu_login');
     document.getElementById('authForm').style.display = (!inAcc && authConfigured()) ? 'block' : 'none';
     document.getElementById('accountInfo').style.display = inAcc ? 'block' : 'none';
     document.getElementById('authNotConfigured').style.display = (!inAcc && !authConfigured()) ? 'block' : 'none';
     if(inAcc) document.getElementById('accountEmail').textContent = auth.email||'—';
   }
-  function openLogin(){ updateAccountUI(); setAuthStatus(''); setAccountStatus(loggedIn()?'Deine Gedanken werden automatisch gesichert.':''); loginSheet.classList.add('open'); }
+  function openLogin(){ updateAccountUI(); setAuthStatus(''); setAccountStatus(loggedIn()?t('account_autosaved'):''); loginSheet.classList.add('open'); }
   function closeLogin(){ loginSheet.classList.remove('open'); }
 
   async function afterLogin(){
     const row=await pullBrain();
     if(row && row.data && (row.data.nodes||[]).length){ applyPayload(row.data); }
     else { await pushBrain(); }   // Konto erstmalig mit dem aktuellen Stand füllen
-    setAccountStatus('Angemeldet ✓ – Gedanken werden automatisch gesichert.');
+    setAccountStatus(t('account_logged_in_ok'));
   }
   async function doSignIn(){
     if(!authConfigured()) return;
     const email=document.getElementById('authEmail').value.trim();
     const pass=document.getElementById('authPass').value;
-    if(!email || !pass){ setAuthStatus('Bitte E-Mail und Passwort eingeben.'); return; }
-    setAuthStatus('Anmelden …');
+    if(!email || !pass){ setAuthStatus(t('auth_need_both')); return; }
+    setAuthStatus(t('auth_signing_in'));
     try{
       const res=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{
         method:'POST', headers:{'apikey':SUPABASE_ANON,'Content-Type':'application/json'},
         body:JSON.stringify({email,password:pass})
       });
       const d=await res.json().catch(()=>({}));
-      if(!res.ok || !d.access_token){ setAuthStatus(authError(d)||'Anmeldung fehlgeschlagen.'); return; }
+      if(!res.ok || !d.access_token){ setAuthStatus(authError(d)||t('auth_failed')); return; }
       setSession(d); document.getElementById('authPass').value=''; setAuthStatus(''); updateAccountUI();
       closeLogin(); await afterLogin();
-    }catch(e){ setAuthStatus('Netzwerkfehler – bist du online?'); }
+    }catch(e){ setAuthStatus(t('auth_network')); }
   }
   async function doSignUp(){
     if(!authConfigured()) return;
     const email=document.getElementById('authEmail').value.trim();
     const pass=document.getElementById('authPass').value;
-    if(!email || pass.length<6){ setAuthStatus('E-Mail und Passwort (mind. 6 Zeichen) eingeben.'); return; }
-    setAuthStatus('Konto wird erstellt …');
+    if(!email || pass.length<6){ setAuthStatus(t('auth_need_valid')); return; }
+    setAuthStatus(t('auth_creating'));
     try{
       const res=await fetch(SUPABASE_URL+'/auth/v1/signup',{
         method:'POST', headers:{'apikey':SUPABASE_ANON,'Content-Type':'application/json'},
         body:JSON.stringify({email,password:pass})
       });
       const d=await res.json().catch(()=>({}));
-      if(!res.ok){ setAuthStatus(authError(d)||'Registrierung fehlgeschlagen.'); return; }
+      if(!res.ok){ setAuthStatus(authError(d)||t('auth_register_failed')); return; }
       if(d.access_token){ setSession(d); document.getElementById('authPass').value=''; setAuthStatus(''); updateAccountUI(); closeLogin(); await afterLogin(); }
-      else { setAuthStatus('Fast geschafft! Bitte bestätige die E-Mail in deinem Postfach und melde dich danach an.'); }
-    }catch(e){ setAuthStatus('Netzwerkfehler – bist du online?'); }
+      else { setAuthStatus(t('auth_confirm_email')); }
+    }catch(e){ setAuthStatus(t('auth_network')); }
   }
   async function doSignOut(){
     try{ await fetch(SUPABASE_URL+'/auth/v1/logout',{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+auth.token}}); }catch(e){}
-    clearAuth(); updateAccountUI(); setAccountStatus('Abgemeldet.');
+    clearAuth(); updateAccountUI(); setAccountStatus(t('auth_logged_out'));
   }
 
   accountBtn.onclick=openLogin;
@@ -1501,6 +1642,16 @@ create policy "zugriff per schluessel"
   document.getElementById('accountCloseBtn').onclick=closeLogin;
   document.getElementById('authLogoutBtn').onclick=doSignOut;
   document.getElementById('authPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doSignIn(); });
+
+  // ---- Sprache & Support im Menü ----
+  const languageSheet=document.getElementById('languageSheet');
+  function markLangActive(){ document.querySelectorAll('.lang-opt').forEach(b=>b.classList.toggle('active', b.dataset.lang===lang)); }
+  document.getElementById('languageBtn').onclick=()=>{ markLangActive(); languageSheet.classList.add('open'); };
+  document.getElementById('languageCloseBtn').onclick=()=>languageSheet.classList.remove('open');
+  document.querySelectorAll('.lang-opt').forEach(b=>{ b.onclick=()=>{ setLang(b.dataset.lang); markLangActive(); languageSheet.classList.remove('open'); }; });
+  document.getElementById('supportBtn').onclick=()=>{
+    window.location.href='mailto:cris.cr400@gmail.com?subject='+encodeURIComponent(t('support_subject'))+'&body='+encodeURIComponent(t('support_body'));
+  };
 
   async function initAuth(){
     loadAuth();
@@ -1532,6 +1683,7 @@ create policy "zugriff per schluessel"
 
   // ---- Start ----
   window.addEventListener('resize', resize);
+  applyStaticI18n();   // statische Texte in der gewählten Sprache setzen
   load(); loadSync(); resize(); makeStars(); updateCount(); renderCats(); updateAddColor();
   if(nodes.length){ document.getElementById('hint').classList.add('hide'); recenter(); }
   loop();
@@ -1545,9 +1697,9 @@ create policy "zugriff per schluessel"
   function setStatus(){
     if(!statusDot) return;
     let cls, title;
-    if(!navigator.onLine){ cls='offline'; title='Offline – läuft weiter, alles wird lokal gespeichert'; }
-    else if(updateReady){ cls='update'; title='Neue Version – wird automatisch neu geladen …'; }
-    else { cls='online'; title='Live – aktuell'; }
+    if(!navigator.onLine){ cls='offline'; title=t('status_offline'); }
+    else if(updateReady){ cls='update'; title=t('status_update'); }
+    else { cls='online'; title=t('status_live'); }
     statusDot.className='dot '+cls;
     statusDot.title=title;
   }
