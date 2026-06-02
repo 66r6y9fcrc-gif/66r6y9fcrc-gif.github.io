@@ -253,7 +253,6 @@
     <button class="iconbtn" id="recenter" title="Zentrieren">⊙</button>
     <button class="iconbtn" id="exportBtn" title="Sichern (Backup herunterladen)">⬇</button>
     <button class="iconbtn" id="importBtn" title="Backup laden">⬆</button>
-    <button class="iconbtn" id="aiBtn" title="Mini-KI: Kategorie automatisch vorschlagen">✨</button>
     <button class="iconbtn" id="relinkBtn" title="Verbindungen neu nach Thema ordnen">🔗</button>
     <button class="iconbtn" id="linkBtn" title="Brücke zwischen zwei Themen ziehen">🪢</button>
     <button class="iconbtn" id="syncBtn" title="Cloud-Sync">☁</button>
@@ -814,17 +813,9 @@ create policy "zugriff per schluessel"
   input.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
 
   // ====== Mini-KI: Kategorie-Vorschlag (komplett offline, im Browser) ======
-  let aiEnabled = true;
-  try{ aiEnabled = localStorage.getItem('digital-brain-ai') !== '0'; }catch(e){}
-  const aiBtn=document.getElementById('aiBtn');
-  function refreshAiBtn(){ aiBtn.classList.toggle('on', aiEnabled); }
-  aiBtn.onclick=()=>{
-    aiEnabled=!aiEnabled;
-    try{ localStorage.setItem('digital-brain-ai', aiEnabled?'1':'0'); }catch(e){}
-    refreshAiBtn();
-    if(!aiEnabled) hideSuggest();
-  };
-  refreshAiBtn();
+  // Mini-KI ist dauerhaft aktiv – die Vorschläge erscheinen direkt über dem
+  // Eingabefeld unten (im Chat). Es gibt keinen separaten Ein/Aus-Knopf mehr.
+  const aiEnabled = true;
 
   // Gelerntes Gedächtnis: Stichwort -> { kategorieId: Gewicht }.
   // Wächst jedes Mal, wenn du einen Vorschlag bestätigst/korrigierst.
