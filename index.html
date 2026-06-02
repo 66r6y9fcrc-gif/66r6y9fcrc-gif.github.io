@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Digitales Gehirn · v0.3</title>
+  <title>Digitales Gehirn · v0.4</title>
   <meta name="description" content="Dein digitales Gehirn: Jede Idee wird ein leuchtender Knotenpunkt im Sternennetz. Alle Gedanken sind miteinander verbunden.">
   <meta name="theme-color" content="#02030a">
   <link rel="manifest" href="manifest.json">
@@ -127,10 +127,19 @@
     .chip.active-add{box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);}
     .chip.add{color:var(--muted);}
 
-    /* Kategorie-Auswahl in der Detailkarte */
+    /* Detailkarte: Titel, Kategorie, Notiz */
+    .card{max-height:calc(100vh - 120px);overflow-y:auto;}
+    .card .titleInput{width:100%;background:transparent;border:0;outline:0;color:#fff;
+      font-size:18px;font-weight:600;line-height:1.35;margin:0 0 6px;font-family:inherit;
+      border-bottom:1px solid transparent;transition:border-color .15s;}
+    .card .titleInput:focus{border-bottom-color:rgba(120,170,255,.45);}
     .card .label{color:var(--muted);font-size:12px;margin:0 0 6px;}
     .card .cats-edit{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;}
     .card .cats-edit .chip{padding:5px 10px;font-size:12px;}
+    .card .note{width:100%;min-height:96px;resize:vertical;background:rgba(255,255,255,.04);
+      border:1px solid var(--panel-line);border-radius:11px;color:var(--text);
+      font-family:inherit;font-size:14px;line-height:1.5;padding:10px 12px;margin:0 0 16px;outline:none;}
+    .card .note:focus{border-color:rgba(120,170,255,.5);}
 
     /* ---- Suchleiste ---- */
     .search{
@@ -152,7 +161,7 @@
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.3</small></div>
+    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.4</small></div>
     <div class="count" id="count">0 Gedanken</div>
   </div>
 
@@ -185,10 +194,12 @@
   </div>
 
   <div class="card" id="card">
-    <h2 id="cardTitle"></h2>
+    <input id="cardTitle" class="titleInput" placeholder="Gedanke" aria-label="Titel des Gedankens">
     <div class="meta" id="cardMeta"></div>
-    <p class="label">Kategorie ändern:</p>
+    <p class="label">Kategorie:</p>
     <div class="cats-edit" id="cardCats"></div>
+    <p class="label">Notiz:</p>
+    <textarea id="cardNote" class="note" placeholder="Details, Verknüpfungen, Links … (wird automatisch gespeichert)"></textarea>
     <div class="row">
       <button class="btn danger" id="delBtn">Löschen</button>
       <button class="btn" id="closeBtn">Schließen</button>
@@ -235,7 +246,7 @@
   function save(){
     try{
       localStorage.setItem(STORE_KEY, JSON.stringify({
-        nodes: nodes.map(n => ({id:n.id, text:n.text, x:n.x, y:n.y, t:n.t, cat:n.cat})),
+        nodes: nodes.map(n => ({id:n.id, text:n.text, note:n.note||'', x:n.x, y:n.y, t:n.t, cat:n.cat})),
         edges, categories, activeCat
       }));
     }catch(e){}
@@ -412,7 +423,7 @@
     for(const n of nodes){
       const pulse = 0.6 + 0.4*Math.sin(time*2 + (n.id%100));
       const sel = n.id===selectedId;
-      const isMatch = q && n.text.toLowerCase().includes(q);
+      const isMatch = q && (n.text.toLowerCase().includes(q) || (n.note||'').toLowerCase().includes(q));
       // Abblenden, wenn ein Kategorie-Filter ODER eine Suche aktiv ist und der Knoten nicht passt
       const faded = (focusCat && n.cat!==focusCat) || (q && !isMatch);
       const col = nodeColor(n);
@@ -577,17 +588,34 @@
     const d=new Date(n.t||Date.now());
     document.getElementById('cardMeta').textContent='Kategorie: '+catById(n.cat).name+
       ' · erfasst am '+d.toLocaleDateString('de-DE')+
-      ' · '+(edges.filter(e=>e.a===n.id||e.b===n.id).length)+' Verbindungen';
+      ' · '+(edges.filter(e=>e.a===n.id||e.b===n.id).length)+' Verbindungen'+
+      ((n.note&&n.note.trim())?' · 📝 Notiz':'');
   }
+  const cardTitle=document.getElementById('cardTitle');
+  const cardNote=document.getElementById('cardNote');
   function openCard(n){
     selectedId=n.id;
-    document.getElementById('cardTitle').textContent=n.text;
+    cardTitle.value=n.text;
+    cardNote.value=n.note||'';
     openCardMeta(n);
     renderCardCats();
     card.classList.add('open');
   }
   function closeCard(){ selectedId=null; card.classList.remove('open'); }
-  document.getElementById('closeBtn').onclick=closeCard;
+  // Titel bearbeiten
+  cardTitle.addEventListener('input', ()=>{
+    const n=findNode(selectedId);
+    if(n){ n.text = cardTitle.value; }
+  });
+  cardTitle.addEventListener('change', save);
+  cardTitle.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); cardTitle.blur(); } });
+  // Notiz bearbeiten (automatisch gespeichert)
+  cardNote.addEventListener('input', ()=>{
+    const n=findNode(selectedId);
+    if(n){ n.note = cardNote.value; openCardMeta(n); }
+  });
+  cardNote.addEventListener('change', save);
+  document.getElementById('closeBtn').onclick=()=>{ save(); closeCard(); };
   document.getElementById('delBtn').onclick=()=>{ if(selectedId){ deleteNode(selectedId); closeCard(); } };
 
   // ---- Eingabe ----
@@ -651,7 +679,7 @@
   function searchMatches(){
     if(!searchQuery) return [];
     const qq=searchQuery.toLowerCase();
-    return nodes.filter(n=>n.text.toLowerCase().includes(qq));
+    return nodes.filter(n=>n.text.toLowerCase().includes(qq) || (n.note||'').toLowerCase().includes(qq));
   }
   function centerOn(n){
     const w=canvas.clientWidth, h=canvas.clientHeight;
@@ -688,7 +716,7 @@
   function exportData(){
     const payload={
       version:1,
-      nodes: nodes.map(n=>({id:n.id, text:n.text, x:n.x, y:n.y, t:n.t, cat:n.cat})),
+      nodes: nodes.map(n=>({id:n.id, text:n.text, note:n.note||'', x:n.x, y:n.y, t:n.t, cat:n.cat})),
       edges, categories, activeCat
     };
     const blob=new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
