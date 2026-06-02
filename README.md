@@ -6,7 +6,15 @@ größer wird das Netz.
 
 Live: <https://66r6y9fcrc-gif.github.io/>
 
-## Funktionen (v0.5)
+## Funktionen (v0.6)
+
+- Verbindungen entstehen **nur innerhalb eines Themas** – jedes Thema bildet eine eigene Insel
+- Themen-Inseln stoßen sich **deutlich voneinander ab** und halten intern zusammen
+- 🔗 **Verbindungen neu nach Thema ordnen** (räumt bestehende Gehirne auf)
+- 🪢 **Brücken-Modus**: manuell zwei beliebige Sterne (auch über Themen hinweg) verbinden –
+  Brücken werden als gestrichelte Linie dargestellt und bleiben beim Neuordnen erhalten
+
+## Frühere Funktionen (v0.5)
 
 - Ideen unten eintippen → erscheinen als leuchtende Sterne, automatisch mit den nächsten
   Knoten verbunden

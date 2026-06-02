@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Digitales Gehirn · v0.5</title>
+  <title>Digitales Gehirn · v0.6</title>
   <meta name="description" content="Dein digitales Gehirn: Jede Idee wird ein leuchtender Knotenpunkt im Sternennetz. Alle Gedanken sind miteinander verbunden.">
   <meta name="theme-color" content="#02030a">
   <link rel="manifest" href="manifest.json">
@@ -171,13 +171,22 @@
     .help pre{white-space:pre-wrap;background:rgba(0,0,0,.4);padding:10px;border-radius:8px;
       overflow:auto;color:#cfe0ff;font-size:11.5px;line-height:1.45;}
     .syncBtn-on{box-shadow:inset 0 0 0 1px rgba(61,220,151,.6) !important;color:#9bffd0 !important;}
+    .iconbtn.on{box-shadow:inset 0 0 0 1px rgba(61,220,151,.7);color:#9bffd0;background:rgba(61,220,151,.12);}
+
+    /* ---- Brücken-Modus Hinweis ---- */
+    .linkhint{position:fixed;top:64px;left:50%;transform:translateX(-50%);
+      background:rgba(20,30,50,.9);border:1px solid rgba(61,220,151,.5);
+      color:#d6ffe9;font-size:13px;padding:8px 14px;border-radius:999px;
+      backdrop-filter:blur(8px);pointer-events:none;opacity:0;transition:opacity .2s;
+      z-index:40;max-width:90vw;text-align:center;}
+    .linkhint.show{opacity:1;}
   </style>
 </head>
 <body>
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.5</small></div>
+    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.6</small></div>
     <div class="count" id="count">0 Gedanken</div>
   </div>
 
@@ -194,6 +203,8 @@
     Jeder Gedanke wird ein Stern – und verbindet sich mit dem Rest deines Gehirns.</p>
   </div>
 
+  <div class="linkhint" id="linkHint"></div>
+
   <div class="tools">
     <button class="iconbtn" id="searchBtn" title="Suchen">🔍</button>
     <button class="iconbtn" id="zoomIn"  title="Heranzoomen">+</button>
@@ -202,6 +213,7 @@
     <button class="iconbtn" id="exportBtn" title="Sichern (Backup herunterladen)">⬇</button>
     <button class="iconbtn" id="importBtn" title="Backup laden">⬆</button>
     <button class="iconbtn" id="relinkBtn" title="Verbindungen neu nach Thema ordnen">🔗</button>
+    <button class="iconbtn" id="linkBtn" title="Brücke zwischen zwei Themen ziehen">🪢</button>
     <button class="iconbtn" id="syncBtn" title="Cloud-Sync">☁</button>
   </div>
   <input type="file" id="importFile" accept="application/json,.json" style="display:none">
@@ -395,15 +407,22 @@ create policy "zugriff per schluessel"
   // ---- Physik (kraftbasiertes Layout) ----
   function simulate(){
     const REP = 2600;     // Abstoßung zwischen Knoten
+    const REP_CROSS = 3.4;// stärkere Abstoßung zwischen verschiedenen Themen
     const SPRING = 0.012; // Federkraft entlang der Fäden
     const REST = 130;     // Ruhelänge eines Fadens
-    const CENTER = 0.0009;// sanfter Zug zur Mitte
+    const CENTER = 0.0007;// sanfter Zug zur Mitte (hält alles auf dem Schirm)
+    const CLUSTER = 0.006;// Zug zum eigenen Themen-Schwerpunkt (Cluster-Bildung)
     const DAMP = 0.86;
 
     // Mittelpunkt aller Knoten = Schwerpunkt
     let gx=0, gy=0;
     for(const n of nodes){ gx+=n.x; gy+=n.y; }
     gx/=(nodes.length||1); gy/=(nodes.length||1);
+
+    // Schwerpunkt je Thema (Kategorie)
+    const cc={};
+    for(const n of nodes){ const c=cc[n.cat]||(cc[n.cat]={x:0,y:0,n:0}); c.x+=n.x; c.y+=n.y; c.n++; }
+    for(const k in cc){ cc[k].x/=cc[k].n; cc[k].y/=cc[k].n; }
 
     for(let i=0;i<nodes.length;i++){
       const a = nodes[i];
@@ -412,8 +431,11 @@ create policy "zugriff per schluessel"
         const b = nodes[j];
         let dx=a.x-b.x, dy=a.y-b.y;
         let d2=dx*dx+dy*dy || 0.01;
-        if(d2 < 90000){ // nur nahe Knoten abstoßen (Performance)
-          const f = REP/d2;
+        const cross = a.cat!==b.cat;
+        const range = cross ? 250000 : 90000; // verschiedene Themen wirken über größere Distanz
+        if(d2 < range){
+          let f = REP/d2;
+          if(cross) f *= REP_CROSS;
           const d=Math.sqrt(d2);
           const fx=dx/d*f, fy=dy/d*f;
           a.vx+=fx; a.vy+=fy; b.vx-=fx; b.vy-=fy;
@@ -422,6 +444,9 @@ create policy "zugriff per schluessel"
       // Zug zur Mitte
       a.vx += (gx - a.x)*CENTER;
       a.vy += (gy - a.y)*CENTER;
+      // Zug zum eigenen Themen-Schwerpunkt → kompakte Themen-Inseln
+      const c = cc[a.cat];
+      if(c){ a.vx += (c.x - a.x)*CLUSTER; a.vy += (c.y - a.y)*CLUSTER; }
     }
     // Federn
     for(const e of edges){
@@ -476,16 +501,19 @@ create policy "zugriff per schluessel"
     for(const e of edges){
       const a=nodeById(e.a), b=nodeById(e.b);
       if(!a||!b) continue;
-      const dim = (focusCat && a.cat!==focusCat && b.cat!==focusCat) ? .05 : .30;
+      const dim = (focusCat && a.cat!==focusCat && b.cat!==focusCat) ? .05 : (e.bridge ? .55 : .30);
       const grad = ctx.createLinearGradient(a.x,a.y,b.x,b.y);
       grad.addColorStop(0, hexToRgba(nodeColor(a), dim));
       grad.addColorStop(1, hexToRgba(nodeColor(b), dim));
       ctx.strokeStyle = grad;
+      ctx.lineWidth = (e.bridge ? 1.6 : 1)/view.scale;
+      ctx.setLineDash(e.bridge ? [6/view.scale, 5/view.scale] : []);
       ctx.beginPath();
       ctx.moveTo(a.x,a.y);
       ctx.lineTo(b.x,b.y);
       ctx.stroke();
     }
+    ctx.setLineDash([]);
 
     // Knoten (leuchtende Sterne in Kategoriefarbe)
     const q = searchQuery.toLowerCase();
@@ -517,6 +545,15 @@ create policy "zugriff per schluessel"
       ctx.beginPath();
       ctx.arc(n.x,n.y,baseR,0,Math.PI*2);
       ctx.fill();
+      // Hervorhebung des ersten gewählten Sterns im Brücken-Modus
+      if(n.id===linkFrom){
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 2.5/view.scale;
+        ctx.strokeStyle = hexToRgba('#3ddc97', 0.6+0.4*Math.sin(time*5));
+        ctx.beginPath();
+        ctx.arc(n.x,n.y, baseR + (7+2*Math.sin(time*5))/view.scale, 0, Math.PI*2);
+        ctx.stroke();
+      }
       // pulsierender Such-Treffer-Ring
       if(isMatch){
         ctx.globalAlpha = 1;
@@ -556,6 +593,7 @@ create policy "zugriff per schluessel"
   let dragNode = null, panning = false, moved = false;
   let last = {x:0,y:0};
   let selectedId = null;
+  let linkMode = false, linkFrom = null;   // manueller Brücken-Modus
 
   function screenToWorld(px,py){
     return { x:(px - view.x)/view.scale, y:(py - view.y)/view.scale };
@@ -591,10 +629,32 @@ create policy "zugriff per schluessel"
     last={x:px,y:py};
   }
   function pointerUp(px,py){
-    if(dragNode && !moved){ openCard(dragNode); }
-    else if(!dragNode && !moved){ closeCard(); }
-    if(dragNode) save();
+    if(dragNode && !moved){
+      if(linkMode) handleLinkTap(dragNode);
+      else openCard(dragNode);
+    }
+    else if(!dragNode && !moved){
+      if(linkMode){ linkFrom=null; setLinkHint('Brücken-Modus: ersten Stern antippen.'); }
+      else closeCard();
+    }
+    if(dragNode && moved) save();
     dragNode=null; panning=false;
+  }
+
+  function handleLinkTap(n){
+    if(linkFrom===null){
+      linkFrom=n.id;
+      setLinkHint('Erster Stern gewählt – jetzt den zweiten antippen.');
+    } else if(linkFrom===n.id){
+      linkFrom=null;
+      setLinkHint('Auswahl aufgehoben. Ersten Stern antippen.');
+    } else {
+      const a=linkFrom, b=n.id;
+      if(!edges.some(e=>(e.a===a&&e.b===b)||(e.a===b&&e.b===a)))
+        edges.push({a, b, bridge:true});
+      linkFrom=null; save();
+      setLinkHint('Brücke erstellt ✓ – nächste? Stern antippen oder 🪢 zum Beenden.');
+    }
   }
 
   // Maus
@@ -815,8 +875,25 @@ create policy "zugriff per schluessel"
     };
     reader.readAsText(file);
   }
-  // Alle Verbindungen verwerfen und neu pro Thema (Kategorie) aufbauen
+  // ---- Brücken-Modus (manuelle Verbindung zwischen zwei Sternen) ----
+  const linkBtn=document.getElementById('linkBtn');
+  const linkHintEl=document.getElementById('linkHint');
+  function setLinkHint(t){
+    linkHintEl.textContent=t||'';
+    linkHintEl.classList.toggle('show', !!t);
+  }
+  function setLinkMode(on){
+    linkMode=on; linkFrom=null;
+    linkBtn.classList.toggle('on', on);
+    if(on){ closeCard(); setLinkHint('Brücken-Modus: zwei Sterne nacheinander antippen.'); }
+    else setLinkHint('');
+  }
+  linkBtn.onclick=()=>setLinkMode(!linkMode);
+
+  // Alle (automatischen) Verbindungen verwerfen und neu pro Thema aufbauen.
+  // Manuell gezogene Brücken bleiben erhalten.
   function rebuildEdges(){
+    const bridges=edges.filter(e=>e.bridge);
     edges=[];
     const byCat={};
     nodes.forEach(n=>{ (byCat[n.cat]=byCat[n.cat]||[]).push(n); });
@@ -831,6 +908,10 @@ create policy "zugriff per schluessel"
         }
       });
     });
+    // manuelle Brücken wieder anhängen (sofern beide Enden noch existieren)
+    for(const e of bridges){
+      if(nodes.some(n=>n.id===e.a) && nodes.some(n=>n.id===e.b)) edges.push(e);
+    }
     save();
   }
   document.getElementById('relinkBtn').onclick=()=>{
