@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Digitales Gehirn · v0.6</title>
+  <title>Digitales Gehirn · v0.7</title>
   <meta name="description" content="Dein digitales Gehirn: Jede Idee wird ein leuchtender Knotenpunkt im Sternennetz. Alle Gedanken sind miteinander verbunden.">
   <meta name="theme-color" content="#02030a">
   <link rel="manifest" href="manifest.json">
@@ -180,13 +180,29 @@
       backdrop-filter:blur(8px);pointer-events:none;opacity:0;transition:opacity .2s;
       z-index:40;max-width:90vw;text-align:center;}
     .linkhint.show{opacity:1;}
+
+    /* ---- Diktieren (Mikrofon) ---- */
+    .iconbtn.listening, .micmini.listening{
+      background:rgba(255,80,70,.9);color:#fff;border-color:transparent;
+      animation:micpulse 1.1s ease-in-out infinite;
+    }
+    @keyframes micpulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(255,80,70,.55);}
+      50%{box-shadow:0 0 0 7px rgba(255,80,70,0);}
+    }
+    .labelrow{display:flex;align-items:center;gap:8px;}
+    .micmini{border:1px solid var(--panel-line);background:rgba(255,255,255,.04);
+      color:var(--text);width:26px;height:26px;border-radius:8px;cursor:pointer;
+      font-size:13px;display:grid;place-items:center;line-height:1;}
+    .micmini:hover{background:rgba(255,255,255,.1);}
+    .micmini:active{transform:scale(.92);}
   </style>
 </head>
 <body>
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.6</small></div>
+    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v0.7</small></div>
     <div class="count" id="count">0 Gedanken</div>
   </div>
 
@@ -220,6 +236,7 @@
 
   <div class="dock">
     <input id="ideaInput" type="text" placeholder="Neue Idee, neuer Gedanke …" autocomplete="off" enterkeyhint="done">
+    <button class="iconbtn" id="micBtn" title="Diktieren (sprechen statt tippen)">🎤</button>
     <button class="iconbtn add" id="addBtn" title="Hinzufügen (Enter)">+</button>
   </div>
 
@@ -228,7 +245,7 @@
     <div class="meta" id="cardMeta"></div>
     <p class="label">Kategorie:</p>
     <div class="cats-edit" id="cardCats"></div>
-    <p class="label">Notiz:</p>
+    <p class="label labelrow">Notiz: <button class="micmini" id="noteMic" title="Notiz diktieren">🎤</button></p>
     <textarea id="cardNote" class="note" placeholder="Details, Verknüpfungen, Links … (wird automatisch gespeichert)"></textarea>
     <div class="row">
       <button class="btn danger" id="delBtn">Löschen</button>
@@ -730,7 +747,7 @@ create policy "zugriff per schluessel"
     renderCardCats();
     card.classList.add('open');
   }
-  function closeCard(){ selectedId=null; card.classList.remove('open'); }
+  function closeCard(){ if(rec) rec.stop(); selectedId=null; card.classList.remove('open'); }
   // Titel bearbeiten
   cardTitle.addEventListener('input', ()=>{
     const n=findNode(selectedId);
@@ -753,6 +770,47 @@ create policy "zugriff per schluessel"
   function submit(){ addIdea(input.value); input.value=''; input.focus(); }
   addBtn.onclick=submit;
   input.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
+
+  // ---- Diktieren (Web Speech API) ----
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec=null;            // laufende Erkennung
+  function toggleDictation(targetEl, btn, autoSubmit){
+    if(rec){ rec.stop(); return; }          // läuft schon → beenden
+    if(!SpeechRec){
+      window.alert('Dein Browser unterstützt leider keine Spracherkennung. Am besten klappt es in Google Chrome (Android oder Desktop).');
+      return;
+    }
+    rec=new SpeechRec();
+    rec.lang='de-DE';
+    rec.continuous=true;
+    rec.interimResults=true;
+    // an bestehenden Text anhängen (mit Leerzeichen)
+    const base = targetEl.value ? targetEl.value.replace(/\s+$/,'')+' ' : '';
+    btn.classList.add('listening');
+    rec.onresult=(e)=>{
+      let txt='';
+      for(let i=0;i<e.results.length;i++) txt += e.results[i][0].transcript;
+      targetEl.value = base + txt;
+      targetEl.dispatchEvent(new Event('input')); // löst u.a. die Notiz-Autospeicherung aus
+    };
+    rec.onerror=(e)=>{
+      if(e.error==='not-allowed' || e.error==='service-not-allowed')
+        window.alert('Der Mikrofon-Zugriff wurde blockiert. Bitte erlaube ihn in den Browser-Einstellungen und versuche es erneut.');
+    };
+    rec.onend=()=>{
+      btn.classList.remove('listening');
+      rec=null;
+      const val=targetEl.value.trim();
+      if(autoSubmit && val){ submit(); }
+    };
+    try{ rec.start(); }
+    catch(err){ btn.classList.remove('listening'); rec=null; }
+  }
+  const micBtn=document.getElementById('micBtn');
+  const noteMic=document.getElementById('noteMic');
+  if(!SpeechRec){ micBtn.style.opacity='.45'; noteMic.style.opacity='.45'; }
+  micBtn.onclick=()=>toggleDictation(input, micBtn, false);
+  noteMic.onclick=()=>toggleDictation(cardNote, noteMic, false);
 
   // ---- Kategorie-Leiste ----
   const catsEl=document.getElementById('cats');

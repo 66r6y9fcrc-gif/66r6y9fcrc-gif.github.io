@@ -6,6 +6,13 @@ größer wird das Netz.
 
 Live: <https://66r6y9fcrc-gif.github.io/>
 
+## Funktionen (v0.7)
+
+- 🎤 **Diktieren statt Tippen**: Mikrofon in der Eingabeleiste und im Notizfeld.
+  Antippen, sprechen (Deutsch) – der Text erscheint automatisch. Funktioniert am besten
+  in Google Chrome (Android/Desktop); nutzt die browser­eigene Spracherkennung, keine
+  fremden Server.
+
 ## Funktionen (v0.6)
 
 - Verbindungen entstehen **nur innerhalb eines Themas** – jedes Thema bildet eine eigene Insel
