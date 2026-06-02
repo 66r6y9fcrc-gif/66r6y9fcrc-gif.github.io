@@ -47,7 +47,13 @@
     }
     .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.3px;}
     .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);
-      box-shadow:0 0 14px 3px rgba(79,140,255,.8);}
+      box-shadow:0 0 14px 3px rgba(79,140,255,.8);pointer-events:auto;cursor:default;
+      transition:background .25s, box-shadow .25s;}
+    .brand .dot.online{background:#3ddc97;box-shadow:0 0 14px 3px rgba(61,220,151,.75);}
+    .brand .dot.offline{background:#ff5b50;box-shadow:0 0 14px 3px rgba(255,91,80,.75);}
+    .brand .dot.update{background:#ffb340;box-shadow:0 0 14px 3px rgba(255,179,64,.85);
+      cursor:pointer;animation:dotpulse 1.4s ease-in-out infinite;}
+    @keyframes dotpulse{0%,100%{transform:scale(1);}50%{transform:scale(1.3);}}
     .brand small{color:var(--muted);font-weight:500;}
     .count{color:var(--muted);font-size:13px;pointer-events:none;}
 
@@ -219,7 +225,7 @@
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>Digitales Gehirn <small>v1.1</small></div>
+    <div class="brand"><span class="dot online" id="statusDot" title="Live – aktuell"></span>Digitales Gehirn <small>v1.1</small></div>
     <div class="count" id="count">0 Gedanken</div>
   </div>
 
@@ -1301,9 +1307,41 @@ create policy "zugriff per schluessel"
   // Beim Start automatisch neueren Cloud-Stand holen
   if(syncReady() && sync.auto){ pullCloud(false); }
 
-  // App offline-/installierbar machen
+  // ---- Status-Punkt: grün = live, orange = neu laden, rot = offline ----
+  const statusDot=document.getElementById('statusDot');
+  let updateReady=false;
+  function setStatus(){
+    if(!statusDot) return;
+    let cls, title;
+    if(!navigator.onLine){ cls='offline'; title='Offline – läuft weiter, alles wird lokal gespeichert'; }
+    else if(updateReady){ cls='update'; title='Neue Version verfügbar – tippen zum Neuladen'; }
+    else { cls='online'; title='Live – aktuell'; }
+    statusDot.className='dot '+cls;
+    statusDot.title=title;
+  }
+  window.addEventListener('online', setStatus);
+  window.addEventListener('offline', setStatus);
+  if(statusDot){ statusDot.addEventListener('click', ()=>{ if(updateReady) location.reload(); }); }
+  setStatus();
+
+  // App offline-/installierbar machen + neue Versionen erkennen
   if('serviceWorker' in navigator){
-    window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+    const hadController=!!navigator.serviceWorker.controller;
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').then(reg=>{
+        reg.addEventListener('updatefound', ()=>{
+          const nw=reg.installing;
+          if(!nw) return;
+          nw.addEventListener('statechange', ()=>{
+            if(nw.state==='installed' && navigator.serviceWorker.controller){ updateReady=true; setStatus(); }
+          });
+        });
+        setInterval(()=>{ reg.update().catch(()=>{}); }, 60000);   // regelmäßig nach Updates schauen
+      }).catch(()=>{});
+    });
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(hadController){ updateReady=true; setStatus(); }
+    });
   }
 })();
 </script>
