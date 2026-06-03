@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Digitales Gehirn · v1.1</title>
+  <title>Digitales Gehirn · v1.2</title>
   <meta name="description" content="Dein digitales Gehirn: Jede Idee wird ein leuchtender Knotenpunkt im Sternennetz. Alle Gedanken sind miteinander verbunden.">
   <meta name="theme-color" content="#02030a">
   <link rel="manifest" href="manifest.json">
@@ -139,9 +139,11 @@
 
     /* ---- Werkzeuge rechts ---- */
     /* Kette/Knoten: oben links, unter der Gedanken-Anzahl */
-    .lefttools{position:fixed;left:14px;top:124px;z-index:6;
+    .lefttools{position:fixed;left:14px;top:124px;z-index:9;
       display:flex;flex-direction:column;gap:8px;}
     .lefttools .iconbtn{width:38px;height:38px;font-size:18px;background:var(--panel);}
+    /* Werkzeug-Dropdown (links unter dem 🧰-Knopf) */
+    .toolsmenu{top:170px;left:14px;right:auto;min-width:210px;transform-origin:top left;}
     /* Zoom-/Zentrieren-Stapel: ganz rechts, direkt über dem Eingabefeld */
     .zoomtools{position:fixed;right:14px;z-index:6;
       bottom:calc(max(18px, env(safe-area-inset-bottom)) + 72px);
@@ -264,7 +266,7 @@
   <canvas id="sky"></canvas>
 
   <div class="topbar">
-    <div class="brand"><span class="dot online" id="statusDot" title="Live – aktuell"></span><span data-i18n="brand_name">Digitales Gehirn</span> <small>v1.1</small></div>
+    <div class="brand"><span class="dot online" id="statusDot" title="Live – aktuell"></span><span data-i18n="brand_name">Digitales Gehirn</span> <small>v1.2</small></div>
     <button class="menubtn" id="menuBtn" data-i18n-title="title_menu" title="Menü" aria-label="Menü">☰</button>
   </div>
 
@@ -290,8 +292,11 @@
   <div class="linkhint" id="linkHint"></div>
 
   <div class="lefttools">
-    <button class="iconbtn" id="relinkBtn" data-i18n-title="title_relink" title="Verbindungen neu nach Thema ordnen">🔗</button>
-    <button class="iconbtn" id="linkBtn" data-i18n-title="title_bridge" title="Brücke zwischen zwei Themen ziehen">🪢</button>
+    <button class="iconbtn" id="toolsBtn" data-i18n-title="title_tools" title="Werkzeuge" aria-haspopup="true">🧰</button>
+    <div class="menu toolsmenu" id="toolsMenu">
+      <button class="menu-item" id="relinkItem"><span class="mi-ic">🔗</span> <span data-i18n="tool_relink">Verbindungen neu ordnen</span></button>
+      <button class="menu-item" id="linkItem"><span class="mi-ic">🪢</span> <span id="linkItemLabel" data-i18n="tool_bridge">Brücke ziehen</span></button>
+    </div>
   </div>
   <input type="file" id="importFile" accept="application/json,.json" style="display:none">
 
@@ -441,7 +446,7 @@ create policy "zugriff per schluessel"
     count_one:'{n} Gedanke', count_many:'{n} Gedanken',
     hint_html:'<b>Tippe deine erste Idee ein.</b><br>Jeder Gedanke wird ein Stern – und verbindet sich mit dem Rest deines Gehirns.',
     ph_search:'Suchen oder neuen Gedanken eingeben …', title_next_match:'Zum nächsten Treffer', title_clear:'Leeren', title_mic:'Diktieren (sprechen statt tippen)', title_add:'Hinzufügen (Enter)', match_hits:'{n} Treffer',
-    title_recenter:'Zentrieren', title_zoomin:'Heranzoomen', title_zoomout:'Herauszoomen', title_relink:'Verbindungen neu nach Thema ordnen', title_bridge:'Brücke zwischen zwei Themen ziehen',
+    title_recenter:'Zentrieren', title_zoomin:'Heranzoomen', title_zoomout:'Herauszoomen', title_relink:'Verbindungen neu nach Thema ordnen', title_bridge:'Brücke zwischen zwei Themen ziehen', title_tools:'Werkzeuge', tool_relink:'Verbindungen neu ordnen', tool_bridge:'Brücke ziehen', tool_bridge_stop:'Brücken-Modus beenden',
     cat_all:'Alle', title_new_category:'Neue Kategorie anlegen', cat_chip_title:'Tippen: nur „{name}“ zeigen · neue Ideen werden „{name}“',
     cat_idee:'Idee', cat_frage:'Frage', cat_projekt:'Projekt', cat_aufgabe:'Aufgabe', cat_traum:'Traum',
     ph_thought:'Gedanke', aria_thought_title:'Titel des Gedankens', label_category:'Kategorie:', label_note:'Notiz:', title_note_mic:'Notiz diktieren', ph_note:'Details, Verknüpfungen, Links … (wird automatisch gespeichert)', btn_delete:'Löschen', btn_close:'Schließen',
@@ -463,7 +468,7 @@ create policy "zugriff per schluessel"
     count_one:'{n} thought', count_many:'{n} thoughts',
     hint_html:'<b>Type your first idea.</b><br>Every thought becomes a star – and connects with the rest of your brain.',
     ph_search:'Search or enter a new thought …', title_next_match:'Next match', title_clear:'Clear', title_mic:'Dictate (speak instead of type)', title_add:'Add (Enter)', match_hits:'{n} hits',
-    title_recenter:'Recenter', title_zoomin:'Zoom in', title_zoomout:'Zoom out', title_relink:'Reorganize connections by topic', title_bridge:'Draw a bridge between two topics',
+    title_recenter:'Recenter', title_zoomin:'Zoom in', title_zoomout:'Zoom out', title_relink:'Reorganize connections by topic', title_bridge:'Draw a bridge between two topics', title_tools:'Tools', tool_relink:'Reorder connections', tool_bridge:'Draw a bridge', tool_bridge_stop:'Exit bridge mode',
     cat_all:'All', title_new_category:'Create new category', cat_chip_title:'Tap: show only "{name}" · new ideas become "{name}"',
     cat_idee:'Idea', cat_frage:'Question', cat_projekt:'Project', cat_aufgabe:'Task', cat_traum:'Dream',
     ph_thought:'Thought', aria_thought_title:'Thought title', label_category:'Category:', label_note:'Note:', title_note_mic:'Dictate note', ph_note:'Details, links, references … (saved automatically)', btn_delete:'Delete', btn_close:'Close',
@@ -485,7 +490,7 @@ create policy "zugriff per schluessel"
     count_one:'{n} pensamiento', count_many:'{n} pensamientos',
     hint_html:'<b>Escribe tu primera idea.</b><br>Cada pensamiento se convierte en una estrella y se conecta con el resto de tu cerebro.',
     ph_search:'Buscar o escribir un nuevo pensamiento …', title_next_match:'Siguiente resultado', title_clear:'Borrar', title_mic:'Dictar (hablar en vez de escribir)', title_add:'Añadir (Enter)', match_hits:'{n} resultados',
-    title_recenter:'Centrar', title_zoomin:'Acercar', title_zoomout:'Alejar', title_relink:'Reorganizar conexiones por tema', title_bridge:'Trazar un puente entre dos temas',
+    title_recenter:'Centrar', title_zoomin:'Acercar', title_zoomout:'Alejar', title_relink:'Reorganizar conexiones por tema', title_bridge:'Trazar un puente entre dos temas', title_tools:'Herramientas', tool_relink:'Reordenar conexiones', tool_bridge:'Trazar un puente', tool_bridge_stop:'Salir del modo puente',
     cat_all:'Todos', title_new_category:'Crear nueva categoría', cat_chip_title:'Tocar: mostrar solo "{name}" · las nuevas ideas serán "{name}"',
     cat_idee:'Idea', cat_frage:'Pregunta', cat_projekt:'Proyecto', cat_aufgabe:'Tarea', cat_traum:'Sueño',
     ph_thought:'Pensamiento', aria_thought_title:'Título del pensamiento', label_category:'Categoría:', label_note:'Nota:', title_note_mic:'Dictar nota', ph_note:'Detalles, enlaces, referencias … (se guarda automáticamente)', btn_delete:'Eliminar', btn_close:'Cerrar',
@@ -507,7 +512,7 @@ create policy "zugriff per schluessel"
     count_one:'{n} pensée', count_many:'{n} pensées',
     hint_html:'<b>Saisis ta première idée.</b><br>Chaque pensée devient une étoile – et se connecte au reste de ton cerveau.',
     ph_search:'Rechercher ou saisir une nouvelle pensée …', title_next_match:'Résultat suivant', title_clear:'Effacer', title_mic:'Dicter (parler au lieu d’écrire)', title_add:'Ajouter (Entrée)', match_hits:'{n} résultats',
-    title_recenter:'Recentrer', title_zoomin:'Zoomer', title_zoomout:'Dézoomer', title_relink:'Réorganiser les connexions par thème', title_bridge:'Tracer un pont entre deux thèmes',
+    title_recenter:'Recentrer', title_zoomin:'Zoomer', title_zoomout:'Dézoomer', title_relink:'Réorganiser les connexions par thème', title_bridge:'Tracer un pont entre deux thèmes', title_tools:'Outils', tool_relink:'Réordonner les liens', tool_bridge:'Tracer un pont', tool_bridge_stop:'Quitter le mode pont',
     cat_all:'Tous', title_new_category:'Créer une nouvelle catégorie', cat_chip_title:'Toucher : afficher seulement « {name} » · les nouvelles idées deviennent « {name} »',
     cat_idee:'Idée', cat_frage:'Question', cat_projekt:'Projet', cat_aufgabe:'Tâche', cat_traum:'Rêve',
     ph_thought:'Pensée', aria_thought_title:'Titre de la pensée', label_category:'Catégorie :', label_note:'Note :', title_note_mic:'Dicter la note', ph_note:'Détails, liens, références … (enregistré automatiquement)', btn_delete:'Supprimer', btn_close:'Fermer',
@@ -1480,19 +1485,25 @@ create policy "zugriff per schluessel"
     reader.readAsText(file);
   }
   // ---- Brücken-Modus (manuelle Verbindung zwischen zwei Sternen) ----
-  const linkBtn=document.getElementById('linkBtn');
+  const toolsBtn=document.getElementById('toolsBtn');
+  const toolsMenu=document.getElementById('toolsMenu');
+  const linkItemLabel=document.getElementById('linkItemLabel');
   const linkHintEl=document.getElementById('linkHint');
   function setLinkHint(t){
     linkHintEl.textContent=t||'';
     linkHintEl.classList.toggle('show', !!t);
   }
+  function closeToolsMenu(){ toolsMenu.classList.remove('open'); }
   function setLinkMode(on){
     linkMode=on; linkFrom=null;
-    linkBtn.classList.toggle('on', on);
+    toolsBtn.classList.toggle('on', on);   // 🧰 leuchtet, solange Brücken-Modus läuft
+    if(linkItemLabel) linkItemLabel.textContent = t(on?'tool_bridge_stop':'tool_bridge');
     if(on){ closeCard(); setLinkHint(t('link_mode_start')); }
     else setLinkHint('');
   }
-  linkBtn.onclick=()=>setLinkMode(!linkMode);
+  toolsBtn.onclick=e=>{ e.stopPropagation(); toolsMenu.classList.toggle('open'); };
+  document.getElementById('linkItem').onclick=()=>{ closeToolsMenu(); setLinkMode(!linkMode); };
+  document.addEventListener('click', e=>{ if(e.target!==toolsBtn && !toolsBtn.contains(e.target) && !toolsMenu.contains(e.target)) closeToolsMenu(); });
 
   // Alle (automatischen) Verbindungen verwerfen und neu pro Thema aufbauen.
   // Manuell gezogene Brücken bleiben erhalten.
@@ -1518,7 +1529,8 @@ create policy "zugriff per schluessel"
     }
     save();
   }
-  document.getElementById('relinkBtn').onclick=()=>{
+  document.getElementById('relinkItem').onclick=()=>{
+    closeToolsMenu();
     if(!nodes.length) return;
     if(window.confirm(t('confirm_relink')))
       rebuildEdges();
