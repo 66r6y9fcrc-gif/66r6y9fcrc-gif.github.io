@@ -154,6 +154,9 @@
     .askanswer .hit .htext{flex:1;min-width:0;}
     .askanswer .hit .htitle{font-weight:600;color:var(--text);}
     .askanswer .hit .hsnip{color:var(--muted);font-size:12.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;}
+    .askanswer .aitext{white-space:pre-wrap;background:rgba(127,160,255,.10);border:1px solid var(--panel-line);
+      border-radius:12px;padding:12px 13px;margin:0 0 12px;color:var(--text);}
+    .askanswer .aitext.thinking{color:var(--muted);}
 
     /* ---- Hilfe / leerer Zustand ---- */
     .hint{
@@ -454,7 +457,16 @@ create policy "zugriff per schluessel"
       <button class="btn primary" id="askGoBtn" data-i18n="ask_go">Antworten</button>
     </div>
     <div id="askAnswer" class="askanswer"></div>
-    <p class="authnote" data-i18n="ask_more">Mit einem KI-Schlüssel formuliert dir das Gehirn daraus flüssige Antworten – sag Bescheid, wenn du ihn hast.</p>
+    <details class="help" id="askAiBox">
+      <summary data-i18n="ask_ai_summary">🤖 Echte KI-Antworten aktivieren</summary>
+      <p class="authnote" data-i18n="ask_ai_hint">Füge deinen Anthropic-Schlüssel ein (beginnt mit sk-ant-…). Er wird nur auf diesem Gerät gespeichert.</p>
+      <input id="aiKey" class="field" type="password" placeholder="sk-ant-…" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="row">
+        <button class="btn" id="aiKeyClear" data-i18n="ask_ai_clear">Entfernen</button>
+        <button class="btn primary" id="aiKeySave" data-i18n="ask_ai_save">Speichern</button>
+      </div>
+      <div class="authnote" id="aiKeyStatus"></div>
+    </details>
   </div>
 
 <script>
@@ -501,6 +513,7 @@ create policy "zugriff per schluessel"
     link_mode_start:'Brücken-Modus: zwei Sterne nacheinander antippen.', link_mode_first:'Brücken-Modus: ersten Stern antippen.', link_first_selected:'Erster Stern gewählt – jetzt den zweiten antippen.', link_cleared:'Auswahl aufgehoben. Ersten Stern antippen.', link_created:'Brücke erstellt ✓ – nächste? Stern antippen oder 🪢 zum Beenden.',
     confirm_import:'Aktuelles Gehirn durch das Backup ersetzen? Die jetzigen {n} Gedanken werden überschrieben.', alert_import_done:'Backup geladen: {n} Gedanken wiederhergestellt.', alert_import_fail:'Diese Datei konnte nicht gelesen werden. Bitte eine vorher exportierte .json-Datei wählen.', confirm_relink:'Alle Verbindungen neu nach Thema ordnen? Gedanken bleiben erhalten, nur die Fäden werden innerhalb gleicher Themen neu gezogen.',
     tool_ask:'Frag dein Gehirn', ask_title:'🧠 Frag dein Gehirn', ask_intro:'Stell eine Frage – dein Gehirn sucht die passenden Gedanken heraus.', ask_ph:'Worüber möchtest du etwas wissen?', ask_go:'Antworten', ask_none:'Dazu habe ich noch keine passenden Gedanken gefunden.', ask_lead:'Dazu passen diese {n} Gedanken:', ask_more:'Mit einem KI-Schlüssel formuliert dir das Gehirn daraus flüssige Antworten – sag Bescheid, wenn du ihn hast.',
+    ask_ai_summary:'🤖 Echte KI-Antworten aktivieren', ask_ai_hint:'Füge deinen Anthropic-Schlüssel ein (beginnt mit sk-ant-…). Er wird nur auf diesem Gerät gespeichert.', ask_ai_save:'Speichern', ask_ai_clear:'Entfernen', ask_ai_on:'KI ist aktiv ✓ – Fragen werden zusätzlich beantwortet.', ask_ai_off:'Noch kein Schlüssel – es werden nur passende Gedanken angezeigt.', ask_thinking:'Die KI denkt nach …', ask_ai_error:'KI-Antwort fehlgeschlagen:',
     alert_no_speech:'Dein Browser unterstützt leider keine Spracherkennung. Am besten klappt es in Google Chrome (Android oder Desktop).', alert_mic_blocked:'Der Mikrofon-Zugriff wurde blockiert. Bitte erlaube ihn in den Browser-Einstellungen und versuche es erneut.',
     language_title:'🌐 Sprache', support_subject:'Support – Digitales Gehirn', support_body:'Hallo,\n\nich brauche Hilfe mit folgender Sache:\n\n'
    },
@@ -524,6 +537,7 @@ create policy "zugriff per schluessel"
     link_mode_start:'Bridge mode: tap two stars one after another.', link_mode_first:'Bridge mode: tap the first star.', link_first_selected:'First star selected – now tap the second.', link_cleared:'Selection cleared. Tap the first star.', link_created:'Bridge created ✓ – next? Tap a star or 🪢 to finish.',
     confirm_import:'Replace the current brain with the backup? The current {n} thoughts will be overwritten.', alert_import_done:'Backup loaded: {n} thoughts restored.', alert_import_fail:'This file could not be read. Please choose a .json file you exported earlier.', confirm_relink:'Reorganize all connections by topic? Thoughts are kept, only the threads are redrawn within the same topics.',
     tool_ask:'Ask your brain', ask_title:'🧠 Ask your brain', ask_intro:'Ask a question – your brain finds the matching thoughts.', ask_ph:'What would you like to know?', ask_go:'Answer', ask_none:'No matching thoughts found for that yet.', ask_lead:'These {n} thoughts match:', ask_more:'With an AI key your brain turns these into fluent answers – let me know once you have one.',
+    ask_ai_summary:'🤖 Enable real AI answers', ask_ai_hint:'Paste your Anthropic key (starts with sk-ant-…). It is stored only on this device.', ask_ai_save:'Save', ask_ai_clear:'Remove', ask_ai_on:'AI is active ✓ – questions get a written answer too.', ask_ai_off:'No key yet – only matching thoughts are shown.', ask_thinking:'The AI is thinking …', ask_ai_error:'AI answer failed:',
     alert_no_speech:'Unfortunately your browser does not support speech recognition. It works best in Google Chrome (Android or desktop).', alert_mic_blocked:'Microphone access was blocked. Please allow it in your browser settings and try again.',
     language_title:'🌐 Language', support_subject:'Support – Digital Brain', support_body:'Hello,\n\nI need help with the following:\n\n'
    },
@@ -547,6 +561,7 @@ create policy "zugriff per schluessel"
     link_mode_start:'Modo puente: toca dos estrellas una tras otra.', link_mode_first:'Modo puente: toca la primera estrella.', link_first_selected:'Primera estrella elegida – ahora toca la segunda.', link_cleared:'Selección anulada. Toca la primera estrella.', link_created:'Puente creado ✓ – ¿el siguiente? Toca una estrella o 🪢 para terminar.',
     confirm_import:'¿Reemplazar el cerebro actual con la copia? Los {n} pensamientos actuales se sobrescribirán.', alert_import_done:'Copia cargada: {n} pensamientos restaurados.', alert_import_fail:'No se pudo leer este archivo. Elige un archivo .json exportado anteriormente.', confirm_relink:'¿Reorganizar todas las conexiones por tema? Los pensamientos se mantienen, solo se vuelven a trazar los hilos dentro de los mismos temas.',
     tool_ask:'Pregunta a tu cerebro', ask_title:'🧠 Pregunta a tu cerebro', ask_intro:'Haz una pregunta: tu cerebro encuentra los pensamientos relevantes.', ask_ph:'¿Qué quieres saber?', ask_go:'Responder', ask_none:'Aún no encontré pensamientos relacionados con eso.', ask_lead:'Coinciden estos {n} pensamientos:', ask_more:'Con una clave de IA, tu cerebro redacta respuestas fluidas a partir de ellos – avísame cuando la tengas.',
+    ask_ai_summary:'🤖 Activar respuestas de IA reales', ask_ai_hint:'Pega tu clave de Anthropic (empieza con sk-ant-…). Se guarda solo en este dispositivo.', ask_ai_save:'Guardar', ask_ai_clear:'Quitar', ask_ai_on:'IA activa ✓: las preguntas también reciben una respuesta redactada.', ask_ai_off:'Aún sin clave: solo se muestran los pensamientos relevantes.', ask_thinking:'La IA está pensando …', ask_ai_error:'Falló la respuesta de la IA:',
     alert_no_speech:'Lamentablemente tu navegador no admite el reconocimiento de voz. Funciona mejor en Google Chrome (Android o escritorio).', alert_mic_blocked:'Se bloqueó el acceso al micrófono. Permítelo en los ajustes del navegador e inténtalo de nuevo.',
     language_title:'🌐 Idioma', support_subject:'Soporte – Cerebro Digital', support_body:'Hola:\n\nNecesito ayuda con lo siguiente:\n\n'
    },
@@ -570,6 +585,7 @@ create policy "zugriff per schluessel"
     link_mode_start:'Mode pont : touche deux étoiles l’une après l’autre.', link_mode_first:'Mode pont : touche la première étoile.', link_first_selected:'Première étoile choisie – touche maintenant la deuxième.', link_cleared:'Sélection annulée. Touche la première étoile.', link_created:'Pont créé ✓ – le suivant ? Touche une étoile ou 🪢 pour terminer.',
     confirm_import:'Remplacer le cerveau actuel par la sauvegarde ? Les {n} pensées actuelles seront écrasées.', alert_import_done:'Sauvegarde chargée : {n} pensées restaurées.', alert_import_fail:'Ce fichier n’a pas pu être lu. Choisis un fichier .json exporté précédemment.', confirm_relink:'Réorganiser toutes les connexions par thème ? Les pensées sont conservées, seuls les fils sont retracés au sein des mêmes thèmes.',
     tool_ask:'Interroge ton cerveau', ask_title:'🧠 Interroge ton cerveau', ask_intro:'Pose une question – ton cerveau trouve les pensées correspondantes.', ask_ph:'Que veux-tu savoir ?', ask_go:'Répondre', ask_none:'Aucune pensée correspondante trouvée pour le moment.', ask_lead:'Ces {n} pensées correspondent :', ask_more:'Avec une clé IA, ton cerveau en rédige des réponses fluides – dis-le-moi quand tu l’as.',
+    ask_ai_summary:'🤖 Activer les vraies réponses IA', ask_ai_hint:'Colle ta clé Anthropic (commence par sk-ant-…). Elle est stockée uniquement sur cet appareil.', ask_ai_save:'Enregistrer', ask_ai_clear:'Retirer', ask_ai_on:'IA active ✓ – les questions reçoivent aussi une réponse rédigée.', ask_ai_off:'Pas encore de clé – seules les pensées correspondantes sont affichées.', ask_thinking:'L’IA réfléchit …', ask_ai_error:'Échec de la réponse IA :',
     alert_no_speech:'Malheureusement, ton navigateur ne prend pas en charge la reconnaissance vocale. Cela fonctionne mieux dans Google Chrome (Android ou ordinateur).', alert_mic_blocked:'L’accès au microphone a été bloqué. Autorise-le dans les paramètres du navigateur et réessaie.',
     language_title:'🌐 Langue', support_subject:'Support – Cerveau Numérique', support_body:'Bonjour,\n\nj’ai besoin d’aide concernant :\n\n'
    }
@@ -1635,12 +1651,8 @@ create policy "zugriff per schluessel"
     return scored.slice(0,limit).map(x=>x.n);
   }
   function escapeHtml(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-  function runAsk(){
-    const q=askInput.value.trim();
-    if(!q){ askInput.focus(); return; }
-    const rel=findRelevant(q, 8);
-    if(!rel.length){ askAnswer.innerHTML='<p class="lead">'+escapeHtml(t('ask_none'))+'</p>'; return; }
-    let html='<p class="lead">'+escapeHtml(t('ask_lead',{n:rel.length}))+'</p>';
+  function renderHits(rel){
+    let html='';
     for(const n of rel){
       const c=catById(n.cat);
       const note=(n.note||'').trim().replace(/\s+/g,' ');
@@ -1649,17 +1661,82 @@ create policy "zugriff per schluessel"
         '<div class="htext"><div class="htitle">'+escapeHtml(n.text)+'</div>'+
         (snip?'<div class="hsnip">'+escapeHtml(snip)+'</div>':'')+'</div></div>';
     }
-    askAnswer.innerHTML=html;
+    return html;
+  }
+  function wireHits(){
     askAnswer.querySelectorAll('.hit').forEach(el=>{
       el.onclick=()=>{ const n=findNode(Number(el.dataset.id)); if(n){ closeAsk(); centerOnNode(n); openCard(n); } };
     });
   }
-  function openAsk(){ askAnswer.innerHTML=''; askSheet.classList.add('open'); setTimeout(()=>askInput.focus(),60); }
+  // ---- Optionale echte KI-Antwort (Anthropic / Claude) ----
+  // Der Schlüssel bleibt ausschließlich lokal im Browser dieses Geräts.
+  const AI_KEY_STORE='digital-brain-aikey';
+  const AI_MODEL='claude-haiku-4-5-20251001';
+  let aiKey=(()=>{ try{ return localStorage.getItem(AI_KEY_STORE)||''; }catch(e){ return ''; } })();
+  async function askAI(question, rel){
+    const ctx=rel.map((n,i)=>'('+(i+1)+') ['+catName(catById(n.cat))+'] '+n.text+(n.note?(' — '+n.note):'')).join('\n');
+    const sys='Du bist das „zweite Gehirn" des Nutzers. Beantworte die Frage NUR auf Basis der unten aufgeführten eigenen Gedanken des Nutzers. Erfinde nichts dazu; wenn die Gedanken die Antwort nicht hergeben, sage das ehrlich. Antworte klar, knapp und in derselben Sprache wie die Frage.';
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'content-type':'application/json',
+        'x-api-key':aiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:AI_MODEL, max_tokens:700, system:sys,
+        messages:[{role:'user', content:'Frage: '+question+'\n\nMeine Gedanken:\n'+ctx}]
+      })
+    });
+    if(!res.ok){ const tx=await res.text().catch(()=>''); throw new Error('HTTP '+res.status+(tx?(' '+tx.slice(0,160)):'')); }
+    const data=await res.json();
+    return (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : '';
+  }
+  async function runAsk(){
+    const q=askInput.value.trim();
+    if(!q){ askInput.focus(); return; }
+    const rel=findRelevant(q, 8);
+    if(!rel.length){ askAnswer.innerHTML='<p class="lead">'+escapeHtml(t('ask_none'))+'</p>'; return; }
+    // Sofort die passenden Gedanken zeigen …
+    askAnswer.innerHTML='<p class="lead">'+escapeHtml(t('ask_lead',{n:rel.length}))+'</p>'+renderHits(rel);
+    wireHits();
+    // … und mit Schlüssel zusätzlich eine echte, formulierte KI-Antwort darüber
+    if(aiKey){
+      const box=document.createElement('div');
+      box.className='aitext thinking'; box.textContent=t('ask_thinking');
+      askAnswer.insertBefore(box, askAnswer.firstChild);
+      try{
+        const ans=await askAI(q, rel);
+        box.classList.remove('thinking');
+        box.textContent=ans || t('ask_none');
+      }catch(e){
+        box.classList.remove('thinking');
+        box.textContent=t('ask_ai_error')+' '+((e&&e.message)||'');
+      }
+    }
+  }
+  function setAiStatus(){ const s=document.getElementById('aiKeyStatus'); if(s) s.textContent = aiKey ? t('ask_ai_on') : t('ask_ai_off'); }
+  function openAsk(){
+    askAnswer.innerHTML='';
+    const k=document.getElementById('aiKey'); if(k) k.value = aiKey ? '••••••••••' : '';
+    setAiStatus();
+    askSheet.classList.add('open'); setTimeout(()=>askInput.focus(),60);
+  }
   function closeAsk(){ askSheet.classList.remove('open'); }
   document.getElementById('askItem').onclick=()=>{ closeToolsMenu(); openAsk(); };
   document.getElementById('askGoBtn').onclick=runAsk;
   document.getElementById('askCloseBtn').onclick=closeAsk;
   askInput.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); runAsk(); } });
+  document.getElementById('aiKeySave').onclick=()=>{
+    const f=document.getElementById('aiKey'); const v=(f.value||'').trim();
+    if(v && !/^[•]+$/.test(v)){ aiKey=v; try{ localStorage.setItem(AI_KEY_STORE, v); }catch(e){} f.value='••••••••••'; }
+    setAiStatus();
+  };
+  document.getElementById('aiKeyClear').onclick=()=>{
+    aiKey=''; try{ localStorage.removeItem(AI_KEY_STORE); }catch(e){}
+    document.getElementById('aiKey').value=''; setAiStatus();
+  };
 
   document.getElementById('exportBtn').onclick=exportData;
   const importFile=document.getElementById('importFile');
