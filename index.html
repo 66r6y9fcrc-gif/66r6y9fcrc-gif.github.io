@@ -143,6 +143,17 @@
     .btn.primary:hover{background:#3f7bf0;}
     .btn.danger{color:#ffb4ab;border-color:rgba(255,120,110,.35);background:rgba(255,80,70,.08);}
     .btn.danger:hover{background:rgba(255,80,70,.18);}
+    /* „Frag dein Gehirn"-Antwortbereich */
+    .askanswer{margin:12px 0 4px;font-size:14px;line-height:1.55;}
+    .askanswer .lead{color:var(--muted);font-size:13px;margin:0 0 10px;}
+    .askanswer .hit{display:flex;gap:9px;align-items:flex-start;padding:9px 10px;cursor:pointer;
+      border:1px solid var(--panel-line);border-radius:11px;margin:0 0 7px;background:rgba(127,160,255,.05);
+      transition:background .15s;}
+    .askanswer .hit:hover{background:rgba(127,160,255,.12);}
+    .askanswer .hit .cdot{width:10px;height:10px;border-radius:50%;margin-top:4px;flex:none;box-shadow:0 0 8px 1px currentColor;}
+    .askanswer .hit .htext{flex:1;min-width:0;}
+    .askanswer .hit .htitle{font-weight:600;color:var(--text);}
+    .askanswer .hit .hsnip{color:var(--muted);font-size:12.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;}
 
     /* ---- Hilfe / leerer Zustand ---- */
     .hint{
@@ -311,6 +322,8 @@
   <div class="lefttools">
     <button class="iconbtn" id="toolsBtn" data-i18n-title="title_tools" title="Werkzeuge" aria-haspopup="true">🧰</button>
     <div class="menu toolsmenu" id="toolsMenu">
+      <button class="menu-item" id="askItem"><span class="mi-ic">🧠</span> <span data-i18n="tool_ask">Frag dein Gehirn</span></button>
+      <div class="menu-sep"></div>
       <button class="menu-item" id="relinkItem"><span class="mi-ic">🔗</span> <span data-i18n="tool_relink">Verbindungen neu ordnen</span></button>
       <button class="menu-item" id="linkItem"><span class="mi-ic">🪢</span> <span id="linkItemLabel" data-i18n="tool_bridge">Brücke ziehen</span></button>
     </div>
@@ -432,6 +445,18 @@ create policy "zugriff per schluessel"
     </div>
   </div>
 
+  <div class="card" id="askSheet">
+    <h2 data-i18n="ask_title">🧠 Frag dein Gehirn</h2>
+    <p class="authintro" data-i18n="ask_intro">Stell eine Frage – dein Gehirn sucht die passenden Gedanken heraus.</p>
+    <textarea id="askInput" class="note" rows="2" data-i18n-ph="ask_ph" placeholder="Worüber möchtest du etwas wissen?"></textarea>
+    <div class="row">
+      <button class="btn" id="askCloseBtn" data-i18n="btn_close">Schließen</button>
+      <button class="btn primary" id="askGoBtn" data-i18n="ask_go">Antworten</button>
+    </div>
+    <div id="askAnswer" class="askanswer"></div>
+    <p class="authnote" data-i18n="ask_more">Mit einem KI-Schlüssel formuliert dir das Gehirn daraus flüssige Antworten – sag Bescheid, wenn du ihn hast.</p>
+  </div>
+
 <script>
 (() => {
   "use strict";
@@ -475,6 +500,7 @@ create policy "zugriff per schluessel"
     suggest_default:'Mini-KI schlägt vor – tippe zum Bestätigen:', suggest_new:'Kein passendes Thema gefunden – neues anlegen oder selbst wählen:', suggest_unsure:'Mini-KI ist unsicher – bitte selbst wählen:', suggest_newtheme:'✨ Neues Thema „{name}“', suggest_newtheme_manual:'✨ Neues Thema …', suggest_cancel:'✕ Abbrechen', prompt_new_theme:'Name des neuen Themas:', prompt_new_category:'Name der neuen Kategorie:',
     link_mode_start:'Brücken-Modus: zwei Sterne nacheinander antippen.', link_mode_first:'Brücken-Modus: ersten Stern antippen.', link_first_selected:'Erster Stern gewählt – jetzt den zweiten antippen.', link_cleared:'Auswahl aufgehoben. Ersten Stern antippen.', link_created:'Brücke erstellt ✓ – nächste? Stern antippen oder 🪢 zum Beenden.',
     confirm_import:'Aktuelles Gehirn durch das Backup ersetzen? Die jetzigen {n} Gedanken werden überschrieben.', alert_import_done:'Backup geladen: {n} Gedanken wiederhergestellt.', alert_import_fail:'Diese Datei konnte nicht gelesen werden. Bitte eine vorher exportierte .json-Datei wählen.', confirm_relink:'Alle Verbindungen neu nach Thema ordnen? Gedanken bleiben erhalten, nur die Fäden werden innerhalb gleicher Themen neu gezogen.',
+    tool_ask:'Frag dein Gehirn', ask_title:'🧠 Frag dein Gehirn', ask_intro:'Stell eine Frage – dein Gehirn sucht die passenden Gedanken heraus.', ask_ph:'Worüber möchtest du etwas wissen?', ask_go:'Antworten', ask_none:'Dazu habe ich noch keine passenden Gedanken gefunden.', ask_lead:'Dazu passen diese {n} Gedanken:', ask_more:'Mit einem KI-Schlüssel formuliert dir das Gehirn daraus flüssige Antworten – sag Bescheid, wenn du ihn hast.',
     alert_no_speech:'Dein Browser unterstützt leider keine Spracherkennung. Am besten klappt es in Google Chrome (Android oder Desktop).', alert_mic_blocked:'Der Mikrofon-Zugriff wurde blockiert. Bitte erlaube ihn in den Browser-Einstellungen und versuche es erneut.',
     language_title:'🌐 Sprache', support_subject:'Support – Digitales Gehirn', support_body:'Hallo,\n\nich brauche Hilfe mit folgender Sache:\n\n'
    },
@@ -497,6 +523,7 @@ create policy "zugriff per schluessel"
     suggest_default:'Mini-AI suggests – tap to confirm:', suggest_new:'No matching topic found – create a new one or choose yourself:', suggest_unsure:'Mini-AI is unsure – please choose yourself:', suggest_newtheme:'✨ New topic "{name}"', suggest_newtheme_manual:'✨ New topic …', suggest_cancel:'✕ Cancel', prompt_new_theme:'Name of the new topic:', prompt_new_category:'Name of the new category:',
     link_mode_start:'Bridge mode: tap two stars one after another.', link_mode_first:'Bridge mode: tap the first star.', link_first_selected:'First star selected – now tap the second.', link_cleared:'Selection cleared. Tap the first star.', link_created:'Bridge created ✓ – next? Tap a star or 🪢 to finish.',
     confirm_import:'Replace the current brain with the backup? The current {n} thoughts will be overwritten.', alert_import_done:'Backup loaded: {n} thoughts restored.', alert_import_fail:'This file could not be read. Please choose a .json file you exported earlier.', confirm_relink:'Reorganize all connections by topic? Thoughts are kept, only the threads are redrawn within the same topics.',
+    tool_ask:'Ask your brain', ask_title:'🧠 Ask your brain', ask_intro:'Ask a question – your brain finds the matching thoughts.', ask_ph:'What would you like to know?', ask_go:'Answer', ask_none:'No matching thoughts found for that yet.', ask_lead:'These {n} thoughts match:', ask_more:'With an AI key your brain turns these into fluent answers – let me know once you have one.',
     alert_no_speech:'Unfortunately your browser does not support speech recognition. It works best in Google Chrome (Android or desktop).', alert_mic_blocked:'Microphone access was blocked. Please allow it in your browser settings and try again.',
     language_title:'🌐 Language', support_subject:'Support – Digital Brain', support_body:'Hello,\n\nI need help with the following:\n\n'
    },
@@ -519,6 +546,7 @@ create policy "zugriff per schluessel"
     suggest_default:'La mini-IA sugiere – toca para confirmar:', suggest_new:'No se encontró un tema adecuado – crea uno nuevo o elige tú:', suggest_unsure:'La mini-IA no está segura – elige tú:', suggest_newtheme:'✨ Nuevo tema "{name}"', suggest_newtheme_manual:'✨ Nuevo tema …', suggest_cancel:'✕ Cancelar', prompt_new_theme:'Nombre del nuevo tema:', prompt_new_category:'Nombre de la nueva categoría:',
     link_mode_start:'Modo puente: toca dos estrellas una tras otra.', link_mode_first:'Modo puente: toca la primera estrella.', link_first_selected:'Primera estrella elegida – ahora toca la segunda.', link_cleared:'Selección anulada. Toca la primera estrella.', link_created:'Puente creado ✓ – ¿el siguiente? Toca una estrella o 🪢 para terminar.',
     confirm_import:'¿Reemplazar el cerebro actual con la copia? Los {n} pensamientos actuales se sobrescribirán.', alert_import_done:'Copia cargada: {n} pensamientos restaurados.', alert_import_fail:'No se pudo leer este archivo. Elige un archivo .json exportado anteriormente.', confirm_relink:'¿Reorganizar todas las conexiones por tema? Los pensamientos se mantienen, solo se vuelven a trazar los hilos dentro de los mismos temas.',
+    tool_ask:'Pregunta a tu cerebro', ask_title:'🧠 Pregunta a tu cerebro', ask_intro:'Haz una pregunta: tu cerebro encuentra los pensamientos relevantes.', ask_ph:'¿Qué quieres saber?', ask_go:'Responder', ask_none:'Aún no encontré pensamientos relacionados con eso.', ask_lead:'Coinciden estos {n} pensamientos:', ask_more:'Con una clave de IA, tu cerebro redacta respuestas fluidas a partir de ellos – avísame cuando la tengas.',
     alert_no_speech:'Lamentablemente tu navegador no admite el reconocimiento de voz. Funciona mejor en Google Chrome (Android o escritorio).', alert_mic_blocked:'Se bloqueó el acceso al micrófono. Permítelo en los ajustes del navegador e inténtalo de nuevo.',
     language_title:'🌐 Idioma', support_subject:'Soporte – Cerebro Digital', support_body:'Hola:\n\nNecesito ayuda con lo siguiente:\n\n'
    },
@@ -541,6 +569,7 @@ create policy "zugriff per schluessel"
     suggest_default:'La mini-IA propose – touche pour confirmer :', suggest_new:'Aucun thème correspondant – crées-en un ou choisis toi-même :', suggest_unsure:'La mini-IA n’est pas sûre – choisis toi-même :', suggest_newtheme:'✨ Nouveau thème « {name} »', suggest_newtheme_manual:'✨ Nouveau thème …', suggest_cancel:'✕ Annuler', prompt_new_theme:'Nom du nouveau thème :', prompt_new_category:'Nom de la nouvelle catégorie :',
     link_mode_start:'Mode pont : touche deux étoiles l’une après l’autre.', link_mode_first:'Mode pont : touche la première étoile.', link_first_selected:'Première étoile choisie – touche maintenant la deuxième.', link_cleared:'Sélection annulée. Touche la première étoile.', link_created:'Pont créé ✓ – le suivant ? Touche une étoile ou 🪢 pour terminer.',
     confirm_import:'Remplacer le cerveau actuel par la sauvegarde ? Les {n} pensées actuelles seront écrasées.', alert_import_done:'Sauvegarde chargée : {n} pensées restaurées.', alert_import_fail:'Ce fichier n’a pas pu être lu. Choisis un fichier .json exporté précédemment.', confirm_relink:'Réorganiser toutes les connexions par thème ? Les pensées sont conservées, seuls les fils sont retracés au sein des mêmes thèmes.',
+    tool_ask:'Interroge ton cerveau', ask_title:'🧠 Interroge ton cerveau', ask_intro:'Pose une question – ton cerveau trouve les pensées correspondantes.', ask_ph:'Que veux-tu savoir ?', ask_go:'Répondre', ask_none:'Aucune pensée correspondante trouvée pour le moment.', ask_lead:'Ces {n} pensées correspondent :', ask_more:'Avec une clé IA, ton cerveau en rédige des réponses fluides – dis-le-moi quand tu l’as.',
     alert_no_speech:'Malheureusement, ton navigateur ne prend pas en charge la reconnaissance vocale. Cela fonctionne mieux dans Google Chrome (Android ou ordinateur).', alert_mic_blocked:'L’accès au microphone a été bloqué. Autorise-le dans les paramètres du navigateur et réessaie.',
     language_title:'🌐 Langue', support_subject:'Support – Cerveau Numérique', support_body:'Bonjour,\n\nj’ai besoin d’aide concernant :\n\n'
    }
@@ -1576,6 +1605,61 @@ create policy "zugriff per schluessel"
     if(window.confirm(t('confirm_relink')))
       rebuildEdges();
   };
+
+  // ---- Frag dein Gehirn (Offline-Retrieval: passende Gedanken heraussuchen) ----
+  const askSheet=document.getElementById('askSheet');
+  const askInput=document.getElementById('askInput');
+  const askAnswer=document.getElementById('askAnswer');
+  const STOPWORDS=new Set(('der die das und oder ist war wie was wer wo warum wann ich du mir mein meine deine zu den dem ein eine einen mit für von vom auf im in am an es sich nicht auch aber wenn dann noch schon mal bitte über etwas dies '+
+    'the and or is are a an of to for with on in at it this that what who where why how my your').split(/\s+/));
+  const DIACRITICS = new RegExp('[\\u0300-\\u036f]', 'g');
+  function tokenize(s){
+    return (s||'').toLowerCase().normalize('NFD').replace(DIACRITICS,'')
+      .split(/[^a-z0-9äöüß]+/i).filter(w=>w.length>=3 && !STOPWORDS.has(w));
+  }
+  function findRelevant(question, limit){
+    const qt=tokenize(question);
+    if(!qt.length) return nodes.slice().sort((a,b)=>(b.t||0)-(a.t||0)).slice(0,limit);
+    const scored=[];
+    for(const n of nodes){
+      const hay=tokenize(n.text+' '+(n.note||''));
+      const hs=new Set(hay);
+      let score=0;
+      for(const w of qt){
+        if(hs.has(w)){ score+=3; continue; }
+        for(const h of hay){ if(h.length>=4 && (h.includes(w)||w.includes(h))){ score+=1; break; } }
+      }
+      if(score>0) scored.push({n,score});
+    }
+    scored.sort((a,b)=>b.score-a.score);
+    return scored.slice(0,limit).map(x=>x.n);
+  }
+  function escapeHtml(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function runAsk(){
+    const q=askInput.value.trim();
+    if(!q){ askInput.focus(); return; }
+    const rel=findRelevant(q, 8);
+    if(!rel.length){ askAnswer.innerHTML='<p class="lead">'+escapeHtml(t('ask_none'))+'</p>'; return; }
+    let html='<p class="lead">'+escapeHtml(t('ask_lead',{n:rel.length}))+'</p>';
+    for(const n of rel){
+      const c=catById(n.cat);
+      const note=(n.note||'').trim().replace(/\s+/g,' ');
+      const snip=note.slice(0,90)+(note.length>90?'…':'');
+      html+='<div class="hit" data-id="'+n.id+'"><span class="cdot" style="background:'+c.color+';color:'+c.color+'"></span>'+
+        '<div class="htext"><div class="htitle">'+escapeHtml(n.text)+'</div>'+
+        (snip?'<div class="hsnip">'+escapeHtml(snip)+'</div>':'')+'</div></div>';
+    }
+    askAnswer.innerHTML=html;
+    askAnswer.querySelectorAll('.hit').forEach(el=>{
+      el.onclick=()=>{ const n=findNode(Number(el.dataset.id)); if(n){ closeAsk(); centerOnNode(n); openCard(n); } };
+    });
+  }
+  function openAsk(){ askAnswer.innerHTML=''; askSheet.classList.add('open'); setTimeout(()=>askInput.focus(),60); }
+  function closeAsk(){ askSheet.classList.remove('open'); }
+  document.getElementById('askItem').onclick=()=>{ closeToolsMenu(); openAsk(); };
+  document.getElementById('askGoBtn').onclick=runAsk;
+  document.getElementById('askCloseBtn').onclick=closeAsk;
+  askInput.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); runAsk(); } });
 
   document.getElementById('exportBtn').onclick=exportData;
   const importFile=document.getElementById('importFile');

@@ -1,7 +1,7 @@
 // Service Worker: macht die App offline-fähig (App-Shell-Caching).
 // Strategie: Netzwerk zuerst (damit Updates ankommen), bei Offline aus dem Cache.
 // Wichtig: Die Gedanken-Daten liegen in localStorage und sind davon unabhängig.
-const CACHE = 'gehirn-v28';
+const CACHE = 'gehirn-v29';
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
