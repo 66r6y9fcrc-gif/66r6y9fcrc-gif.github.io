@@ -180,6 +180,10 @@
     .card .note{width:100%;min-height:96px;resize:vertical;background:rgba(255,255,255,.04);
       border:1px solid var(--panel-line);border-radius:11px;color:var(--text);
       font-family:inherit;font-size:14px;line-height:1.5;padding:10px 12px;margin:0 0 16px;outline:none;}
+    .card .conns-edit{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;}
+    .card .conns-edit .chip{padding:5px 10px;font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+    .card .conns-edit .chip .ctag{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em;}
+    .card .conns-edit .conn-none{color:var(--muted);font-size:12px;}
     .card .note:focus{border-color:rgba(120,170,255,.5);}
 
     /* ---- Suche im Dock unten (eine Leiste: Suchen UND Hinzufügen) ---- */
@@ -319,6 +323,8 @@
     <div class="cats-edit" id="cardCats"></div>
     <p class="label labelrow"><span data-i18n="label_note">Notiz:</span> <button class="micmini" id="noteMic" data-i18n-title="title_note_mic" title="Notiz diktieren">🎤</button></p>
     <textarea id="cardNote" class="note" data-i18n-ph="ph_note" placeholder="Details, Verknüpfungen, Links … (wird automatisch gespeichert)"></textarea>
+    <p class="label" id="cardConnLabel" data-i18n="label_connections">Verbunden mit:</p>
+    <div class="conns-edit" id="cardConns"></div>
     <div class="row">
       <button class="btn danger" id="delBtn" data-i18n="btn_delete">Löschen</button>
       <button class="btn" id="closeBtn" data-i18n="btn_close">Schließen</button>
@@ -440,6 +446,7 @@ create policy "zugriff per schluessel"
     cat_idee:'Idee', cat_frage:'Frage', cat_projekt:'Projekt', cat_aufgabe:'Aufgabe', cat_traum:'Traum',
     ph_thought:'Gedanke', aria_thought_title:'Titel des Gedankens', label_category:'Kategorie:', label_note:'Notiz:', title_note_mic:'Notiz diktieren', ph_note:'Details, Verknüpfungen, Links … (wird automatisch gespeichert)', btn_delete:'Löschen', btn_close:'Schließen',
     meta_category:'Kategorie', meta_captured:'erfasst am', meta_connections_one:'{n} Verbindung', meta_connections_many:'{n} Verbindungen', meta_note:'📝 Notiz',
+    label_connections:'Verbunden mit:', conn_none:'Noch mit keinem anderen Gedanken verbunden.', conn_bridge_tag:'Brücke',
     login_title:'👤 Konto', auth_intro:'Melde dich an, damit deine Gedanken sicher in deinem eigenen Konto gespeichert werden – auch auf anderen Geräten.', label_email:'E-Mail', label_password:'Passwort', ph_email:'du@beispiel.de', ph_password:'mindestens 6 Zeichen', btn_login:'Anmelden', btn_register:'Registrieren', label_logged_as:'Angemeldet als', btn_logout:'Abmelden',
     auth_not_configured:'Der Login ist noch nicht eingerichtet. Sobald der Supabase-Zugang hinterlegt ist, kannst du dich hier registrieren und anmelden.',
     auth_need_both:'Bitte E-Mail und Passwort eingeben.', auth_signing_in:'Anmelden …', auth_failed:'Anmeldung fehlgeschlagen.', auth_need_valid:'E-Mail und Passwort (mind. 6 Zeichen) eingeben.', auth_creating:'Konto wird erstellt …', auth_register_failed:'Registrierung fehlgeschlagen.', auth_confirm_email:'Fast geschafft! Bitte bestätige die E-Mail in deinem Postfach und melde dich danach an.', auth_network:'Netzwerkfehler – bist du online?', auth_logged_out:'Abgemeldet.', account_autosaved:'Deine Gedanken werden automatisch gesichert.', account_logged_in_ok:'Angemeldet ✓ – Gedanken werden automatisch gesichert.',
@@ -461,6 +468,7 @@ create policy "zugriff per schluessel"
     cat_idee:'Idea', cat_frage:'Question', cat_projekt:'Project', cat_aufgabe:'Task', cat_traum:'Dream',
     ph_thought:'Thought', aria_thought_title:'Thought title', label_category:'Category:', label_note:'Note:', title_note_mic:'Dictate note', ph_note:'Details, links, references … (saved automatically)', btn_delete:'Delete', btn_close:'Close',
     meta_category:'Category', meta_captured:'created on', meta_connections_one:'{n} connection', meta_connections_many:'{n} connections', meta_note:'📝 Note',
+    label_connections:'Connected with:', conn_none:'Not connected to any other thought yet.', conn_bridge_tag:'bridge',
     login_title:'👤 Account', auth_intro:'Sign in so your thoughts are safely stored in your own account – across devices, too.', label_email:'Email', label_password:'Password', ph_email:'you@example.com', ph_password:'at least 6 characters', btn_login:'Sign in', btn_register:'Sign up', label_logged_as:'Signed in as', btn_logout:'Sign out',
     auth_not_configured:'Login is not set up yet. Once the Supabase access is configured, you can register and sign in here.',
     auth_need_both:'Please enter email and password.', auth_signing_in:'Signing in …', auth_failed:'Sign-in failed.', auth_need_valid:'Enter an email and password (at least 6 characters).', auth_creating:'Creating account …', auth_register_failed:'Sign-up failed.', auth_confirm_email:'Almost done! Please confirm the email in your inbox and then sign in.', auth_network:'Network error – are you online?', auth_logged_out:'Signed out.', account_autosaved:'Your thoughts are saved automatically.', account_logged_in_ok:'Signed in ✓ – thoughts are saved automatically.',
@@ -482,6 +490,7 @@ create policy "zugriff per schluessel"
     cat_idee:'Idea', cat_frage:'Pregunta', cat_projekt:'Proyecto', cat_aufgabe:'Tarea', cat_traum:'Sueño',
     ph_thought:'Pensamiento', aria_thought_title:'Título del pensamiento', label_category:'Categoría:', label_note:'Nota:', title_note_mic:'Dictar nota', ph_note:'Detalles, enlaces, referencias … (se guarda automáticamente)', btn_delete:'Eliminar', btn_close:'Cerrar',
     meta_category:'Categoría', meta_captured:'creado el', meta_connections_one:'{n} conexión', meta_connections_many:'{n} conexiones', meta_note:'📝 Nota',
+    label_connections:'Conectado con:', conn_none:'Aún sin conexión con otro pensamiento.', conn_bridge_tag:'puente',
     login_title:'👤 Cuenta', auth_intro:'Inicia sesión para que tus pensamientos se guarden de forma segura en tu propia cuenta, también en otros dispositivos.', label_email:'Correo electrónico', label_password:'Contraseña', ph_email:'tu@ejemplo.com', ph_password:'al menos 6 caracteres', btn_login:'Iniciar sesión', btn_register:'Registrarse', label_logged_as:'Sesión iniciada como', btn_logout:'Cerrar sesión',
     auth_not_configured:'El inicio de sesión aún no está configurado. Cuando se añada el acceso de Supabase, podrás registrarte e iniciar sesión aquí.',
     auth_need_both:'Introduce correo y contraseña.', auth_signing_in:'Iniciando sesión …', auth_failed:'Error al iniciar sesión.', auth_need_valid:'Introduce un correo y una contraseña (mín. 6 caracteres).', auth_creating:'Creando cuenta …', auth_register_failed:'Error en el registro.', auth_confirm_email:'¡Casi listo! Confirma el correo en tu bandeja de entrada y luego inicia sesión.', auth_network:'Error de red, ¿estás conectado?', auth_logged_out:'Sesión cerrada.', account_autosaved:'Tus pensamientos se guardan automáticamente.', account_logged_in_ok:'Sesión iniciada ✓ – los pensamientos se guardan automáticamente.',
@@ -503,6 +512,7 @@ create policy "zugriff per schluessel"
     cat_idee:'Idée', cat_frage:'Question', cat_projekt:'Projet', cat_aufgabe:'Tâche', cat_traum:'Rêve',
     ph_thought:'Pensée', aria_thought_title:'Titre de la pensée', label_category:'Catégorie :', label_note:'Note :', title_note_mic:'Dicter la note', ph_note:'Détails, liens, références … (enregistré automatiquement)', btn_delete:'Supprimer', btn_close:'Fermer',
     meta_category:'Catégorie', meta_captured:'créé le', meta_connections_one:'{n} connexion', meta_connections_many:'{n} connexions', meta_note:'📝 Note',
+    label_connections:'Connecté à :', conn_none:'Pas encore connecté à une autre pensée.', conn_bridge_tag:'pont',
     login_title:'👤 Compte', auth_intro:'Connecte-toi pour que tes pensées soient enregistrées en sécurité dans ton propre compte – aussi sur d’autres appareils.', label_email:'E-mail', label_password:'Mot de passe', ph_email:'toi@exemple.com', ph_password:'au moins 6 caractères', btn_login:'Se connecter', btn_register:'S’inscrire', label_logged_as:'Connecté en tant que', btn_logout:'Se déconnecter',
     auth_not_configured:'La connexion n’est pas encore configurée. Une fois l’accès Supabase ajouté, tu pourras t’inscrire et te connecter ici.',
     auth_need_both:'Saisis l’e-mail et le mot de passe.', auth_signing_in:'Connexion …', auth_failed:'Échec de la connexion.', auth_need_valid:'Saisis un e-mail et un mot de passe (au moins 6 caractères).', auth_creating:'Création du compte …', auth_register_failed:'Échec de l’inscription.', auth_confirm_email:'Presque fini ! Confirme l’e-mail dans ta boîte de réception, puis connecte-toi.', auth_network:'Erreur réseau – es-tu en ligne ?', auth_logged_out:'Déconnecté.', account_autosaved:'Tes pensées sont enregistrées automatiquement.', account_logged_in_ok:'Connecté ✓ – les pensées sont enregistrées automatiquement.',
@@ -986,6 +996,49 @@ create policy "zugriff per schluessel"
       ' · '+t(conn===1?'meta_connections_one':'meta_connections_many',{n:conn})+
       ((n.note&&n.note.trim())?' · '+t('meta_note'):'');
   }
+  const cardConnsEl=document.getElementById('cardConns');
+  // Sanft auf einen Knoten zentrieren (Zoom beibehalten)
+  function centerOnNode(n){
+    const w=canvas.clientWidth, h=canvas.clientHeight;
+    view.x = w/2 - n.x*view.scale;
+    view.y = h/2 - n.y*view.scale;
+  }
+  // Zeigt, mit welchen anderen Gedanken dieser verbunden ist
+  function renderCardConns(n){
+    cardConnsEl.innerHTML='';
+    // Verbundene Knoten samt Info, ob es eine manuelle Brücke ist
+    const seen=new Set();
+    const conns=[];
+    for(const e of edges){
+      let otherId=null;
+      if(e.a===n.id) otherId=e.b;
+      else if(e.b===n.id) otherId=e.a;
+      if(otherId===null || seen.has(otherId)) continue;
+      const o=findNode(otherId);
+      if(!o) continue;
+      seen.add(otherId);
+      conns.push({node:o, bridge:!!e.bridge});
+    }
+    if(!conns.length){
+      const none=document.createElement('div');
+      none.className='conn-none';
+      none.textContent=t('conn_none');
+      cardConnsEl.appendChild(none);
+      return;
+    }
+    for(const {node:o, bridge} of conns){
+      const cat=catById(o.cat);
+      const chip=document.createElement('div');
+      chip.className='chip';
+      chip.title=o.text;
+      const dot=`<span class="cdot" style="background:${cat.color};color:${cat.color}"></span>`;
+      const label=(o.text||'').length>26 ? (o.text.slice(0,25)+'…') : (o.text||'');
+      const tag=bridge ? ` <span class="ctag">${t('conn_bridge_tag')}</span>` : '';
+      chip.innerHTML=dot+label+tag;
+      chip.onclick=()=>{ save(); centerOnNode(o); openCard(o); };
+      cardConnsEl.appendChild(chip);
+    }
+  }
   const cardTitle=document.getElementById('cardTitle');
   const cardNote=document.getElementById('cardNote');
   function openCard(n){
@@ -994,6 +1047,7 @@ create policy "zugriff per schluessel"
     cardNote.value=n.note||'';
     openCardMeta(n);
     renderCardCats();
+    renderCardConns(n);
     card.classList.add('open');
   }
   function closeCard(){ if(rec) rec.stop(); selectedId=null; card.classList.remove('open'); }
