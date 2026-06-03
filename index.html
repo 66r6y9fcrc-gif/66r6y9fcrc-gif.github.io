@@ -862,9 +862,17 @@ create policy "zugriff per schluessel"
     }
   }
 
+  let frame=0;
   function loop(){
-    if(nodes.length) simulate();
-    draw();
+    frame++;
+    try{
+      if(nodes.length){
+        // Bei sehr vielen Knoten die teure O(n²)-Physik drosseln, damit das
+        // Gerät nicht überlastet wird (Ursache für „weiße Seite"/Absturz).
+        if(nodes.length<=600 || frame%4===0) simulate();
+      }
+      draw();
+    }catch(e){ /* ein einzelner fehlerhafter Frame darf die App nicht abschießen */ }
     requestAnimationFrame(loop);
   }
 
@@ -1512,12 +1520,33 @@ create policy "zugriff per schluessel"
   function scheduleSync(){ if(!syncReady()) return; clearTimeout(syncTimer); syncTimer=setTimeout(()=>pushCloud(false), 1500); }
 
   function applyPayload(data){
+    data = data || {};
     if(Array.isArray(data.categories) && data.categories.length) categories=data.categories;
     activeCat=(data.activeCat && categories.some(c=>c.id===data.activeCat)) ? data.activeCat : categories[0].id;
-    nodes=(data.nodes||[]).map(n=>({...n, vx:0, vy:0, cat:n.cat||categories[0].id}));
-    edges=data.edges||[];
-    dataUpdatedAt=data.updatedAt || Date.now();
-    idCounter=Math.max(idCounter, 0, ...nodes.map(n=>n.id||0));
+    const defCat = categories[0].id;
+    // Eingehende Knoten absichern: nur gültige Zahlen-Koordinaten zulassen.
+    // Sonst rechnet die Physik mit NaN → die Seite bleibt weiß / stürzt ab.
+    const seenId=new Set();
+    nodes=(Array.isArray(data.nodes)?data.nodes:[]).filter(n=>n && n.text!=null).map(n=>{
+      let x=Number(n.x), y=Number(n.y);
+      if(!Number.isFinite(x)) x=(Math.random()-0.5)*200;
+      if(!Number.isFinite(y)) y=(Math.random()-0.5)*200;
+      let id=Number(n.id);
+      if(!Number.isFinite(id) || seenId.has(id)) id=++idCounter;
+      seenId.add(id);
+      return { id, text:String(n.text), note:n.note||'', x, y, vx:0, vy:0,
+               t:Number(n.t)||Date.now(), cat:n.cat||defCat };
+    });
+    // höchste ID ohne Spread bestimmen (große Arrays sprengen sonst Math.max)
+    for(const n of nodes){ if(n.id>idCounter) idCounter=n.id; }
+    // Nur Kanten zwischen existierenden Knoten, ohne Duplikate
+    const eseen=new Set();
+    edges=(Array.isArray(data.edges)?data.edges:[]).filter(e=>{
+      if(!e || !seenId.has(e.a) || !seenId.has(e.b) || e.a===e.b) return false;
+      const k = e.a<e.b ? e.a+'|'+e.b : e.b+'|'+e.a;
+      if(eseen.has(k)) return false; eseen.add(k); return true;
+    });
+    dataUpdatedAt=Number(data.updatedAt) || Date.now();
     focusCat=null; selectedId=null;
     document.getElementById('hint').classList.toggle('hide', nodes.length>0);
     updateCount(); renderCats(); updateAddColor(); recenter();
@@ -1656,9 +1685,11 @@ create policy "zugriff per schluessel"
   function closeLogin(){ loginSheet.classList.remove('open'); }
 
   async function afterLogin(){
-    const row=await pullBrain();
-    if(row && row.data && (row.data.nodes||[]).length){ applyPayload(row.data); }
-    else { await pushBrain(); }   // Konto erstmalig mit dem aktuellen Stand füllen
+    try{
+      const row=await pullBrain();
+      if(row && row.data && (row.data.nodes||[]).length){ applyPayload(row.data); }
+      else { await pushBrain(); }   // Konto erstmalig mit dem aktuellen Stand füllen
+    }catch(e){}
     setAccountStatus(t('account_logged_in_ok'));
   }
   async function doSignIn(){
@@ -1718,6 +1749,18 @@ create policy "zugriff per schluessel"
     window.location.href='mailto:cris.cr400@gmail.com?subject='+encodeURIComponent(t('support_subject'))+'&body='+encodeURIComponent(t('support_body'));
   };
 
+  // Schutz vor Absturz-Schleifen: Lädt die Seite mehrfach in kurzer Folge neu
+  // (z. B. weil ein Cloud-Stand das Rendern abstürzen lässt), wird der
+  // automatische Cloud-Abruf übersprungen, damit die App benutzbar bleibt.
+  function crashLoopGuard(){
+    try{
+      const now=Date.now();
+      const hist=(JSON.parse(sessionStorage.getItem('db-loadtimes')||'[]')||[]).filter(x=>now-x<15000);
+      hist.push(now);
+      sessionStorage.setItem('db-loadtimes', JSON.stringify(hist));
+      return hist.length>=3;   // 3 schnelle Neuladungen → Cloud-Abruf aussetzen
+    }catch(e){ return false; }
+  }
   async function initAuth(){
     loadAuth();
     if(loggedIn() && authConfigured() && auth.expiresAt && Date.now()>auth.expiresAt-60000 && navigator.onLine){
@@ -1725,8 +1768,15 @@ create policy "zugriff per schluessel"
     }
     updateAccountUI();
     if(loggedIn() && authConfigured() && navigator.onLine){
-      const row=await pullBrain();
-      if(row && row.data && (row.data.nodes||[]).length) applyPayload(row.data);
+      if(crashLoopGuard()){
+        // Wir stecken vermutlich in einer Absturz-Schleife: lokalen Stand behalten.
+        setAccountStatus(t('account_autosaved'));
+        return;
+      }
+      try{
+        const row=await pullBrain();
+        if(row && row.data && (row.data.nodes||[]).length) applyPayload(row.data);
+      }catch(e){}
     }
   }
 
