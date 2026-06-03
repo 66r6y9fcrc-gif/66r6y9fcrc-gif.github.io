@@ -613,10 +613,21 @@ create policy "zugriff per schluessel"
       const data = JSON.parse(raw);
       if(Array.isArray(data.categories) && data.categories.length) categories = data.categories;
       if(data.activeCat) activeCat = data.activeCat;
-      nodes = (data.nodes||[]).map(n => ({...n, vx:0, vy:0, cat: n.cat || categories[0].id}));
+      let healed=false;
+      nodes = (data.nodes||[]).map(n => {
+        // Koordinaten absichern: nicht-endliche Werte (NaN/Infinity) lassen das
+        // Zeichnen (createGradient/arc) abstürzen → keine Punkte sichtbar.
+        let x=Number(n.x), y=Number(n.y);
+        if(!Number.isFinite(x)){ x=(Math.random()-0.5)*300; healed=true; }
+        if(!Number.isFinite(y)){ y=(Math.random()-0.5)*300; healed=true; }
+        return {...n, x, y, vx:0, vy:0, cat: n.cat || categories[0].id};
+      });
       edges = data.edges||[];
       dataUpdatedAt = data.updatedAt || 0;
       if(!categories.some(c=>c.id===activeCat)) activeCat = categories[0].id;
+      // Reparierte Koordinaten einmal dauerhaft sichern (ohne Sync auszulösen),
+      // damit die Punkte beim nächsten Laden an derselben Stelle bleiben.
+      if(healed){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(serialize())); }catch(e){} }
     }catch(e){}
   }
 
@@ -745,10 +756,16 @@ create policy "zugriff per schluessel"
       if(a!==dragNode){ a.vx+=fx; a.vy+=fy; }
       if(b!==dragNode){ b.vx-=fx; b.vy-=fy; }
     }
+    const MAXV=60;
     for(const n of nodes){
       if(n===dragNode) continue;
       n.vx*=DAMP; n.vy*=DAMP;
+      // Ausreißer/NaN abfangen, damit Koordinaten endlich bleiben
+      if(!Number.isFinite(n.vx)) n.vx=0; else n.vx=Math.max(-MAXV,Math.min(MAXV,n.vx));
+      if(!Number.isFinite(n.vy)) n.vy=0; else n.vy=Math.max(-MAXV,Math.min(MAXV,n.vy));
       n.x+=n.vx; n.y+=n.vy;
+      if(!Number.isFinite(n.x)) n.x=(Math.random()-0.5)*300;
+      if(!Number.isFinite(n.y)) n.y=(Math.random()-0.5)*300;
     }
   }
   const _byId = () => { const m=new Map(); for(const n of nodes) m.set(n.id,n); return m; };
@@ -787,6 +804,7 @@ create policy "zugriff per schluessel"
     for(const e of edges){
       const a=nodeById(e.a), b=nodeById(e.b);
       if(!a||!b) continue;
+      if(!Number.isFinite(a.x)||!Number.isFinite(a.y)||!Number.isFinite(b.x)||!Number.isFinite(b.y)) continue;
       const dim = (focusCat && a.cat!==focusCat && b.cat!==focusCat) ? .05 : (e.bridge ? .55 : .30);
       const grad = ctx.createLinearGradient(a.x,a.y,b.x,b.y);
       grad.addColorStop(0, hexToRgba(nodeColor(a), dim));
@@ -804,6 +822,7 @@ create policy "zugriff per schluessel"
     // Knoten (leuchtende Sterne in Kategoriefarbe)
     const q = searchQuery.toLowerCase();
     for(const n of nodes){
+      if(!Number.isFinite(n.x)||!Number.isFinite(n.y)) continue;
       const pulse = 0.6 + 0.4*Math.sin(time*2 + (n.id%100));
       const sel = n.id===selectedId;
       const isMatch = q && (n.text.toLowerCase().includes(q) || (n.note||'').toLowerCase().includes(q));
@@ -1787,7 +1806,11 @@ create policy "zugriff per schluessel"
   function recenter(){
     if(!nodes.length){ view={x:0,y:0,scale:1}; return; }
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
-    for(const n of nodes){ minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);maxX=Math.max(maxX,n.x);maxY=Math.max(maxY,n.y); }
+    for(const n of nodes){
+      if(!Number.isFinite(n.x)||!Number.isFinite(n.y)) continue;   // Ausreißer ignorieren
+      minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);maxX=Math.max(maxX,n.x);maxY=Math.max(maxY,n.y);
+    }
+    if(minX===Infinity){ view={x:canvas.clientWidth/2,y:canvas.clientHeight/2,scale:1}; return; }
     const cx=(minX+maxX)/2, cy=(minY+maxY)/2;
     const w=canvas.clientWidth, h=canvas.clientHeight;
     const span=Math.max(maxX-minX, maxY-minY, 200);
