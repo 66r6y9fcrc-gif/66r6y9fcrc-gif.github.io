@@ -597,7 +597,18 @@ create policy "zugriff per schluessel"
   }
   function load(){
     try{
-      const raw = localStorage.getItem(STORE_KEY);
+      let raw = localStorage.getItem(STORE_KEY);
+      // Rettung: eine zwischenzeitlich genutzte Version speicherte unter
+      // 'digital-brain-v2'. Falls dort MEHR Gedanken liegen (z. B. neu erfasst),
+      // diese übernehmen, damit nichts verloren geht. Sonst bleibt v1 erhalten.
+      try{
+        const rawV2 = localStorage.getItem('digital-brain-v2');
+        if(rawV2){
+          const v1count = raw ? ((JSON.parse(raw).nodes||[]).length) : -1;
+          const v2count = (JSON.parse(rawV2).nodes||[]).length;
+          if(v2count > v1count){ raw = rawV2; localStorage.setItem(STORE_KEY, rawV2); }
+        }
+      }catch(e){}
       if(!raw) return;
       const data = JSON.parse(raw);
       if(Array.isArray(data.categories) && data.categories.length) categories = data.categories;
