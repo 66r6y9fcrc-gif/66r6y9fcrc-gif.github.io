@@ -26,6 +26,22 @@
       --panel-line:rgba(120,170,255,.20);
       --text:#dce6ff;
       --muted:#7f8db3;
+      --topbar-grad:linear-gradient(180deg, rgba(2,3,10,.7), rgba(2,3,10,0));
+    }
+    /* Heller Modus – überschreibt die Farb-Variablen */
+    body.light{
+      --bg-0:#dde6f5;
+      --bg-1:#f8fbff;
+      --star:#8aa0c8;
+      --node:#2f63d6;
+      --node-core:#1b2440;
+      --edge:rgba(50,99,214,.28);
+      --accent:#2f6bff;
+      --panel:rgba(255,255,255,.86);
+      --panel-line:rgba(40,80,160,.20);
+      --text:#1a2440;
+      --muted:#5b6a8c;
+      --topbar-grad:linear-gradient(180deg, rgba(244,248,255,.9), rgba(244,248,255,0));
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
     html,body{height:100%;margin:0;overflow:hidden;}
@@ -42,7 +58,7 @@
       position:fixed;top:0;left:0;right:0;z-index:5;
       display:flex;align-items:center;justify-content:space-between;
       padding:14px 18px;
-      background:linear-gradient(180deg, rgba(2,3,10,.7), rgba(2,3,10,0));
+      background:var(--topbar-grad);
       pointer-events:none;
     }
     .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.3px;}
@@ -81,7 +97,7 @@
     .authnote{color:var(--muted);font-size:13px;line-height:1.5;}
     .langlist{display:flex;flex-direction:column;gap:8px;margin:0 0 14px;}
     .lang-opt{text-align:left;font-size:15px;}
-    .lang-opt.active{border-color:var(--accent);color:#fff;background:rgba(79,140,255,.16);}
+    .lang-opt.active{border-color:var(--accent);color:var(--text);background:rgba(79,140,255,.16);}
 
     /* ---- Untere Eingabeleiste (wie in der Skizze) ---- */
     .dock{
@@ -277,6 +293,7 @@
     <button class="menu-item" id="importBtn"><span class="mi-ic">⬆</span> <span data-i18n="menu_backup_load">Backup laden</span></button>
     <div class="menu-sep"></div>
     <button class="menu-item" id="languageBtn"><span class="mi-ic">🌐</span> <span data-i18n="menu_language">Sprache</span></button>
+    <button class="menu-item" id="themeBtn"><span class="mi-ic">🌓</span> <span id="themeLabel">Heller Modus</span></button>
     <button class="menu-item" id="supportBtn"><span class="mi-ic">✉️</span> <span data-i18n="menu_support">Support</span></button>
   </div>
 
@@ -442,7 +459,7 @@ create policy "zugriff per schluessel"
    de:{
     brand_name:'Digitales Gehirn', title_menu:'Menü',
     status_live:'Live – aktuell', status_offline:'Offline – läuft weiter, alles wird lokal gespeichert', status_update:'Neue Version – wird automatisch neu geladen …',
-    menu_login:'Anmelden', menu_backup_save:'Sichern (Backup)', menu_backup_load:'Backup laden', menu_language:'Sprache', menu_support:'Support',
+    menu_login:'Anmelden', menu_backup_save:'Sichern (Backup)', menu_backup_load:'Backup laden', menu_language:'Sprache', menu_theme_light:'Heller Modus', menu_theme_dark:'Dunkler Modus', menu_support:'Support',
     count_one:'{n} Gedanke', count_many:'{n} Gedanken',
     hint_html:'<b>Tippe deine erste Idee ein.</b><br>Jeder Gedanke wird ein Stern – und verbindet sich mit dem Rest deines Gehirns.',
     ph_search:'Suchen oder neuen Gedanken eingeben …', title_next_match:'Zum nächsten Treffer', title_clear:'Leeren', title_mic:'Diktieren (sprechen statt tippen)', title_add:'Hinzufügen (Enter)', match_hits:'{n} Treffer',
@@ -464,7 +481,7 @@ create policy "zugriff per schluessel"
    en:{
     brand_name:'Digital Brain', title_menu:'Menu',
     status_live:'Live – up to date', status_offline:'Offline – still running, everything is saved locally', status_update:'New version – reloading automatically …',
-    menu_login:'Sign in', menu_backup_save:'Save (backup)', menu_backup_load:'Load backup', menu_language:'Language', menu_support:'Support',
+    menu_login:'Sign in', menu_backup_save:'Save (backup)', menu_backup_load:'Load backup', menu_language:'Language', menu_theme_light:'Light mode', menu_theme_dark:'Dark mode', menu_support:'Support',
     count_one:'{n} thought', count_many:'{n} thoughts',
     hint_html:'<b>Type your first idea.</b><br>Every thought becomes a star – and connects with the rest of your brain.',
     ph_search:'Search or enter a new thought …', title_next_match:'Next match', title_clear:'Clear', title_mic:'Dictate (speak instead of type)', title_add:'Add (Enter)', match_hits:'{n} hits',
@@ -486,7 +503,7 @@ create policy "zugriff per schluessel"
    es:{
     brand_name:'Cerebro Digital', title_menu:'Menú',
     status_live:'En línea – actualizado', status_offline:'Sin conexión – sigue funcionando, todo se guarda localmente', status_update:'Nueva versión – recargando automáticamente …',
-    menu_login:'Iniciar sesión', menu_backup_save:'Guardar (copia)', menu_backup_load:'Cargar copia', menu_language:'Idioma', menu_support:'Soporte',
+    menu_login:'Iniciar sesión', menu_backup_save:'Guardar (copia)', menu_backup_load:'Cargar copia', menu_language:'Idioma', menu_theme_light:'Modo claro', menu_theme_dark:'Modo oscuro', menu_support:'Soporte',
     count_one:'{n} pensamiento', count_many:'{n} pensamientos',
     hint_html:'<b>Escribe tu primera idea.</b><br>Cada pensamiento se convierte en una estrella y se conecta con el resto de tu cerebro.',
     ph_search:'Buscar o escribir un nuevo pensamiento …', title_next_match:'Siguiente resultado', title_clear:'Borrar', title_mic:'Dictar (hablar en vez de escribir)', title_add:'Añadir (Enter)', match_hits:'{n} resultados',
@@ -508,7 +525,7 @@ create policy "zugriff per schluessel"
    fr:{
     brand_name:'Cerveau Numérique', title_menu:'Menu',
     status_live:'En ligne – à jour', status_offline:'Hors ligne – continue de fonctionner, tout est enregistré localement', status_update:'Nouvelle version – rechargement automatique …',
-    menu_login:'Se connecter', menu_backup_save:'Sauvegarder', menu_backup_load:'Charger une sauvegarde', menu_language:'Langue', menu_support:'Support',
+    menu_login:'Se connecter', menu_backup_save:'Sauvegarder', menu_backup_load:'Charger une sauvegarde', menu_language:'Langue', menu_theme_light:'Mode clair', menu_theme_dark:'Mode sombre', menu_support:'Support',
     count_one:'{n} pensée', count_many:'{n} pensées',
     hint_html:'<b>Saisis ta première idée.</b><br>Chaque pensée devient une étoile – et se connecte au reste de ton cerveau.',
     ph_search:'Rechercher ou saisir une nouvelle pensée …', title_next_match:'Résultat suivant', title_clear:'Effacer', title_mic:'Dicter (parler au lieu d’écrire)', title_add:'Ajouter (Entrée)', match_hits:'{n} résultats',
@@ -549,8 +566,30 @@ create policy "zugriff per schluessel"
     if(!LANGS.includes(l)) l='de';
     lang=l; try{ localStorage.setItem(LANG_KEY, l); }catch(e){}
     applyStaticI18n();
-    updateCount(); renderCats(); renderCardCats(); setStatus(); updateAccountUI();
+    updateCount(); renderCats(); renderCardCats(); setStatus(); updateAccountUI(); updateThemeLabel();
     if(rec){ try{ rec.lang=localeOf(lang); }catch(e){} }
+  }
+  // ---- Hell/Dunkel-Modus ----
+  const THEME_KEY='digital-brain-theme';
+  function currentTheme(){ return document.body.classList.contains('light') ? 'light' : 'dark'; }
+  function refreshThemeColors(){
+    const cs=getComputedStyle(document.body);
+    const star=cs.getPropertyValue('--star').trim();
+    const core=cs.getPropertyValue('--node-core').trim();
+    const text=cs.getPropertyValue('--text').trim();
+    themeColors.star  = star || '#bcd4ff';
+    themeColors.core  = core || '#ffffff';
+    themeColors.label = text || '#ffffff';
+    themeColors.labelDim = /^#[0-9a-f]{6}$/i.test(text) ? hexToRgba(text,.72) : (text || 'rgba(220,230,255,.78)');
+  }
+  function updateThemeLabel(){
+    const el=document.getElementById('themeLabel');
+    if(el) el.textContent = t(currentTheme()==='light' ? 'menu_theme_dark' : 'menu_theme_light');
+  }
+  function applyTheme(mode){
+    document.body.classList.toggle('light', mode==='light');
+    try{ localStorage.setItem(THEME_KEY, currentTheme()); }catch(e){}
+    refreshThemeColors(); updateThemeLabel();
   }
 
   // ---- Zustand ----
@@ -558,6 +597,8 @@ create policy "zugriff per schluessel"
   let edges = [];           // {a, b}
   let view = { x: 0, y: 0, scale: 1 };   // Kamera
   let stars = [];           // dekorativer Hintergrund
+  // Canvas-Farben, die sich mit dem Hell/Dunkel-Modus ändern
+  let themeColors = { star:'#bcd4ff', core:'#ffffff', label:'#ffffff', labelDim:'rgba(220,230,255,.78)' };
   let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
   // ---- Kategorien & Farben ----
@@ -808,7 +849,7 @@ create policy "zugriff per schluessel"
       const x = (px+W)%W, y=(py+H)%H;
       const tw = 0.5 + 0.5*Math.sin(time*1.5 + s.tw);
       ctx.globalAlpha = s.a * (0.5 + tw*0.5);
-      ctx.fillStyle = '#bcd4ff';
+      ctx.fillStyle = themeColors.star;
       ctx.beginPath();
       ctx.arc(x, y, s.r, 0, Math.PI*2);
       ctx.fill();
@@ -867,7 +908,7 @@ create policy "zugriff per schluessel"
       ctx.beginPath();
       ctx.arc(n.x,n.y,baseR+1.5/view.scale,0,Math.PI*2);
       ctx.stroke();
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = themeColors.core;
       ctx.beginPath();
       ctx.arc(n.x,n.y,baseR,0,Math.PI*2);
       ctx.fill();
@@ -884,7 +925,7 @@ create policy "zugriff per schluessel"
       if(isMatch){
         ctx.globalAlpha = 1;
         ctx.lineWidth = 2/view.scale;
-        ctx.strokeStyle = hexToRgba('#ffffff', 0.55+0.45*Math.sin(time*4));
+        ctx.strokeStyle = hexToRgba(themeColors.label, 0.55+0.45*Math.sin(time*4));
         ctx.beginPath();
         ctx.arc(n.x,n.y, baseR + (5+1.5*Math.sin(time*4))/view.scale, 0, Math.PI*2);
         ctx.stroke();
@@ -893,7 +934,7 @@ create policy "zugriff per schluessel"
       // Beschriftung – nah genug herangezoomt, oder bei Treffer/Auswahl immer
       if(view.scale > 0.55 || isMatch || sel){
         ctx.font = `${12/view.scale}px Inter, system-ui, sans-serif`;
-        ctx.fillStyle = (sel||isMatch) ? '#ffffff' : 'rgba(220,230,255,.78)';
+        ctx.fillStyle = (sel||isMatch) ? themeColors.label : themeColors.labelDim;
         ctx.textAlign = 'center';
         const label = n.text.length>26 ? n.text.slice(0,25)+'…' : n.text;
         ctx.fillText(label, n.x, n.y + baseR + 14/view.scale);
@@ -1793,6 +1834,7 @@ create policy "zugriff per schluessel"
   document.getElementById('languageBtn').onclick=()=>{ markLangActive(); languageSheet.classList.add('open'); };
   document.getElementById('languageCloseBtn').onclick=()=>languageSheet.classList.remove('open');
   document.querySelectorAll('.lang-opt').forEach(b=>{ b.onclick=()=>{ setLang(b.dataset.lang); markLangActive(); languageSheet.classList.remove('open'); }; });
+  document.getElementById('themeBtn').onclick=()=>applyTheme(currentTheme()==='light'?'dark':'light');
   document.getElementById('supportBtn').onclick=()=>{
     window.location.href='mailto:cris.cr400@gmail.com?subject='+encodeURIComponent(t('support_subject'))+'&body='+encodeURIComponent(t('support_body'));
   };
@@ -1851,6 +1893,7 @@ create policy "zugriff per schluessel"
   // ---- Start ----
   window.addEventListener('resize', resize);
   applyStaticI18n();   // statische Texte in der gewählten Sprache setzen
+  applyTheme(localStorage.getItem(THEME_KEY)==='light' ? 'light' : 'dark');   // gespeicherten Modus anwenden
   load(); loadSync(); resize(); makeStars(); updateCount(); renderCats(); updateAddColor();
   if(nodes.length){ document.getElementById('hint').classList.add('hide'); recenter(); }
   loop();
