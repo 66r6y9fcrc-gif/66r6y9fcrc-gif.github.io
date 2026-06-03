@@ -615,20 +615,36 @@ create policy "zugriff per schluessel"
       if(data.activeCat) activeCat = data.activeCat;
       let healed=false;
       nodes = (data.nodes||[]).map(n => {
-        // Koordinaten absichern: nicht-endliche Werte (NaN/Infinity) lassen das
-        // Zeichnen (createGradient/arc) abstürzen → keine Punkte sichtbar.
+        // Koordinaten absichern: nicht-endliche (NaN/Infinity) ODER absurd große
+        // Werte lassen das Zeichnen abstürzen bzw. schieben Punkte außer Sicht.
         let x=Number(n.x), y=Number(n.y);
-        if(!Number.isFinite(x)){ x=(Math.random()-0.5)*300; healed=true; }
-        if(!Number.isFinite(y)){ y=(Math.random()-0.5)*300; healed=true; }
+        if(!Number.isFinite(x) || Math.abs(x)>BAD_COORD){ x=(Math.random()-0.5)*300; healed=true; }
+        if(!Number.isFinite(y) || Math.abs(y)>BAD_COORD){ y=(Math.random()-0.5)*300; healed=true; }
         return {...n, x, y, vx:0, vy:0, cat: n.cat || categories[0].id};
       });
       edges = data.edges||[];
       dataUpdatedAt = data.updatedAt || 0;
       if(!categories.some(c=>c.id===activeCat)) activeCat = categories[0].id;
+      if(ensureSaneLayout()) healed=true;
       // Reparierte Koordinaten einmal dauerhaft sichern (ohne Sync auszulösen),
       // damit die Punkte beim nächsten Laden an derselben Stelle bleiben.
       if(healed){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(serialize())); }catch(e){} }
     }catch(e){}
+  }
+  // Grenze, ab der eine Koordinate als „kaputt" gilt (Physik-Ausreißer o. Ä.)
+  const BAD_COORD = 1e5;
+  // Letzte Rettung: Liegt KEIN Punkt in einem brauchbaren Bereich, alle ordentlich
+  // im Kreis um den Ursprung verteilen, damit sie garantiert sichtbar werden.
+  function ensureSaneLayout(){
+    if(!nodes.length) return false;
+    let ok=0;
+    for(const n of nodes){
+      if(Number.isFinite(n.x) && Number.isFinite(n.y) && Math.abs(n.x)<=BAD_COORD && Math.abs(n.y)<=BAD_COORD) ok++;
+    }
+    if(ok>0) return false;
+    const R = 120 + nodes.length*16;
+    nodes.forEach((n,i)=>{ const a=i/nodes.length*Math.PI*2; n.x=Math.cos(a)*R; n.y=Math.sin(a)*R; n.vx=0; n.vy=0; });
+    return true;
   }
 
   // ---- Hintergrund-Sterne ----
@@ -1548,8 +1564,8 @@ create policy "zugriff per schluessel"
     const seenId=new Set();
     nodes=(Array.isArray(data.nodes)?data.nodes:[]).filter(n=>n && n.text!=null).map(n=>{
       let x=Number(n.x), y=Number(n.y);
-      if(!Number.isFinite(x)) x=(Math.random()-0.5)*200;
-      if(!Number.isFinite(y)) y=(Math.random()-0.5)*200;
+      if(!Number.isFinite(x) || Math.abs(x)>BAD_COORD) x=(Math.random()-0.5)*300;
+      if(!Number.isFinite(y) || Math.abs(y)>BAD_COORD) y=(Math.random()-0.5)*300;
       let id=Number(n.id);
       if(!Number.isFinite(id) || seenId.has(id)) id=++idCounter;
       seenId.add(id);
@@ -1567,6 +1583,7 @@ create policy "zugriff per schluessel"
     });
     dataUpdatedAt=Number(data.updatedAt) || Date.now();
     focusCat=null; selectedId=null;
+    ensureSaneLayout();
     document.getElementById('hint').classList.toggle('hide', nodes.length>0);
     updateCount(); renderCats(); updateAddColor(); recenter();
     try{ localStorage.setItem(STORE_KEY, JSON.stringify(serialize())); }catch(e){}
