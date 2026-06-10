@@ -25,9 +25,10 @@
   #xpBar i { background:linear-gradient(90deg,#fbc02d,#ffee58); }
   #hudTop { display:flex; justify-content:space-between; gap:10px; font-weight:bold; }
   #hudGold { color:#ffd54f; }
-  #btnMenu { position:fixed; top:calc(8px + env(safe-area-inset-top)); right:8px; z-index:6;
-    width:44px; height:44px; border-radius:10px; border:2px solid #5d4a8a; background:rgba(10,6,20,.78);
-    color:#fff; font-size:20px; }
+  .topBtn { position:fixed; right:8px; z-index:6; width:44px; height:44px; border-radius:10px;
+    border:2px solid #5d4a8a; background:rgba(10,6,20,.78); color:#fff; font-size:20px; }
+  #btnMenu { top:calc(8px + env(safe-area-inset-top)); }
+  #btnInv { top:calc(60px + env(safe-area-inset-top)); }
 
   /* ---------- Touch-Steuerung ---------- */
   #controls { position:fixed; inset:0; pointer-events:none; z-index:5; }
@@ -65,28 +66,47 @@
     border:2px solid #8a6fd0; background:#3a2a60; color:#fff; font-family:inherit; }
   #bBtns button:active { background:#5a3fa0; }
   #bBtns button:disabled { opacity:.4; }
+  #bBtns button .sub { display:block; font-size:11px; font-weight:normal; color:#a99ad4; }
 
   .screen { position:fixed; inset:0; z-index:30; display:none; flex-direction:column; align-items:center;
-    justify-content:center; gap:14px; background:rgba(12,6,24,.92); color:#fff; text-align:center; padding:20px; }
+    justify-content:center; gap:14px; background:rgba(12,6,24,.92); color:#fff; text-align:center; padding:20px;
+    overflow-y:auto; }
   .screen h1 { font-size:clamp(28px, 8vw, 44px); color:#ffd54f; text-shadow:3px 3px 0 #7a3fa0; }
   .screen h2 { font-size:clamp(20px, 6vw, 30px); }
   .screen p { color:#cbb8ff; max-width:430px; font-size:15px; line-height:1.5; }
-  .screen button, #menuUI button, #shopUI button { padding:13px 22px; font-size:16px; font-weight:bold;
+  .screen button, #menuUI button, #shopUI button, #invUI button { padding:13px 22px; font-size:16px; font-weight:bold;
     border-radius:12px; border:2px solid #8a6fd0; background:#3a2a60; color:#fff; font-family:inherit; min-width:200px; }
   .screen button:active { background:#5a3fa0; }
   .screen button.danger { border-color:#d05f6f; background:#5e2535; }
 
-  #menuUI, #shopUI { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
-    width:min(420px, calc(100% - 24px)); max-height:84vh; overflow-y:auto; padding:16px; display:none; z-index:25; }
-  #menuUI h3, #shopUI h3 { color:#ffd54f; margin-bottom:10px; text-align:center; font-size:18px; }
-  #menuUI .stats { font-size:14px; line-height:1.7; background:rgba(0,0,0,.25); border-radius:8px; padding:8px 12px; margin-bottom:10px; }
-  #menuUI button, #shopUI button { width:100%; margin-top:8px; min-width:0; }
-  #shopUI .item { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; }
-  #shopUI .item .info { flex:1; font-size:13px; line-height:1.35; }
-  #shopUI .item .info b { font-size:14px; }
-  #shopUI .item button { width:auto; margin:0; padding:10px 14px; white-space:nowrap; }
-  #shopGold { text-align:center; color:#ffd54f; font-weight:bold; margin-bottom:4px; }
+  /* Klassenwahl */
+  .classCard { display:block; width:min(420px, calc(100% - 8px)); text-align:left; padding:12px 16px !important; }
+  .classCard b { font-size:18px; }
+  .classCard .cdesc { font-weight:normal; font-size:13px; color:#cbb8ff; line-height:1.4; margin-top:4px; }
+  .classCard .cstats { font-weight:normal; font-size:12px; color:#a99ad4; margin-top:4px; }
+
+  #menuUI, #shopUI, #invUI { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:min(440px, calc(100% - 24px)); max-height:84vh; overflow-y:auto; padding:16px; display:none; z-index:25; }
+  #menuUI h3, #shopUI h3, #invUI h3 { color:#ffd54f; margin-bottom:10px; text-align:center; font-size:18px; }
+  #menuUI .stats { font-size:13px; line-height:1.7; background:rgba(0,0,0,.25); border-radius:8px; padding:8px 12px; margin-bottom:10px; }
+  #menuUI button, #shopUI button, #invUI button { width:100%; margin-top:8px; min-width:0; }
+  .itemRow { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; }
+  .itemRow .info { flex:1; font-size:13px; line-height:1.35; }
+  .itemRow .info b { font-size:14px; }
+  .itemRow button { width:auto !important; margin:0 !important; padding:10px 14px; white-space:nowrap; }
   .muted { color:#a99ad4; font-size:12px; }
+  .tabs { display:flex; gap:8px; margin-bottom:6px; }
+  .tabs button { flex:1; padding:9px 4px !important; font-size:14px !important; margin-top:0 !important; opacity:.55; }
+  .tabs button.active { opacity:1; border-color:#ffd54f; }
+  .slotLabel { margin-top:10px; font-size:12px; color:#a99ad4; border-bottom:1px solid #4a3a72; padding-bottom:2px; }
+  .invItem { display:flex; align-items:center; gap:8px; padding:8px 6px; border-radius:8px; margin-top:4px;
+    background:rgba(0,0,0,.2); font-size:14px; }
+  .invItem:active { background:rgba(120,90,220,.3); }
+  .invItem .nm { flex:1; line-height:1.3; }
+  .invItem .tag { font-size:11px; color:#a99ad4; }
+  .statLine { display:flex; justify-content:space-between; font-size:14px; padding:2px 0; }
+  .diffUp { color:#6fe07a; } .diffDown { color:#ff7a7a; }
+  #shopGold, #invCap { text-align:center; color:#ffd54f; font-weight:bold; margin-bottom:4px; }
 </style>
 </head>
 <body>
@@ -100,7 +120,8 @@
     <div class="bar" id="xpBar"><i></i></div>
   </div>
 </div>
-<button id="btnMenu">☰</button>
+<button id="btnMenu" class="topBtn">☰</button>
+<button id="btnInv" class="topBtn">🎒</button>
 
 <div id="controls">
   <div id="dpad">
@@ -125,13 +146,19 @@
 
 <div id="menuUI" class="panel"></div>
 <div id="shopUI" class="panel"></div>
+<div id="invUI" class="panel"></div>
 
 <div class="screen" id="titleScreen">
   <h1>⚔ Pixel-Abenteuer</h1>
-  <p>Ein Drache bedroht das Dorf Eichenhain. Erkunde Wald und Höhle, werde stärker und besiege ihn!</p>
+  <p>Ein Drache bedroht das Dorf Eichenhain. Wähle deine Klasse, sammle legendäre Beute und besiege ihn!</p>
   <button id="btnContinue" style="display:none">▶ Fortsetzen</button>
   <button id="btnNew">✦ Neues Spiel</button>
   <p class="muted">Steuerung: Steuerkreuz zum Laufen, A zum Reden/Bestätigen.<br>Am PC: Pfeiltasten/WASD + Leertaste.</p>
+</div>
+
+<div class="screen" id="classScreen">
+  <h2>Wähle deine Klasse</h2>
+  <div id="classCards" style="display:flex;flex-direction:column;gap:10px;align-items:center;width:100%"></div>
 </div>
 
 <div class="screen" id="gameoverScreen">
@@ -149,9 +176,11 @@
 <script>
 'use strict';
 /* ============================================================
-   Pixel-Abenteuer – ein Mobile-Fantasy-RPG in einer Datei.
-   Oberwelt-Erkundung + rundenbasierte Kämpfe, Speicherung
-   in localStorage. Keine externen Assets.
+   Pixel-Abenteuer v2 – Mobile-Fantasy-RPG in einer Datei.
+   Klassen (Krieger/Magier/Schurke), prozedurales Loot mit
+   Raritätsstufen, Inventar mit 4 Ausrüstungs-Slots, Oberwelt-
+   Erkundung + rundenbasierte Kämpfe mit Statuseffekten.
+   Speicherung in localStorage. Keine externen Assets.
    ============================================================ */
 
 // ---------- Grund-Setup ----------
@@ -176,6 +205,8 @@ const irnd = (a, b) => Math.floor(rnd(a, b + 1));
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 // deterministisches „Rauschen" pro Kachel für Deko-Variation
 const noise = (x, y) => { const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return n - Math.floor(n); };
+let uidCounter = 0;
+const uid = () => Date.now().toString(36) + '-' + (uidCounter++).toString(36) + Math.floor(Math.random() * 1e4).toString(36);
 
 // ---------- Sound (WebAudio, winzige Retro-Töne) ----------
 let audio = null, soundOn = true;
@@ -199,10 +230,13 @@ const sfx = {
   magic:  () => { beep(500, .12, 'square', .05, 600); setTimeout(() => beep(900, .15, 'square', .05, 400), 90); },
   heal:   () => { beep(520, .1, 'sine', .06); setTimeout(() => beep(780, .15, 'sine', .06), 100); },
   gold:   () => { beep(880, .07, 'square', .05); setTimeout(() => beep(1320, .1, 'square', .05), 70); },
+  loot:   () => [660, 880, 1175].forEach((f, i) => setTimeout(() => beep(f, .1, 'square', .05), i * 90)),
+  equip:  () => beep(340, .12, 'triangle', .06, 120),
   level:  () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, .14, 'square', .06), i * 110)),
   lose:   () => [330, 262, 196, 131].forEach((f, i) => setTimeout(() => beep(f, .25, 'triangle', .07), i * 200)),
   win:    () => [523, 523, 523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, .15, 'square', .06), i * 120)),
   flee:   () => beep(400, .2, 'triangle', .05, 300),
+  poison: () => beep(260, .2, 'sawtooth', .05, -120),
 };
 
 // ---------- Karten ----------
@@ -258,7 +292,7 @@ const MAPS = {
       't......,,..ppppppp...t',
       't.,,...,,........p..#t',
       't.,,......t..,,..p..#t',
-      't....t.......,,..ppp#t',  // Pfad endet rechts an der Höhle
+      't....t.......,,..ppp#t',
       't..............t...##t',
       'tttttttttttttttttttttt',
     ],
@@ -267,7 +301,7 @@ const MAPS = {
       { x: 19, y: 17, to: 'hoehle', tx: 2, ty: 1 },
     ],
     npcs: [],
-    encounters: { chance: 0.13, list: ['schleim', 'wolf', 'pilz'], onTiles: new Set([',']) },
+    encounters: { chance: 0.13, list: ['schleim', 'wolf', 'pilz'], onTiles: new Set([',']), ilvl: [1, 3] },
   },
   hoehle: {
     name: 'Schattenhöhle', border: '#', zone: 'hoehle',
@@ -296,7 +330,7 @@ const MAPS = {
       { x: 18, y: 16, to: 'hort', tx: 6, ty: 9 },
     ],
     npcs: [],
-    encounters: { chance: 0.14, list: ['fledermaus', 'skelett', 'troll'], onTiles: new Set(['.', 'c']) },
+    encounters: { chance: 0.14, list: ['fledermaus', 'skelett', 'troll'], onTiles: new Set(['.', 'c']), ilvl: [4, 7] },
     floor: '.',
   },
   hort: {
@@ -331,16 +365,163 @@ function tileAt(map, x, y) {
   return map.tiles[y][x];
 }
 
-// ---------- Gegner ----------
+// ---------- Gegner (Werte für Gear-Power des Helden ausgelegt) ----------
 const ENEMIES = {
-  schleim:    { name: 'Schleim',      hp: 16,  atk: 5,  def: 1, xp: 8,   gold: [4, 8] },
-  wolf:       { name: 'Grauwolf',     hp: 26,  atk: 8,  def: 2, xp: 14,  gold: [7, 13] },
-  pilz:       { name: 'Knurrpilz',    hp: 22,  atk: 6,  def: 4, xp: 12,  gold: [6, 11] },
-  fledermaus: { name: 'Riesenfledermaus', hp: 24, atk: 10, def: 2, xp: 18, gold: [9, 16] },
-  skelett:    { name: 'Skelettkrieger', hp: 36, atk: 12, def: 6, xp: 26,  gold: [14, 24] },
-  troll:      { name: 'Höhlentroll',  hp: 52,  atk: 15, def: 8, xp: 40,  gold: [22, 38] },
-  drache:     { name: 'Drache Varganor', hp: 150, atk: 19, def: 10, xp: 250, gold: [280, 320], boss: true },
+  schleim:    { name: 'Schleim',          hp: 16,  atk: 5,  def: 1,  xp: 8,   gold: [4, 8] },
+  wolf:       { name: 'Grauwolf',         hp: 28,  atk: 8,  def: 2,  xp: 14,  gold: [7, 13] },
+  pilz:       { name: 'Knurrpilz',        hp: 24,  atk: 6,  def: 4,  xp: 12,  gold: [6, 11] },
+  fledermaus: { name: 'Riesenfledermaus', hp: 28,  atk: 11, def: 2,  xp: 18,  gold: [9, 16] },
+  skelett:    { name: 'Skelettkrieger',   hp: 44,  atk: 14, def: 7,  xp: 26,  gold: [14, 24] },
+  troll:      { name: 'Höhlentroll',      hp: 64,  atk: 17, def: 9,  xp: 40,  gold: [22, 38] },
+  drache:     { name: 'Drache Varganor',  hp: 190, atk: 22, def: 12, xp: 250, gold: [280, 320], boss: true },
 };
+
+// ---------- Klassen ----------
+const CLASSES = {
+  krieger: {
+    name: 'Krieger', icon: '⚔',
+    desc: 'Stahl und Sturheit. Hält gewaltig viel aus und teilt mit Schwert oder Axt kräftig aus.',
+    base: { hp: 38, mp: 8, atk: 8, def: 4 },
+    growth: { hp: 9, mp: 2, atk: 2, def: 2 },
+    crit: 5, dodge: 3,
+    weapons: ['schwert', 'axt'], startWeapon: 'schwert',
+    skills: ['wuchtschlag', 'kampfschrei', 'klingensturm'],
+    pal: { t: '#b3342a', g: '#7a1f18' },
+  },
+  magier: {
+    name: 'Magier', icon: '🔮',
+    desc: 'Meister der Elemente. Wenig Rüstung, dafür verheerende Zauber und Heilung.',
+    base: { hp: 26, mp: 20, atk: 6, def: 2 },
+    growth: { hp: 6, mp: 5, atk: 2, def: 1 },
+    crit: 5, dodge: 3,
+    weapons: ['stab'], startWeapon: 'stab',
+    skills: ['feuerball', 'heilung', 'blitzsturm'],
+    pal: { t: '#7a4fd0', g: '#4f2f96' },
+  },
+  schurke: {
+    name: 'Schurke', icon: '🗡',
+    desc: 'Schnell und tödlich. Hohe Kritisch- und Ausweichchance, Gift auf der Klinge.',
+    base: { hp: 30, mp: 12, atk: 7, def: 3 },
+    growth: { hp: 7, mp: 3, atk: 2, def: 1 },
+    crit: 15, dodge: 10,
+    weapons: ['dolch'], startWeapon: 'dolch',
+    skills: ['giftklinge', 'schattenschritt', 'meucheln'],
+    pal: { t: '#3e7d52', g: '#27513a' },
+  },
+};
+
+// ---------- Skills ----------
+const SKILLS = {
+  wuchtschlag:     { name: 'Wuchtschlag', icon: '💥', mp: 4, lvl: 1, type: 'dmg', power: 1.7,
+    log: n => '💥 Wuchtschlag trifft ' + n },
+  kampfschrei:     { name: 'Kampfschrei', icon: '📢', mp: 5, lvl: 4, type: 'buff', mult: 1.4, turns: 3,
+    info: 'ATK +40 % für 3 Runden' },
+  klingensturm:    { name: 'Klingensturm', icon: '🌀', mp: 9, lvl: 8, type: 'dmg', power: 2.6,
+    log: n => '🌀 Klingensturm zerfetzt ' + n },
+  feuerball:       { name: 'Feuerball', icon: '🔥', mp: 4, lvl: 1, type: 'dmg', power: 1.7, magic: true,
+    log: n => '🔥 Dein Feuerball verbrennt ' + n },
+  heilung:         { name: 'Heilung', icon: '💚', mp: 5, lvl: 3, type: 'heal', power: 0.45,
+    info: 'heilt 45 % deiner HP' },
+  blitzsturm:      { name: 'Blitzsturm', icon: '⚡', mp: 9, lvl: 7, type: 'dmg', power: 2.5, magic: true,
+    log: n => '⚡ Der Blitzsturm durchzuckt ' + n },
+  giftklinge:      { name: 'Giftklinge', icon: '☠', mp: 4, lvl: 1, type: 'dmg', power: 1.2, poison: 3,
+    log: n => '☠ Giftklinge trifft ' + n, info: 'vergiftet 3 Runden' },
+  schattenschritt: { name: 'Schattenschritt', icon: '👤', mp: 3, lvl: 4, type: 'evade',
+    info: 'nächster Gegnerangriff verfehlt' },
+  meucheln:        { name: 'Meucheln', icon: '🩸', mp: 7, lvl: 8, type: 'dmg', power: 1.6, critBonus: 50,
+    log: n => '🩸 Du meuchelst ' + n, info: '+50 % Kritchance' },
+};
+const classSkills = () => CLASSES[G.cls].skills.map(id => SKILLS[id]);
+
+// ---------- Gear: Raritäten, Basistypen, Affixe, Generator ----------
+const RARITIES = [
+  { name: 'Gewöhnlich', color: '#c0c0c8', mult: 1.0,  affixes: 0, weight: 55, valueMult: 1 },
+  { name: 'Selten',     color: '#58a8ff', mult: 1.25, affixes: 1, weight: 28, valueMult: 2.2 },
+  { name: 'Episch',     color: '#bf72ff', mult: 1.55, affixes: 2, weight: 13, valueMult: 4 },
+  { name: 'Legendär',   color: '#ffa033', mult: 2.0,  affixes: 3, weight: 4,  valueMult: 7 },
+];
+const SLOTS = { waffe: 'Waffe', ruestung: 'Rüstung', helm: 'Helm', amulett: 'Amulett' };
+const BASES = {
+  schwert:  { label: 'schwert',  slot: 'waffe', cls: 'krieger', icon: '🗡', main: 'atk', scale: 2.2 },
+  axt:      { label: 'axt',      slot: 'waffe', cls: 'krieger', icon: '🪓', main: 'atk', scale: 2.4 },
+  stab:     { label: 'stab',     slot: 'waffe', cls: 'magier',  icon: '🪄', main: 'atk', scale: 2.2, bonus: 'mp' },
+  dolch:    { label: 'dolch',    slot: 'waffe', cls: 'schurke', icon: '🔪', main: 'atk', scale: 2.0, bonus: 'crit' },
+  ruestung: { label: 'rüstung',  slot: 'ruestung', cls: null, icon: '🛡', main: 'def', scale: 1.6 },
+  helm:     { label: 'helm',     slot: 'helm',     cls: null, icon: '🪖', main: 'def', scale: 0.9 },
+  amulett:  { label: 'amulett',  slot: 'amulett',  cls: null, icon: '📿', main: 'hp', scale: 3.0 },
+};
+// Material-Vorsilben nach Item-Level (Waffe / Rüstungsteile / Amulett)
+const MATS = [
+  { max: 3,  w: 'Holz',    a: 'Leder',   am: 'Bernstein' },
+  { max: 6,  w: 'Eisen',   a: 'Ketten',  am: 'Silber' },
+  { max: 9,  w: 'Stahl',   a: 'Stahl',   am: 'Gold' },
+  { max: 99, w: 'Drachen', a: 'Drachen', am: 'Drachen' },
+];
+const AFFIXES = [
+  { stat: 'atk',   suffix: 'der Stärke',   perIlvl: 0.8, min: 1, max: 99, fmt: v => '+' + v + ' ATK' },
+  { stat: 'def',   suffix: 'der Abwehr',   perIlvl: 0.6, min: 1, max: 99, fmt: v => '+' + v + ' DEF' },
+  { stat: 'hp',    suffix: 'der Bärin',    perIlvl: 2.5, min: 4, max: 99, fmt: v => '+' + v + ' HP' },
+  { stat: 'mp',    suffix: 'der Weisheit', perIlvl: 1.2, min: 2, max: 99, fmt: v => '+' + v + ' MP' },
+  { stat: 'crit',  suffix: 'des Falken',   perIlvl: 0.5, min: 2, max: 12, fmt: v => '+' + v + ' % Krit' },
+  { stat: 'dodge', suffix: 'der Katze',    perIlvl: 0.5, min: 2, max: 10, fmt: v => '+' + v + ' % Ausweichen' },
+];
+const STAT_FMT = {
+  atk: v => '+' + v + ' Angriff', def: v => '+' + v + ' Verteidigung',
+  hp: v => '+' + v + ' max. HP', mp: v => '+' + v + ' max. MP',
+  crit: v => '+' + v + ' % Krit', dodge: v => '+' + v + ' % Ausweichen',
+};
+
+function rollRarity(weights) {
+  const pool = weights || RARITIES.map(r => r.weight);
+  const total = pool.reduce((a, b) => a + b, 0);
+  let roll = Math.random() * total;
+  for (let i = 0; i < pool.length; i++) { roll -= pool[i]; if (roll <= 0) return i; }
+  return 0;
+}
+function gearName(baseId, ilvl, affix) {
+  const base = BASES[baseId];
+  const mat = MATS.find(m => ilvl <= m.max);
+  const pre = base.slot === 'waffe' ? mat.w : base.slot === 'amulett' ? mat.am : mat.a;
+  return pre + base.label + (affix ? ' ' + affix.suffix : '');
+}
+// Erzeugt ein Ausrüstungsstück. opts: { base?, slot?, rarity?, cls? }
+function rollGear(ilvl, opts) {
+  opts = opts || {};
+  ilvl = clamp(Math.round(ilvl), 1, 12);
+  let baseId = opts.base;
+  if (!baseId) {
+    const slot = opts.slot || pick(['waffe', 'waffe', 'ruestung', 'ruestung', 'helm', 'amulett']);
+    const cls = opts.cls || (G ? G.cls : null);
+    const candidates = Object.keys(BASES).filter(id =>
+      BASES[id].slot === slot && (!BASES[id].cls || BASES[id].cls === cls));
+    baseId = candidates.length ? pick(candidates) : 'ruestung';
+  }
+  const base = BASES[baseId];
+  const rid = opts.rarity != null ? opts.rarity : rollRarity();
+  const rar = RARITIES[rid];
+  const stats = { atk: 0, def: 0, hp: 0, mp: 0, crit: 0, dodge: 0 };
+  stats[base.main] += Math.max(1, Math.round(base.scale * ilvl * rar.mult * rnd(0.9, 1.1)));
+  if (base.bonus) stats[base.bonus] += base.bonus === 'crit' ? 2 + Math.floor(ilvl / 3) : 2 + ilvl;
+  // Affixe: unterschiedliche Werte, nicht doppelt
+  const pool = AFFIXES.filter(a => a.stat !== base.main);
+  const rolled = [];
+  for (let i = 0; i < rar.affixes && pool.length; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    const af = pool.splice(idx, 1)[0];
+    stats[af.stat] += clamp(Math.round(af.perIlvl * ilvl * rnd(0.8, 1.2)), af.min, af.max);
+    rolled.push(af);
+  }
+  const value = Math.round((8 + ilvl * 5) * rar.valueMult);
+  return {
+    uid: uid(), base: baseId, slot: base.slot, cls: base.cls, icon: base.icon,
+    rarity: rid, ilvl, stats, value,
+    name: gearName(baseId, ilvl, rolled[0]),
+  };
+}
+const rarOf = it => RARITIES[it.rarity];
+function gearStatLines(it) {
+  return Object.entries(it.stats).filter(([, v]) => v > 0).map(([k, v]) => STAT_FMT[k](v));
+}
 
 // ---------- Pixel-Sprites ----------
 // Jedes Sprite: Palette (Zeichen -> Farbe) + Zeilen. '.' = transparent.
@@ -369,79 +550,106 @@ const SPRITES = {
     'd...........d..', 'dd....rr....dd.', 'ddd..rrrr..ddd.', 'dddrrrrrrrrddd.', '.drrerrrrerd...', '.rrrrrrrrrrrr..', '..rryyyyyyrr...', '..rrywwwwyrr...', '.rrrryyyyrrrr..', 'rrdrrrrrrrrdrr.', 'rr.rryyyyrr.rr.', '...rrryyrrr....', '...dd.rr.dd....', '..ddd.rr.ddd...', '......ff.......'] },
 };
 
-function drawSprite(g, key, x, y, size) {
+function drawSprite(g, key, x, y, size, palOver) {
   const sp = SPRITES[key]; if (!sp) return;
+  const pal = palOver ? Object.assign({}, sp.pal, palOver) : sp.pal;
   const rows = sp.rows, h = rows.length, w = Math.max(...rows.map(r => r.length));
   const cell = size / Math.max(w, h);
   const ox = x + (size - w * cell) / 2, oy = y + (size - h * cell) / 2;
   for (let j = 0; j < h; j++) for (let i = 0; i < rows[j].length; i++) {
     const ch = rows[j][i]; if (ch === '.') continue;
-    const col = sp.pal[ch]; if (!col) continue;
+    const col = pal[ch]; if (!col) continue;
     g.fillStyle = col;
     g.fillRect(Math.floor(ox + i * cell), Math.floor(oy + j * cell), Math.ceil(cell), Math.ceil(cell));
   }
 }
 
 // ---------- Spielzustand ----------
-const SAVE_KEY = 'pixel-abenteuer-save-v1';
-const WEAPONS = [
-  { name: 'Holzschwert', atk: 0, price: 0 },
-  { name: 'Eisenschwert', atk: 4, price: 70 },
-  { name: 'Flammenklinge', atk: 9, price: 220 },
-];
-const ARMORS = [
-  { name: 'Stoffweste', def: 0, price: 0 },
-  { name: 'Lederrüstung', def: 3, price: 60 },
-  { name: 'Kettenhemd', def: 7, price: 200 },
-];
+const SAVE_KEY = 'pixel-abenteuer-save-v2';
+const INV_MAX = 24;
 
 let G = null; // gesamter Spielstand
-function newGame() {
-  return {
+function newGame(cls) {
+  cls = CLASSES[cls] ? cls : 'krieger';
+  const g = {
     map: 'dorf', x: 10, y: 9, dir: 'down',
-    lvl: 1, xp: 0, hp: 32, maxHp: 32, mp: 10, maxMp: 10,
-    atk: 7, def: 3, gold: 30,
-    weapon: 0, armor: 0,
+    cls, lvl: 1, xp: 0, gold: 30,
     items: { trank: 2, aether: 1 },
+    inv: [],
+    equip: {
+      waffe: rollGear(1, { base: CLASSES[cls].startWeapon, rarity: 0 }),
+      ruestung: rollGear(1, { base: 'ruestung', rarity: 0 }),
+      helm: null, amulett: null,
+    },
+    shopStock: null,
     flags: { introSeen: false, dragonDead: false },
+    hp: 0, mp: 0,
   };
+  const s = statsFor(g);
+  g.hp = s.maxHp; g.mp = s.maxMp;
+  return g;
 }
 const xpNext = lvl => Math.floor(20 * Math.pow(lvl, 1.5));
-const atkTotal = () => G.atk + WEAPONS[G.weapon].atk;
-const defTotal = () => G.def + ARMORS[G.armor].def;
+
+// Gesamtwerte: Klassenbasis + Level-Zuwächse + Ausrüstung
+function statsFor(g) {
+  const c = CLASSES[g.cls];
+  const s = {
+    atk: c.base.atk + c.growth.atk * (g.lvl - 1),
+    def: c.base.def + c.growth.def * (g.lvl - 1),
+    maxHp: c.base.hp + c.growth.hp * (g.lvl - 1),
+    maxMp: c.base.mp + c.growth.mp * (g.lvl - 1),
+    crit: c.crit, dodge: c.dodge,
+  };
+  for (const it of Object.values(g.equip)) {
+    if (!it) continue;
+    s.atk += it.stats.atk; s.def += it.stats.def;
+    s.maxHp += it.stats.hp; s.maxMp += it.stats.mp;
+    s.crit += it.stats.crit; s.dodge += it.stats.dodge;
+  }
+  s.crit = clamp(s.crit, 0, 60); s.dodge = clamp(s.dodge, 0, 45);
+  return s;
+}
+const stats = () => statsFor(G);
+function clampVitals() {
+  const s = stats();
+  G.hp = clamp(G.hp, 0, s.maxHp); G.mp = clamp(G.mp, 0, s.maxMp);
+}
 
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch (e) {} }
 function load() {
   try {
     const raw = localStorage.getItem(SAVE_KEY); if (!raw) return null;
     const g = JSON.parse(raw);
-    if (!g || !MAPS[g.map]) return null;
-    return Object.assign(newGame(), g);
+    if (!g || !MAPS[g.map] || !CLASSES[g.cls]) return null;
+    return Object.assign(newGame(g.cls), g);
   } catch (e) { return null; }
 }
 
 // ---------- Modus / UI-Referenzen ----------
-let mode = 'title'; // title | explore | dialog | battle | menu | shop | gameover | victory
+let mode = 'title'; // title | classpick | explore | dialog | battle | menu | shop | inv | gameover | victory
 const $ = id => document.getElementById(id);
 const ui = {
   dialog: $('dialog'), dWho: $('dWho'), dText: $('dText'),
   battle: $('battleUI'), bLog: $('bLog'), bBtns: $('bBtns'),
-  menu: $('menuUI'), shop: $('shopUI'),
-  title: $('titleScreen'), gameover: $('gameoverScreen'), victory: $('victoryScreen'),
+  menu: $('menuUI'), shop: $('shopUI'), inv: $('invUI'),
+  title: $('titleScreen'), classScreen: $('classScreen'), classCards: $('classCards'),
+  gameover: $('gameoverScreen'), victory: $('victoryScreen'),
   hudName: $('hudName'), hudGold: $('hudGold'),
   hpTxt: $('hpTxt'), mpTxt: $('mpTxt'),
   hpBar: document.querySelector('#hpBar i'), mpBar: document.querySelector('#mpBar i'),
   xpBar: document.querySelector('#xpBar i'),
-  hud: $('hud'), controls: $('controls'), btnMenu: $('btnMenu'),
+  btnMenu: $('btnMenu'), btnInv: $('btnInv'),
 };
 function refreshHud() {
   if (!G) return;
-  ui.hudName.textContent = 'Held · Lv ' + G.lvl;
+  const s = stats();
+  ui.hudName.textContent = CLASSES[G.cls].icon + ' ' + CLASSES[G.cls].name + ' · Lv ' + G.lvl;
   ui.hudGold.textContent = G.gold + ' G';
-  ui.hpTxt.textContent = G.hp + '/' + G.maxHp;
-  ui.mpTxt.textContent = G.mp + '/' + G.maxMp;
-  ui.hpBar.style.width = (100 * G.hp / G.maxHp) + '%';
-  ui.mpBar.style.width = (100 * G.mp / G.maxMp) + '%';
+  ui.hpTxt.textContent = G.hp + '/' + s.maxHp;
+  ui.mpTxt.textContent = G.mp + '/' + s.maxMp;
+  ui.hpBar.style.width = (100 * G.hp / s.maxHp) + '%';
+  ui.mpBar.style.width = (100 * G.mp / s.maxMp) + '%';
   ui.xpBar.style.width = (100 * G.xp / xpNext(G.lvl)) + '%';
 }
 
@@ -477,7 +685,10 @@ window.addEventListener('keydown', e => {
   const map = { arrowup: 'up', w: 'up', arrowdown: 'down', s: 'down', arrowleft: 'left', a: 'left', arrowright: 'right', d: 'right' };
   if (map[k]) { held.add(map[k]); e.preventDefault(); }
   if (k === ' ' || k === 'enter') { e.preventDefault(); pressA(); }
-  if (k === 'escape' && mode === 'menu') closeMenu();
+  if (k === 'escape') {
+    if (mode === 'menu') closeMenu();
+    else if (mode === 'inv') closeInv();
+  }
 });
 window.addEventListener('keyup', e => {
   const k = e.key.toLowerCase();
@@ -496,7 +707,13 @@ for (const [id, dir] of [['dUp', 'up'], ['dDown', 'down'], ['dLeft', 'left'], ['
 }
 $('btnA').addEventListener('pointerdown', e => { e.preventDefault(); pressA(); });
 ui.btnMenu.addEventListener('pointerdown', e => { e.preventDefault();
-  if (mode === 'explore') openMenu(); else if (mode === 'menu') closeMenu(); });
+  if (mode === 'explore') openMenu();
+  else if (mode === 'menu') closeMenu();
+  else if (mode === 'inv') { closeInv(); openMenu(); } });
+ui.btnInv.addEventListener('pointerdown', e => { e.preventDefault();
+  if (mode === 'explore') openInv();
+  else if (mode === 'inv') closeInv();
+  else if (mode === 'menu') { closeMenu(); openInv(); } });
 document.addEventListener('contextmenu', e => e.preventDefault());
 
 function pressA() {
@@ -522,7 +739,6 @@ function walkable(map, x, y) {
 
 let fade = 0; // Karten-Übergangsblende (1 -> 0)
 function changeMap(portal) {
-  const dest = MAPS[portal.to];
   G.map = portal.to; setPlayerTo(portal.tx, portal.ty);
   fade = 1; sfx.select(); save();
   if (portal.to === 'hort' && !G.flags.dragonDead) {
@@ -580,6 +796,11 @@ function startBattle(enemyId) {
     xp: base.xp, gold: irnd(base.gold[0], base.gold[1]),
     shake: 0, flash: 0, bob: Math.random() * 6, busy: false,
     floats: [], // schwebende Schadenszahlen
+    poison: 0,        // Runden Gift auf dem Gegner
+    poisonDmg: 0,
+    pBuffTurns: 0,    // Kampfschrei-Runden des Helden
+    pBuffMult: 1,
+    pEvade: false,    // Schattenschritt aktiv
   };
   mode = 'battle';
   held.clear();
@@ -593,20 +814,24 @@ function addFloat(text, color) { B.floats.push({ text, color, t: 0 }); }
 
 function renderBattleButtons(view) {
   const b = ui.bBtns; b.innerHTML = '';
-  const mk = (label, fn, disabled) => {
+  const mk = (label, fn, disabled, sub) => {
     const el = document.createElement('button');
-    el.textContent = label; el.disabled = !!disabled || B.busy;
+    el.innerHTML = label + (sub ? '<span class="sub">' + sub + '</span>' : '');
+    el.disabled = !!disabled || B.busy;
     el.addEventListener('pointerdown', e => { e.preventDefault(); if (!el.disabled) fn(); });
     b.appendChild(el); return el;
   };
   if (view === 'main') {
     mk('⚔ Angriff', () => playerAttack());
-    mk('✨ Zauber', () => renderBattleButtons('magic'));
+    mk('✨ Skills', () => renderBattleButtons('skills'));
     mk('🧪 Tasche', () => renderBattleButtons('items'));
     mk('🏃 Flucht', () => playerFlee(), B.boss);
-  } else if (view === 'magic') {
-    mk('🔥 Feuerball (4 MP)', () => castFire(), G.mp < 4);
-    mk('💚 Heilung (5 MP)' + (G.lvl < 3 ? ' – ab Lv 3' : ''), () => castHeal(), G.lvl < 3 || G.mp < 5);
+  } else if (view === 'skills') {
+    for (const sk of classSkills()) {
+      const locked = G.lvl < sk.lvl;
+      mk(sk.icon + ' ' + sk.name, () => useSkill(sk), locked || G.mp < sk.mp,
+        locked ? 'ab Lv ' + sk.lvl : sk.mp + ' MP' + (sk.info ? ' · ' + sk.info : ''));
+    }
     mk('↩ Zurück', () => renderBattleButtons('main'));
   } else if (view === 'items') {
     mk('🧪 Trank ×' + G.items.trank + ' (+35 HP)', () => useItemInBattle('trank'), G.items.trank <= 0);
@@ -615,42 +840,64 @@ function renderBattleButtons(view) {
   }
 }
 function dmgRoll(atk, def) { return Math.max(1, Math.round(atk * rnd(0.85, 1.2) - def * 0.5)); }
+const heroAtk = () => Math.round(stats().atk * (B && B.pBuffTurns > 0 ? B.pBuffMult : 1));
+
+function rollCrit(bonus) { return Math.random() * 100 < stats().crit + (bonus || 0); }
 
 function playerAttack() {
   if (B.busy) return; B.busy = true; renderBattleButtons('main');
-  const crit = Math.random() < 0.1;
-  let d = dmgRoll(atkTotal(), B.def); if (crit) d = Math.round(d * 1.8);
+  const crit = rollCrit(0);
+  let d = dmgRoll(heroAtk(), B.def); if (crit) d = Math.round(d * 1.8);
   B.hp = Math.max(0, B.hp - d);
   B.flash = 0.25; B.shake = 0.3; sfx.hit();
   addFloat('-' + d, crit ? '#ffd540' : '#fff');
   bLog((crit ? '💥 Kritischer Treffer! ' : 'Du triffst ') + B.name + ': ' + d + ' Schaden!');
   afterPlayerAction();
 }
-function castFire() {
-  if (B.busy || G.mp < 4) return; B.busy = true; renderBattleButtons('main');
-  G.mp -= 4; refreshHud();
-  const d = Math.max(2, Math.round(atkTotal() * rnd(1.5, 1.9) - B.def * 0.3));
-  B.hp = Math.max(0, B.hp - d);
-  B.flash = 0.35; B.shake = 0.35; sfx.magic();
-  addFloat('-' + d, '#ff8a3a');
-  bLog('🔥 Dein Feuerball verbrennt ' + B.name + ': ' + d + ' Schaden!');
-  afterPlayerAction();
-}
-function castHeal() {
-  if (B.busy || G.mp < 5 || G.lvl < 3) return; B.busy = true; renderBattleButtons('main');
-  G.mp -= 5;
-  const h = Math.round(G.maxHp * 0.45);
-  G.hp = Math.min(G.maxHp, G.hp + h); refreshHud(); sfx.heal();
-  bLog('💚 Heilung! Du gewinnst ' + h + ' HP zurück.');
-  afterPlayerAction(true);
+function useSkill(sk) {
+  if (B.busy || G.mp < sk.mp || G.lvl < sk.lvl) return;
+  B.busy = true; renderBattleButtons('main');
+  G.mp -= sk.mp; refreshHud();
+  if (sk.type === 'dmg') {
+    const crit = rollCrit(sk.critBonus || 0);
+    const defFactor = sk.magic ? 0.2 : 0.5;
+    let d = Math.max(2, Math.round(heroAtk() * sk.power * rnd(0.9, 1.1) - B.def * defFactor));
+    if (crit) d = Math.round(d * 1.8);
+    B.hp = Math.max(0, B.hp - d);
+    B.flash = 0.35; B.shake = 0.35;
+    (sk.magic ? sfx.magic : sfx.hit)();
+    addFloat('-' + d, crit ? '#ffd540' : sk.magic ? '#7ec8ff' : '#fff');
+    let msg = (crit ? '💥 Kritisch! ' : '') + sk.log(B.name) + ': ' + d + ' Schaden!';
+    if (sk.poison && B.hp > 0) {
+      B.poison = sk.poison;
+      B.poisonDmg = Math.max(2, Math.round(stats().atk * 0.4));
+      msg += ' ' + B.name + ' ist vergiftet!';
+      sfx.poison();
+    }
+    bLog(msg);
+    afterPlayerAction();
+  } else if (sk.type === 'heal') {
+    const h = Math.round(stats().maxHp * sk.power);
+    G.hp = Math.min(stats().maxHp, G.hp + h); refreshHud(); sfx.heal();
+    bLog('💚 Heilung! Du gewinnst ' + h + ' HP zurück.');
+    afterPlayerAction(true);
+  } else if (sk.type === 'buff') {
+    B.pBuffTurns = sk.turns; B.pBuffMult = sk.mult; sfx.magic();
+    bLog('📢 Kampfschrei! Dein Angriff steigt für ' + sk.turns + ' Runden um ' + Math.round((sk.mult - 1) * 100) + ' %.');
+    afterPlayerAction(true);
+  } else if (sk.type === 'evade') {
+    B.pEvade = true; sfx.magic();
+    bLog('👤 Schattenschritt! Du verschmilzt mit den Schatten.');
+    afterPlayerAction(true);
+  }
 }
 function useItemInBattle(which) {
   if (B.busy) return; B.busy = true; renderBattleButtons('main');
   if (which === 'trank' && G.items.trank > 0) {
-    G.items.trank--; G.hp = Math.min(G.maxHp, G.hp + 35); sfx.heal();
+    G.items.trank--; G.hp = Math.min(stats().maxHp, G.hp + 35); sfx.heal();
     bLog('🧪 Du trinkst einen Trank: +35 HP.');
   } else if (which === 'aether' && G.items.aether > 0) {
-    G.items.aether--; G.mp = Math.min(G.maxMp, G.mp + 12); sfx.heal();
+    G.items.aether--; G.mp = Math.min(stats().maxMp, G.mp + 12); sfx.heal();
     bLog('💙 Du nutzt einen Äther: +12 MP.');
   }
   refreshHud();
@@ -672,36 +919,99 @@ function afterPlayerAction(skipDeathCheck) {
 }
 function enemyTurn() {
   if (!B) return;
-  const d = dmgRoll(B.atk, defTotal());
-  G.hp = Math.max(0, G.hp - d);
-  refreshHud(); sfx.hurt();
-  bLog(B.name + ' greift an: ' + d + ' Schaden!');
-  if (G.hp <= 0) { setTimeout(loseBattle, 750); return; }
+  // Gift tickt zu Beginn des Gegnerzugs
+  if (B.poison > 0) {
+    B.poison--;
+    B.hp = Math.max(0, B.hp - B.poisonDmg);
+    B.flash = 0.2; sfx.poison();
+    addFloat('-' + B.poisonDmg, '#7ddb5a');
+    bLog('☠ Das Gift frisst sich durch ' + B.name + ': ' + B.poisonDmg + ' Schaden!');
+    if (B.hp <= 0) { setTimeout(winBattle, 650); return; }
+    setTimeout(enemyStrike, 800);
+  } else {
+    enemyStrike();
+  }
+}
+function enemyStrike() {
+  if (!B) return;
+  const dodged = B.pEvade || Math.random() * 100 < stats().dodge;
+  if (dodged) {
+    bLog(B.pEvade ? '👤 ' + B.name + ' schlägt ins Leere – Schattenschritt!' : '💨 Du weichst dem Angriff von ' + B.name + ' aus!');
+    B.pEvade = false;
+    sfx.flee();
+  } else {
+    const d = dmgRoll(B.atk, stats().def);
+    G.hp = Math.max(0, G.hp - d);
+    refreshHud(); sfx.hurt();
+    bLog(B.name + ' greift an: ' + d + ' Schaden!');
+    if (G.hp <= 0) { setTimeout(loseBattle, 750); return; }
+  }
+  if (B.pBuffTurns > 0) B.pBuffTurns--;
   B.busy = false; renderBattleButtons('main');
 }
+
+// ---------- Loot ----------
+function rollLoot(wasBoss) {
+  const lines = [];
+  const enc = MAPS[G.map].encounters;
+  const gearDrops = [];
+  if (wasBoss) {
+    gearDrops.push(rollGear(10, { rarity: 3 }));
+    gearDrops.push(rollGear(irnd(7, 9)));
+  } else if (Math.random() < 0.35) {
+    const range = enc ? enc.ilvl : [1, 3];
+    gearDrops.push(rollGear(irnd(range[0], range[1])));
+  }
+  for (const it of gearDrops) {
+    if (G.inv.length < INV_MAX) {
+      G.inv.push(it);
+      lines.push(rarOf(it).name === 'Gewöhnlich'
+        ? '🎁 Beute: ' + it.icon + ' ' + it.name + ' (Stufe ' + it.ilvl + ')'
+        : '✨ ' + rarOf(it).name + 'er Fund: ' + it.icon + ' ' + it.name + ' (Stufe ' + it.ilvl + ')!');
+    } else {
+      lines.push('⚠ Inventar voll! ' + it.name + ' bleibt zurück. (Verkaufe Beute bei Bodo.)');
+    }
+  }
+  if (!wasBoss && Math.random() < 0.2) {
+    if (Math.random() < 0.6) { G.items.trank++; lines.push('🧪 Beute: 1 Trank'); }
+    else { G.items.aether++; lines.push('💙 Beute: 1 Äther'); }
+  }
+  return lines;
+}
+
 function winBattle() {
   sfx.gold();
   G.gold += B.gold; G.xp += B.xp;
+  const lootLines = rollLoot(B.boss);
   let msg = '🏆 ' + B.name + ' besiegt! +' + B.xp + ' XP, +' + B.gold + ' Gold.';
   const lvls = [];
   while (G.xp >= xpNext(G.lvl)) {
     G.xp -= xpNext(G.lvl); G.lvl++;
-    G.maxHp += 7; G.maxMp += 3; G.atk += 2; G.def += 1;
-    G.hp = G.maxHp; G.mp = G.maxMp;
+    const s = stats();
+    G.hp = s.maxHp; G.mp = s.maxMp;
     lvls.push(G.lvl);
   }
   const wasBoss = B.boss;
   refreshHud(); bLog(msg);
+  if (lootLines.length) sfx.loot();
   setTimeout(() => {
     endBattle(() => {
-      const after = () => {
+      const afterLevel = () => {
         if (wasBoss) { G.flags.dragonDead = true; save(); showVictory(); }
         else save();
       };
-      if (lvls.length) {
-        sfx.level();
-        showDialog(null, ['⬆ Level-Aufstieg! Du bist jetzt Level ' + G.lvl + '.', 'HP und MP wurden vollständig aufgefrischt, deine Werte sind gestiegen.'], after);
-      } else after();
+      const afterLoot = () => {
+        if (lvls.length) {
+          sfx.level();
+          const newSkills = classSkills().filter(sk => lvls.includes(sk.lvl));
+          const lines = ['⬆ Level-Aufstieg! Du bist jetzt Level ' + G.lvl + '.',
+            'HP und MP wurden vollständig aufgefrischt, deine Werte sind gestiegen.'];
+          for (const sk of newSkills) lines.push('✨ Neuer Skill gelernt: ' + sk.icon + ' ' + sk.name + '!');
+          showDialog(null, lines, afterLevel);
+        } else afterLevel();
+      };
+      if (lootLines.length) showDialog(null, lootLines, afterLoot);
+      else afterLoot();
     });
   }, 1100);
 }
@@ -721,7 +1031,8 @@ $('btnRespawn').addEventListener('pointerdown', e => {
   e.preventDefault(); sfx.select();
   ui.gameover.style.display = 'none';
   G.gold = Math.floor(G.gold / 2);
-  G.hp = G.maxHp; G.mp = G.maxMp;
+  const s = stats();
+  G.hp = s.maxHp; G.mp = s.maxMp;
   G.map = 'dorf'; setPlayerTo(10, 9); G.dir = 'down';
   fade = 1; mode = 'explore'; refreshHud(); save();
 });
@@ -741,16 +1052,17 @@ function interact(npc) {
       showDialog(npc.name, ['Du hast es wirklich getan! Varganor ist Geschichte!', 'Eichenhain wird dir das nie vergessen, Held. Ruh dich aus – du hast es verdient.']);
     } else {
       showDialog(npc.name, [
-        'Ah, junger Held! Gut, dass du da bist.',
+        'Ah, junger ' + CLASSES[G.cls].name + '! Gut, dass du da bist.',
         'Der Drache Varganor haust tief in der Schattenhöhle hinter dem Finsterwald. Nachts hören wir sein Brüllen bis ins Dorf …',
         'Folge dem Weg nach Süden in den Wald, dann nach Südosten zur Höhle. Aber geh nicht unvorbereitet!',
-        'Sammle im Kampf Erfahrung, und kauf dir bei Bodo bessere Ausrüstung. Greta päppelt dich im Gasthaus wieder auf.',
+        'Besiegte Monster lassen Ausrüstung fallen – je seltener, desto mächtiger. Öffne dein Inventar (🎒) und rüste dich aus!',
+        'Bodo kauft deine Beute und hat täglich neue Waren. Greta päppelt dich im Gasthaus wieder auf.',
       ]);
     }
   } else if (npc.kind === 'inn') {
     openInn(npc);
   } else if (npc.kind === 'shop') {
-    openShop(npc);
+    openShop();
   } else if (npc.kind === 'boss') {
     showDialog('Varganor', [
       'WER WAGT ES, MEINEN HORT ZU BETRETEN?',
@@ -761,7 +1073,8 @@ function interact(npc) {
 
 function openInn(npc) {
   const PRICE = 12;
-  if (G.hp >= G.maxHp && G.mp >= G.maxMp) {
+  const s = stats();
+  if (G.hp >= s.maxHp && G.mp >= s.maxMp) {
     showDialog(npc.name, ['Du strotzt ja nur so vor Kraft! Komm wieder, wenn du Ruhe brauchst.']);
     return;
   }
@@ -770,45 +1083,234 @@ function openInn(npc) {
     return;
   }
   showDialog(npc.name, ['Willkommen im Gasthaus „Zur Goldenen Eiche"! Für ' + PRICE + ' Gold schläfst du dich wieder fit.'], () => {
-    G.gold -= PRICE; G.hp = G.maxHp; G.mp = G.maxMp;
+    G.gold -= PRICE;
+    const s2 = stats();
+    G.hp = s2.maxHp; G.mp = s2.maxMp;
     refreshHud(); sfx.heal(); save();
     showDialog(npc.name, ['Gut geschlafen? HP und MP sind wieder voll. Pass auf dich auf!']);
   });
 }
 
-// ---------- Shop ----------
+// ---------- Shop (Kaufen mit „Bodos Angebot" + Verkaufen) ----------
+const REROLL_PRICE = 15;
+function ensureShopStock() {
+  if (G.shopStock && G.shopStock.length) return;
+  const ilvl = clamp(G.lvl + 1, 1, 10);
+  G.shopStock = [
+    rollGear(ilvl, { slot: 'waffe' }),
+    rollGear(ilvl),
+    rollGear(ilvl),
+  ];
+}
+let shopTab = 'kaufen';
 function openShop() {
-  mode = 'shop';
+  mode = 'shop'; shopTab = 'kaufen';
+  ensureShopStock();
   renderShop();
   ui.shop.style.display = 'block';
 }
+function closeShop() { ui.shop.style.display = 'none'; mode = 'explore'; }
 function renderShop() {
   const s = ui.shop;
   s.innerHTML = '<h3>🛒 Bodos Waren</h3><div id="shopGold">Dein Gold: ' + G.gold + ' G</div>';
-  const addItem = (title, desc, price, canBuy, fn) => {
-    const row = document.createElement('div'); row.className = 'item';
-    const info = document.createElement('div'); info.className = 'info';
-    info.innerHTML = '<b>' + title + '</b><br><span class="muted">' + desc + '</span>';
+  const tabs = document.createElement('div'); tabs.className = 'tabs';
+  for (const [id, label] of [['kaufen', '🛒 Kaufen'], ['verkaufen', '💰 Verkaufen']]) {
+    const tb = document.createElement('button');
+    tb.textContent = label; tb.className = shopTab === id ? 'active' : '';
+    tb.addEventListener('pointerdown', e => { e.preventDefault(); shopTab = id; sfx.select(); renderShop(); });
+    tabs.appendChild(tb);
+  }
+  s.appendChild(tabs);
+
+  const addRow = (html, btnLabel, canUse, fn) => {
+    const row = document.createElement('div'); row.className = 'itemRow';
+    const info = document.createElement('div'); info.className = 'info'; info.innerHTML = html;
     const btn = document.createElement('button');
-    btn.textContent = price + ' G';
-    btn.disabled = !canBuy;
-    btn.addEventListener('pointerdown', e => { e.preventDefault(); if (!btn.disabled) { fn(); sfx.gold(); save(); renderShop(); refreshHud(); } });
+    btn.textContent = btnLabel; btn.disabled = !canUse;
+    btn.addEventListener('pointerdown', e => { e.preventDefault(); if (!btn.disabled) fn(); });
     row.appendChild(info); row.appendChild(btn); s.appendChild(row);
   };
-  addItem('🧪 Trank', 'Stellt 35 HP wieder her. (Besitz: ' + G.items.trank + ')', 15, G.gold >= 15, () => { G.gold -= 15; G.items.trank++; });
-  addItem('💙 Äther', 'Stellt 12 MP wieder her. (Besitz: ' + G.items.aether + ')', 25, G.gold >= 25, () => { G.gold -= 25; G.items.aether++; });
-  if (G.weapon < WEAPONS.length - 1) {
-    const w = WEAPONS[G.weapon + 1];
-    addItem('⚔ ' + w.name, 'Angriff +' + w.atk + ' (ersetzt ' + WEAPONS[G.weapon].name + ')', w.price, G.gold >= w.price, () => { G.gold -= w.price; G.weapon++; });
-  }
-  if (G.armor < ARMORS.length - 1) {
-    const a = ARMORS[G.armor + 1];
-    addItem('🛡 ' + a.name, 'Verteidigung +' + a.def + ' (ersetzt ' + ARMORS[G.armor].name + ')', a.price, G.gold >= a.price, () => { G.gold -= a.price; G.armor++; });
+  const gearHtml = it => '<b style="color:' + rarOf(it).color + '">' + it.icon + ' ' + it.name + '</b>' +
+    '<br><span class="muted">' + rarOf(it).name + ' · Stufe ' + it.ilvl + ' · ' + gearStatLines(it).join(', ') + '</span>';
+
+  if (shopTab === 'kaufen') {
+    addRow('<b>🧪 Trank</b><br><span class="muted">Stellt 35 HP wieder her. (Besitz: ' + G.items.trank + ')</span>',
+      '15 G', G.gold >= 15, () => { G.gold -= 15; G.items.trank++; sfx.gold(); save(); renderShop(); refreshHud(); });
+    addRow('<b>💙 Äther</b><br><span class="muted">Stellt 12 MP wieder her. (Besitz: ' + G.items.aether + ')</span>',
+      '25 G', G.gold >= 25, () => { G.gold -= 25; G.items.aether++; sfx.gold(); save(); renderShop(); refreshHud(); });
+    const head = document.createElement('div'); head.className = 'slotLabel';
+    head.textContent = '— Bodos Angebot —'; s.appendChild(head);
+    for (const it of G.shopStock) {
+      const price = Math.round(it.value * 2.2);
+      addRow(gearHtml(it), price + ' G', G.gold >= price && G.inv.length < INV_MAX, () => {
+        G.gold -= price; G.inv.push(it);
+        G.shopStock = G.shopStock.filter(x => x.uid !== it.uid);
+        sfx.gold(); save(); renderShop(); refreshHud();
+      });
+    }
+    if (!G.shopStock.length) {
+      const p = document.createElement('p'); p.className = 'muted'; p.style.marginTop = '6px';
+      p.textContent = 'Ausverkauft! Hol dir neue Waren.'; s.appendChild(p);
+    }
+    addRow('<b>🔄 Neue Waren</b><br><span class="muted">Bodo holt frische Ausrüstung aus dem Lager.</span>',
+      REROLL_PRICE + ' G', G.gold >= REROLL_PRICE, () => {
+        G.gold -= REROLL_PRICE; G.shopStock = null; ensureShopStock();
+        sfx.gold(); save(); renderShop(); refreshHud();
+      });
+  } else {
+    if (!G.inv.length) {
+      const p = document.createElement('p'); p.className = 'muted'; p.style.marginTop = '8px';
+      p.textContent = 'Dein Beutel ist leer – angelegte Ausrüstung wird nicht verkauft.'; s.appendChild(p);
+    }
+    for (const it of G.inv.slice()) {
+      const price = Math.max(1, Math.round(it.value * 0.4));
+      addRow(gearHtml(it), '+' + price + ' G', true, () => {
+        G.inv = G.inv.filter(x => x.uid !== it.uid);
+        G.gold += price; sfx.gold(); save(); renderShop(); refreshHud();
+      });
+    }
   }
   const close = document.createElement('button');
   close.textContent = '✖ Schließen';
-  close.addEventListener('pointerdown', e => { e.preventDefault(); sfx.select(); ui.shop.style.display = 'none'; mode = 'explore'; });
+  close.addEventListener('pointerdown', e => { e.preventDefault(); sfx.select(); closeShop(); });
   s.appendChild(close);
+}
+
+// ---------- Inventar ----------
+let invDetail = null; // uid des angezeigten Items oder 'slot:waffe' für angelegtes
+function openInv() {
+  mode = 'inv'; held.clear(); invDetail = null;
+  renderInv();
+  ui.inv.style.display = 'block';
+}
+function closeInv() { ui.inv.style.display = 'none'; mode = 'explore'; }
+
+function statDiffLines(it, equipped) {
+  // Vergleich: was ändert sich, wenn `it` statt `equipped` angelegt wird
+  const keys = ['atk', 'def', 'hp', 'mp', 'crit', 'dodge'];
+  const lines = [];
+  for (const k of keys) {
+    const a = it.stats[k] || 0, b = equipped ? (equipped.stats[k] || 0) : 0;
+    if (a === 0 && b === 0) continue;
+    const diff = a - b;
+    const cls = diff > 0 ? 'diffUp' : diff < 0 ? 'diffDown' : 'muted';
+    const arrow = diff > 0 ? '▲ +' + diff : diff < 0 ? '▼ ' + diff : '＝';
+    lines.push('<div class="statLine"><span>' + STAT_FMT[k](a) + '</span><span class="' + cls + '">' + arrow + '</span></div>');
+  }
+  return lines.join('');
+}
+
+function renderInv() {
+  const v = ui.inv;
+  v.innerHTML = '<h3>🎒 Inventar</h3><div id="invCap">' + G.inv.length + '/' + INV_MAX + ' Plätze · ' + G.gold + ' G</div>';
+  const mkBtn = (label, fn, disabled, danger) => {
+    const b = document.createElement('button');
+    b.textContent = label; b.disabled = !!disabled;
+    if (danger) b.className = 'danger';
+    b.addEventListener('pointerdown', e => { e.preventDefault(); if (!b.disabled) fn(); });
+    v.appendChild(b); return b;
+  };
+
+  // Detail-Ansicht eines Items
+  const detailItem = invDetail && (G.inv.find(x => x.uid === invDetail) ||
+    Object.values(G.equip).find(x => x && x.uid === invDetail));
+  if (detailItem) {
+    const it = detailItem;
+    const isEquipped = Object.values(G.equip).some(x => x && x.uid === it.uid);
+    const equipped = G.equip[it.slot];
+    const box = document.createElement('div');
+    box.style.cssText = 'background:rgba(0,0,0,.25);border-radius:8px;padding:10px 12px;margin-top:6px';
+    box.innerHTML =
+      '<b style="color:' + rarOf(it).color + ';font-size:16px">' + it.icon + ' ' + it.name + '</b><br>' +
+      '<span class="muted">' + rarOf(it).name + ' · ' + SLOTS[it.slot] + ' · Stufe ' + it.ilvl +
+      (it.cls ? ' · ' + CLASSES[it.cls].name : '') + ' · Wert ' + it.value + ' G</span>' +
+      '<div style="margin-top:6px">' + statDiffLines(it, isEquipped ? null : equipped) + '</div>' +
+      (!isEquipped && equipped ? '<div class="muted" style="margin-top:4px">Vergleich mit: ' + equipped.name + '</div>' : '');
+    v.appendChild(box);
+    const wrongClass = it.cls && it.cls !== G.cls;
+    if (isEquipped) {
+      mkBtn('Ablegen', () => {
+        if (G.inv.length >= INV_MAX) return;
+        G.equip[it.slot] = null; G.inv.push(it);
+        clampVitals(); sfx.equip(); save(); refreshHud();
+        invDetail = null; renderInv();
+      }, G.inv.length >= INV_MAX || it.slot === 'waffe');
+      if (it.slot === 'waffe') {
+        const p = document.createElement('p'); p.className = 'muted'; p.style.textAlign = 'center'; p.style.marginTop = '6px';
+        p.textContent = 'Die Waffe legst du ab, indem du eine andere anlegst.'; v.appendChild(p);
+      }
+    } else {
+      mkBtn(wrongClass ? 'Nur für ' + CLASSES[it.cls].name : '✔ Ausrüsten', () => {
+        const old = G.equip[it.slot];
+        G.equip[it.slot] = it;
+        G.inv = G.inv.filter(x => x.uid !== it.uid);
+        if (old) G.inv.push(old);
+        clampVitals(); sfx.equip(); save(); refreshHud();
+        invDetail = null; renderInv();
+      }, wrongClass);
+      mkBtn('🗑 Wegwerfen', () => {
+        G.inv = G.inv.filter(x => x.uid !== it.uid);
+        sfx.select(); save();
+        invDetail = null; renderInv();
+      }, false, true);
+    }
+    mkBtn('↩ Zurück', () => { invDetail = null; sfx.select(); renderInv(); });
+    return;
+  }
+
+  // Übersicht: Angelegt
+  const addItemRow = (it, tag) => {
+    const row = document.createElement('div'); row.className = 'invItem';
+    row.innerHTML = '<span>' + it.icon + '</span>' +
+      '<span class="nm"><b style="color:' + rarOf(it).color + '">' + it.name + '</b>' +
+      '<br><span class="tag">' + rarOf(it).name + ' · St. ' + it.ilvl + (tag ? ' · ' + tag : '') + '</span></span>' +
+      '<span class="tag">›</span>';
+    row.addEventListener('pointerdown', e => { e.preventDefault(); invDetail = it.uid; sfx.select(); renderInv(); });
+    ui.inv.appendChild(row);
+  };
+  const eqHead = document.createElement('div'); eqHead.className = 'slotLabel';
+  eqHead.textContent = '— Angelegt —'; v.appendChild(eqHead);
+  for (const slot of Object.keys(SLOTS)) {
+    const it = G.equip[slot];
+    if (it) addItemRow(it, SLOTS[slot]);
+    else {
+      const row = document.createElement('div'); row.className = 'invItem';
+      row.innerHTML = '<span>▫</span><span class="nm"><span class="muted">' + SLOTS[slot] + ': leer</span></span>';
+      v.appendChild(row);
+    }
+  }
+  // Verbrauchsgegenstände
+  const cHead = document.createElement('div'); cHead.className = 'slotLabel';
+  cHead.textContent = '— Vorräte —'; v.appendChild(cHead);
+  const s = stats();
+  const consum = (icon, label, count, canUse, fn) => {
+    const row = document.createElement('div'); row.className = 'itemRow';
+    row.innerHTML = '<div class="info"><b>' + icon + ' ' + label + '</b> ×' + count + '</div>';
+    const btn = document.createElement('button');
+    btn.textContent = 'Benutzen'; btn.disabled = !canUse;
+    btn.addEventListener('pointerdown', e => { e.preventDefault(); if (!btn.disabled) fn(); });
+    row.appendChild(btn); v.appendChild(row);
+  };
+  consum('🧪', 'Trank (+35 HP)', G.items.trank, G.items.trank > 0 && G.hp < s.maxHp, () => {
+    G.items.trank--; G.hp = Math.min(s.maxHp, G.hp + 35);
+    sfx.heal(); refreshHud(); save(); renderInv();
+  });
+  consum('💙', 'Äther (+12 MP)', G.items.aether, G.items.aether > 0 && G.mp < s.maxMp, () => {
+    G.items.aether--; G.mp = Math.min(s.maxMp, G.mp + 12);
+    sfx.heal(); refreshHud(); save(); renderInv();
+  });
+  // Beutel
+  const bHead = document.createElement('div'); bHead.className = 'slotLabel';
+  bHead.textContent = '— Beutel —'; v.appendChild(bHead);
+  if (!G.inv.length) {
+    const p = document.createElement('p'); p.className = 'muted'; p.style.marginTop = '6px';
+    p.textContent = 'Noch keine Beute. Monster lassen Ausrüstung fallen!'; v.appendChild(p);
+  }
+  const order = { waffe: 0, ruestung: 1, helm: 2, amulett: 3 };
+  for (const it of G.inv.slice().sort((a, b) => order[a.slot] - order[b.slot] || b.rarity - a.rarity || b.ilvl - a.ilvl)) {
+    addItemRow(it, SLOTS[it.slot]);
+  }
+  mkBtn('✖ Schließen', closeInv);
 }
 
 // ---------- Menü ----------
@@ -820,14 +1322,21 @@ function openMenu() {
 function closeMenu() { ui.menu.style.display = 'none'; mode = 'explore'; }
 function renderMenu() {
   const m = ui.menu;
+  const s = stats();
+  const c = CLASSES[G.cls];
+  const eqLines = Object.keys(SLOTS).map(slot => {
+    const it = G.equip[slot];
+    return SLOTS[slot] + ': ' + (it ? '<span style="color:' + rarOf(it).color + '">' + it.name + '</span>' : '<span class="muted">leer</span>');
+  }).join('<br>');
   m.innerHTML = '<h3>📜 ' + MAPS[G.map].name + '</h3>' +
     '<div class="stats">' +
-    'Level ' + G.lvl + ' · ' + G.xp + '/' + xpNext(G.lvl) + ' XP<br>' +
-    'HP ' + G.hp + '/' + G.maxHp + ' · MP ' + G.mp + '/' + G.maxMp + '<br>' +
-    'Angriff ' + atkTotal() + ' (' + WEAPONS[G.weapon].name + ')<br>' +
-    'Verteidigung ' + defTotal() + ' (' + ARMORS[G.armor].name + ')<br>' +
+    c.icon + ' <b>' + c.name + '</b> · Level ' + G.lvl + ' · ' + G.xp + '/' + xpNext(G.lvl) + ' XP<br>' +
+    'HP ' + G.hp + '/' + s.maxHp + ' · MP ' + G.mp + '/' + s.maxMp + '<br>' +
+    'Angriff ' + s.atk + ' · Verteidigung ' + s.def + '<br>' +
+    'Krit ' + s.crit + ' % · Ausweichen ' + s.dodge + ' %<br>' +
     'Gold ' + G.gold + ' G · 🧪 ×' + G.items.trank + ' · 💙 ×' + G.items.aether +
-    '</div>';
+    '</div>' +
+    '<div class="stats">' + eqLines + '</div>';
   const mk = (label, fn, disabled, danger) => {
     const b = document.createElement('button');
     b.textContent = label; b.disabled = !!disabled;
@@ -835,14 +1344,7 @@ function renderMenu() {
     b.addEventListener('pointerdown', e => { e.preventDefault(); if (!b.disabled) fn(); });
     m.appendChild(b); return b;
   };
-  mk('🧪 Trank benutzen (+35 HP)', () => {
-    G.items.trank--; G.hp = Math.min(G.maxHp, G.hp + 35);
-    sfx.heal(); refreshHud(); save(); renderMenu();
-  }, G.items.trank <= 0 || G.hp >= G.maxHp);
-  mk('💙 Äther benutzen (+12 MP)', () => {
-    G.items.aether--; G.mp = Math.min(G.maxMp, G.mp + 12);
-    sfx.heal(); refreshHud(); save(); renderMenu();
-  }, G.items.aether <= 0 || G.mp >= G.maxMp);
+  mk('🎒 Inventar öffnen', () => { closeMenu(); openInv(); });
   mk(soundOn ? '🔊 Ton: an' : '🔇 Ton: aus', () => { soundOn = !soundOn; renderMenu(); });
   mk('🗑 Neues Spiel starten', () => {
     if (confirm('Wirklich neu anfangen? Der Spielstand wird gelöscht.')) {
@@ -960,7 +1462,6 @@ function drawTile(ch, sx, sy, x, y, t) {
 
 function drawExplore(t) {
   const map = MAPS[G.map];
-  // Höhlenboden in der Höhle statt Gras als Standard
   const camX = clamp(player.px * TS + TS / 2 - W / 2, -TS, map.w * TS - W + TS);
   const camY = clamp(player.py * TS + TS / 2 - H / 2, -TS, map.h * TS - H + TS);
   // Hintergrund außerhalb der Karte
@@ -995,12 +1496,12 @@ function drawExplore(t) {
     }
   }
 
-  // Held
+  // Held (Tunika-Farbe je Klasse)
   const hx = player.px * TS - camX, hy = player.py * TS - camY;
   const bob = player.moving ? Math.abs(Math.sin(player.anim)) * TS * 0.07 : 0;
   cx.fillStyle = 'rgba(0,0,0,.25)';
   cx.fillRect(hx + TS * 0.2, hy + TS * 0.82, TS * 0.6, TS * 0.14);
-  drawSprite(cx, 'hero', hx + TS * 0.08, hy - TS * 0.08 - bob, TS * 0.86);
+  drawSprite(cx, 'hero', hx + TS * 0.08, hy - TS * 0.08 - bob, TS * 0.86, CLASSES[G.cls].pal);
 
   // Gebiets-Name kurz nach Kartenwechsel
   if (fade > 0) {
@@ -1047,17 +1548,28 @@ function drawBattle(t) {
       cx.fillStyle = 'rgba(255,255,255,' + (B.flash * 1.8) + ')';
       cx.fillRect(ex, ey, size, size);
     }
-    // Name + HP-Balken des Gegners
+    // Name + HP-Balken des Gegners (+ Statussymbole)
     const bw = Math.min(W * 0.7, 300);
     const bx = W / 2 - bw / 2, by = H * 0.1;
     cx.fillStyle = '#fff';
     cx.font = 'bold ' + Math.round(Math.min(W, H) * 0.04) + 'px monospace';
     cx.textAlign = 'center';
-    cx.fillText(B.name, W / 2, by - 8);
+    let title = B.name;
+    if (B.poison > 0) title += ' ☠';
+    cx.fillText(title, W / 2, by - 8);
     cx.fillStyle = 'rgba(0,0,0,.5)'; cx.fillRect(bx - 2, by - 2, bw + 4, 14);
     cx.fillStyle = '#33244d'; cx.fillRect(bx, by, bw, 10);
     cx.fillStyle = B.hp / B.maxHp > 0.4 ? '#5fd068' : '#e85050';
     cx.fillRect(bx, by, bw * (B.hp / B.maxHp), 10);
+    // Buff-/Status-Anzeige des Helden
+    const badges = [];
+    if (B.pBuffTurns > 0) badges.push('📢 ATK↑ (' + B.pBuffTurns + ')');
+    if (B.pEvade) badges.push('👤 Schatten');
+    if (badges.length) {
+      cx.font = Math.round(Math.min(W, H) * 0.03) + 'px monospace';
+      cx.fillStyle = '#ffd54f';
+      cx.fillText(badges.join('  ·  '), W / 2, by + 32);
+    }
     // schwebende Schadenszahlen
     for (const f of B.floats) {
       f.t += 0.016;
@@ -1081,7 +1593,7 @@ function loop(ts) {
 
   if (!G) return; // noch auf dem Titelbildschirm
 
-  if (mode === 'explore' || mode === 'dialog' || mode === 'menu' || mode === 'shop') {
+  if (mode === 'explore' || mode === 'dialog' || mode === 'menu' || mode === 'shop' || mode === 'inv') {
     if (mode === 'explore') updateExplore(dt);
     if (fade > -2) fade -= dt * 1.2;
     drawExplore(t);
@@ -1093,23 +1605,49 @@ function loop(ts) {
 }
 requestAnimationFrame(loop);
 
-// ---------- Start / Titelbildschirm ----------
+// ---------- Start / Titel / Klassenwahl ----------
 function startGame(g) {
   G = g;
   setPlayerTo(G.x, G.y);
   fade = 1;
   refreshHud();
   ui.title.style.display = 'none';
+  ui.classScreen.style.display = 'none';
   mode = 'explore';
   if (!G.flags.introSeen) {
     G.flags.introSeen = true; save();
+    const c = CLASSES[G.cls];
     setTimeout(() => showDialog(null, [
       'Dorf Eichenhain. Seit Wochen liegt ein Schatten über dem Land: Der Drache Varganor raubt Vieh, Gold – und den Mut der Menschen.',
-      'Du bist ein junger Abenteurer mit einem Holzschwert und großen Träumen.',
+      'Du bist ein junger ' + c.name + ' mit einfacher Ausrüstung und großen Träumen.',
       'Sprich mit dem Ältesten Alrik (gelbes „!") – er weiß mehr. Steuere mit dem Steuerkreuz, sprich mit A.',
+      'Tipp: Besiegte Monster lassen Beute fallen. Im Inventar (🎒) legst du bessere Ausrüstung an!',
     ]), 400);
   }
 }
+
+function showClassPick() {
+  mode = 'classpick';
+  ui.title.style.display = 'none';
+  ui.classCards.innerHTML = '';
+  for (const [id, c] of Object.entries(CLASSES)) {
+    const card = document.createElement('button');
+    card.className = 'classCard';
+    const skills = c.skills.map(sid => SKILLS[sid].icon + ' ' + SKILLS[sid].name).join(' · ');
+    card.innerHTML = '<b>' + c.icon + ' ' + c.name + '</b>' +
+      '<div class="cdesc">' + c.desc + '</div>' +
+      '<div class="cstats">HP ' + c.base.hp + ' · MP ' + c.base.mp + ' · ATK ' + c.base.atk + ' · DEF ' + c.base.def +
+      ' · Krit ' + c.crit + ' % · Ausweichen ' + c.dodge + ' %<br>' + skills + '</div>';
+    card.addEventListener('pointerdown', e => {
+      e.preventDefault(); ac(); sfx.level();
+      ui.classScreen.style.display = 'none';
+      startGame(newGame(id));
+    });
+    ui.classCards.appendChild(card);
+  }
+  ui.classScreen.style.display = 'flex';
+}
+
 const saved = load();
 if (saved) {
   $('btnContinue').style.display = '';
@@ -1119,7 +1657,7 @@ $('btnNew').addEventListener('pointerdown', e => {
   e.preventDefault(); ac(); sfx.select();
   if (saved && !confirm('Es gibt einen Spielstand. Wirklich neu anfangen?')) return;
   localStorage.removeItem(SAVE_KEY);
-  startGame(newGame());
+  showClassPick();
 });
 ui.title.style.display = 'flex';
 </script>

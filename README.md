@@ -11,10 +11,17 @@ Live: <https://66r6y9fcrc-gif.github.io/>
 Ein eigenständiges Handy-Rollenspiel auf derselben Seite – spielbar unter
 <https://66r6y9fcrc-gif.github.io/rpg/>:
 
+- **3 Klassen**: Krieger, Magier, Schurke – mit eigenen Werten, Levelaufstiegs-Boni und
+  Skills (z. B. Kampfschrei-Buff, Blitzsturm, Giftklinge, Schattenschritt)
+- **Loot-System**: Monster lassen prozedural generierte Ausrüstung fallen – in 4
+  Raritätsstufen (Gewöhnlich/Selten/Episch/Legendär) mit zufälligen Affixen
+  (ATK, DEF, HP, MP, Krit, Ausweichen); der Endboss droppt garantiert Legendäres
+- **Inventar**: 4 Ausrüstungs-Slots (Waffe, Rüstung, Helm, Amulett), 24 Beutel-Plätze,
+  Detailansicht mit grün/rotem Stat-Vergleich zum angelegten Gegenstand
 - Oberwelt-Erkundung im Pixel-Look (Dorf, Finsterwald, Schattenhöhle, Drachenhort)
-- Touch-Steuerkreuz + A-Knopf (am PC: Pfeiltasten/WASD + Leertaste)
-- Rundenbasierte Kämpfe: Angriff, Feuerball, Heilung, Tränke, Flucht
-- Level-Aufstiege, Gold, Shop (Waffen/Rüstung), Gasthaus, Endboss Drache Varganor
+- Touch-Steuerkreuz + A- und 🎒-Knopf (am PC: Pfeiltasten/WASD + Leertaste)
+- Rundenbasierte Kämpfe mit Statuseffekten (Gift, Buffs, Ausweichen, kritische Treffer)
+- Shop mit wechselndem Gear-Angebot und Verkaufen-Tab, Gasthaus, Endboss Drache Varganor
 - Speicherung automatisch in `localStorage`, komplett offline-fähig, eine Datei: `rpg/index.html`
 
 ## Funktionen (v1.0)
