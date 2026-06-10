@@ -6,6 +6,17 @@ größer wird das Netz.
 
 Live: <https://66r6y9fcrc-gif.github.io/>
 
+## ⚔ Pixel-Abenteuer (Fantasy-RPG)
+
+Ein eigenständiges Handy-Rollenspiel auf derselben Seite – spielbar unter
+<https://66r6y9fcrc-gif.github.io/rpg/>:
+
+- Oberwelt-Erkundung im Pixel-Look (Dorf, Finsterwald, Schattenhöhle, Drachenhort)
+- Touch-Steuerkreuz + A-Knopf (am PC: Pfeiltasten/WASD + Leertaste)
+- Rundenbasierte Kämpfe: Angriff, Feuerball, Heilung, Tränke, Flucht
+- Level-Aufstiege, Gold, Shop (Waffen/Rüstung), Gasthaus, Endboss Drache Varganor
+- Speicherung automatisch in `localStorage`, komplett offline-fähig, eine Datei: `rpg/index.html`
+
 ## Funktionen (v1.0)
 
 - 🧠 **Die Mini-KI lernt aus deinen Entscheidungen**: Jedes bestätigte (oder in der

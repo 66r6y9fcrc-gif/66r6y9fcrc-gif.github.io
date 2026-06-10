@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1a1226">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Pixel-Abenteuer – Fantasy RPG</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overflow:hidden; background:#1a1226; touch-action:none; overscroll-behavior:none;
+    font-family:"Courier New", ui-monospace, monospace; user-select:none; -webkit-user-select:none; }
+  #game { position:fixed; inset:0; width:100%; height:100%; display:block; image-rendering:pixelated; }
+
+  /* ---------- HUD ---------- */
+  #hud { position:fixed; top:0; left:0; right:0; padding:calc(6px + env(safe-area-inset-top)) 8px 6px 8px;
+    display:flex; align-items:flex-start; gap:8px; pointer-events:none; z-index:5; }
+  #hudBox { background:rgba(10,6,20,.78); border:2px solid #5d4a8a; border-radius:8px; padding:5px 9px;
+    color:#fff; font-size:12px; line-height:1.5; min-width:138px; }
+  #hudBox .bar { height:7px; border-radius:4px; background:#33244d; overflow:hidden; margin:1px 0 3px 0; }
+  #hudBox .bar i { display:block; height:100%; border-radius:4px; transition:width .25s; }
+  #hpBar i { background:linear-gradient(90deg,#e53935,#ff7043); }
+  #mpBar i { background:linear-gradient(90deg,#1e88e5,#4fc3f7); }
+  #xpBar i { background:linear-gradient(90deg,#fbc02d,#ffee58); }
+  #hudTop { display:flex; justify-content:space-between; gap:10px; font-weight:bold; }
+  #hudGold { color:#ffd54f; }
+  #btnMenu { position:fixed; top:calc(8px + env(safe-area-inset-top)); right:8px; z-index:6;
+    width:44px; height:44px; border-radius:10px; border:2px solid #5d4a8a; background:rgba(10,6,20,.78);
+    color:#fff; font-size:20px; }
+
+  /* ---------- Touch-Steuerung ---------- */
+  #controls { position:fixed; inset:0; pointer-events:none; z-index:5; }
+  #dpad { position:absolute; left:calc(14px + env(safe-area-inset-left)); bottom:calc(18px + env(safe-area-inset-bottom));
+    width:150px; height:150px; }
+  .dbtn { position:absolute; width:50px; height:50px; pointer-events:auto;
+    background:rgba(20,12,40,.65); border:2px solid #6a55a0; border-radius:12px;
+    color:#cbb8ff; font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .dbtn:active, .dbtn.on { background:rgba(120,90,220,.75); color:#fff; }
+  #dUp    { left:50px; top:0; }
+  #dDown  { left:50px; top:100px; }
+  #dLeft  { left:0;  top:50px; }
+  #dRight { left:100px; top:50px; }
+  #btnA { position:absolute; right:calc(20px + env(safe-area-inset-right)); bottom:calc(46px + env(safe-area-inset-bottom));
+    width:74px; height:74px; border-radius:50%; pointer-events:auto;
+    background:rgba(220,60,80,.78); border:3px solid #ff8a9a; color:#fff; font-size:22px; font-weight:bold;
+    box-shadow:0 3px 12px rgba(0,0,0,.5); }
+  #btnA:active { background:rgba(255,90,110,.95); transform:scale(.95); }
+
+  /* ---------- Overlays / Boxen ---------- */
+  .panel { background:#221638; border:3px solid #7a5fc0; border-radius:14px; color:#f0e9ff;
+    box-shadow:0 8px 30px rgba(0,0,0,.6); }
+  #dialog { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(16px + env(safe-area-inset-bottom));
+    width:min(560px, calc(100% - 20px)); padding:12px 14px; font-size:15px; line-height:1.45;
+    display:none; z-index:20; }
+  #dialog .who { color:#ffd54f; font-weight:bold; margin-bottom:3px; font-size:13px; }
+  #dialog .next { text-align:right; color:#a99ad4; font-size:12px; margin-top:4px; animation:blink 1s infinite; }
+  @keyframes blink { 50% { opacity:.25; } }
+
+  #battleUI { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(12px + env(safe-area-inset-bottom));
+    width:min(560px, calc(100% - 16px)); padding:10px; display:none; z-index:20; }
+  #bLog { font-size:14px; line-height:1.4; min-height:40px; margin-bottom:8px; color:#fff; }
+  #bBtns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  #bBtns button { padding:12px 6px; font-size:15px; font-weight:bold; border-radius:10px;
+    border:2px solid #8a6fd0; background:#3a2a60; color:#fff; font-family:inherit; }
+  #bBtns button:active { background:#5a3fa0; }
+  #bBtns button:disabled { opacity:.4; }
+
+  .screen { position:fixed; inset:0; z-index:30; display:none; flex-direction:column; align-items:center;
+    justify-content:center; gap:14px; background:rgba(12,6,24,.92); color:#fff; text-align:center; padding:20px; }
+  .screen h1 { font-size:clamp(28px, 8vw, 44px); color:#ffd54f; text-shadow:3px 3px 0 #7a3fa0; }
+  .screen h2 { font-size:clamp(20px, 6vw, 30px); }
+  .screen p { color:#cbb8ff; max-width:430px; font-size:15px; line-height:1.5; }
+  .screen button, #menuUI button, #shopUI button { padding:13px 22px; font-size:16px; font-weight:bold;
+    border-radius:12px; border:2px solid #8a6fd0; background:#3a2a60; color:#fff; font-family:inherit; min-width:200px; }
+  .screen button:active { background:#5a3fa0; }
+  .screen button.danger { border-color:#d05f6f; background:#5e2535; }
+
+  #menuUI, #shopUI { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:min(420px, calc(100% - 24px)); max-height:84vh; overflow-y:auto; padding:16px; display:none; z-index:25; }
+  #menuUI h3, #shopUI h3 { color:#ffd54f; margin-bottom:10px; text-align:center; font-size:18px; }
+  #menuUI .stats { font-size:14px; line-height:1.7; background:rgba(0,0,0,.25); border-radius:8px; padding:8px 12px; margin-bottom:10px; }
+  #menuUI button, #shopUI button { width:100%; margin-top:8px; min-width:0; }
+  #shopUI .item { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; }
+  #shopUI .item .info { flex:1; font-size:13px; line-height:1.35; }
+  #shopUI .item .info b { font-size:14px; }
+  #shopUI .item button { width:auto; margin:0; padding:10px 14px; white-space:nowrap; }
+  #shopGold { text-align:center; color:#ffd54f; font-weight:bold; margin-bottom:4px; }
+  .muted { color:#a99ad4; font-size:12px; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div id="hudBox">
+    <div id="hudTop"><span id="hudName">Held · Lv 1</span><span id="hudGold">0 G</span></div>
+    <div>HP <span id="hpTxt"></span></div><div class="bar" id="hpBar"><i></i></div>
+    <div>MP <span id="mpTxt"></span></div><div class="bar" id="mpBar"><i></i></div>
+    <div class="bar" id="xpBar"><i></i></div>
+  </div>
+</div>
+<button id="btnMenu">☰</button>
+
+<div id="controls">
+  <div id="dpad">
+    <div class="dbtn" id="dUp">▲</div>
+    <div class="dbtn" id="dLeft">◀</div>
+    <div class="dbtn" id="dRight">▶</div>
+    <div class="dbtn" id="dDown">▼</div>
+  </div>
+  <button id="btnA">A</button>
+</div>
+
+<div id="dialog" class="panel">
+  <div class="who" id="dWho"></div>
+  <div id="dText"></div>
+  <div class="next">▼ weiter</div>
+</div>
+
+<div id="battleUI" class="panel">
+  <div id="bLog"></div>
+  <div id="bBtns"></div>
+</div>
+
+<div id="menuUI" class="panel"></div>
+<div id="shopUI" class="panel"></div>
+
+<div class="screen" id="titleScreen">
+  <h1>⚔ Pixel-Abenteuer</h1>
+  <p>Ein Drache bedroht das Dorf Eichenhain. Erkunde Wald und Höhle, werde stärker und besiege ihn!</p>
+  <button id="btnContinue" style="display:none">▶ Fortsetzen</button>
+  <button id="btnNew">✦ Neues Spiel</button>
+  <p class="muted">Steuerung: Steuerkreuz zum Laufen, A zum Reden/Bestätigen.<br>Am PC: Pfeiltasten/WASD + Leertaste.</p>
+</div>
+
+<div class="screen" id="gameoverScreen">
+  <h2>💀 Besiegt …</h2>
+  <p>Dunkelheit umfängt dich. Doch die Dorfbewohner finden dich und tragen dich zurück nach Eichenhain. Die Hälfte deines Goldes ist verloren.</p>
+  <button id="btnRespawn">Aufstehen</button>
+</div>
+
+<div class="screen" id="victoryScreen">
+  <h1>🏆 Sieg!</h1>
+  <p>Der Drache ist besiegt! Eichenhain ist gerettet und dein Name wird in den Liedern der Barden weiterleben. Du kannst die Welt weiter erkunden.</p>
+  <button id="btnVictoryOk">Weiterspielen</button>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   Pixel-Abenteuer – ein Mobile-Fantasy-RPG in einer Datei.
+   Oberwelt-Erkundung + rundenbasierte Kämpfe, Speicherung
+   in localStorage. Keine externen Assets.
+   ============================================================ */
+
+// ---------- Grund-Setup ----------
+const cv = document.getElementById('game');
+const cx = cv.getContext('2d');
+let W = 0, H = 0, TS = 40, DPR = 1;
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 3);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  cx.imageSmoothingEnabled = false;
+  TS = Math.max(30, Math.min(56, Math.floor(Math.min(W, H) / 9)));
+}
+window.addEventListener('resize', resize);
+resize();
+
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rnd = (a, b) => a + Math.random() * (b - a);
+const irnd = (a, b) => Math.floor(rnd(a, b + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+// deterministisches „Rauschen" pro Kachel für Deko-Variation
+const noise = (x, y) => { const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return n - Math.floor(n); };
+
+// ---------- Sound (WebAudio, winzige Retro-Töne) ----------
+let audio = null, soundOn = true;
+function ac() { if (!audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return audio; }
+function beep(freq, dur, type, vol, slide) {
+  if (!soundOn) return; const a = ac(); if (!a) return;
+  try {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type || 'square'; o.frequency.value = freq;
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), a.currentTime + dur);
+    g.gain.value = vol || 0.05;
+    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
+    o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + dur);
+  } catch (e) {}
+}
+const sfx = {
+  select: () => beep(660, .08, 'square', .05),
+  step:   () => beep(220, .03, 'triangle', .02),
+  hit:    () => beep(140, .15, 'sawtooth', .07, -60),
+  hurt:   () => beep(90, .25, 'sawtooth', .08, -40),
+  magic:  () => { beep(500, .12, 'square', .05, 600); setTimeout(() => beep(900, .15, 'square', .05, 400), 90); },
+  heal:   () => { beep(520, .1, 'sine', .06); setTimeout(() => beep(780, .15, 'sine', .06), 100); },
+  gold:   () => { beep(880, .07, 'square', .05); setTimeout(() => beep(1320, .1, 'square', .05), 70); },
+  level:  () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, .14, 'square', .06), i * 110)),
+  lose:   () => [330, 262, 196, 131].forEach((f, i) => setTimeout(() => beep(f, .25, 'triangle', .07), i * 200)),
+  win:    () => [523, 523, 523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, .15, 'square', .06), i * 120)),
+  flee:   () => beep(400, .2, 'triangle', .05, 300),
+};
+
+// ---------- Karten ----------
+// Kachel-Legende:
+//  t Baum  . Gras  , hohes Gras (Kämpfe)  f Blumen  p Weg  w Wasser
+//  b Hauswand  d Tür (Deko)  # Fels  c Höhlenboden (Kämpfe)  s Steinboden  l Lava
+const BLOCKED = new Set(['t', 'w', 'b', 'd', '#', 'l']);
+
+const MAPS = {
+  dorf: {
+    name: 'Dorf Eichenhain', border: 't', zone: 'dorf',
+    tiles: [
+      'tttttttttttttttttttt',
+      't.f..........f.....t',
+      't.bbb...bbb...bbb..t',
+      't.bdb...bdb...bdb..t',
+      't..p.....p.....p...t',
+      't..ppppppppppppp...t',
+      't.f....p.....p..f..t',
+      't......p.....p.....t',
+      'tww....p.....p...wwt',
+      'tww....ppppppp...wwt',
+      't.........p........t',
+      't..t......p....t...t',
+      't...f.....p...f....t',
+      'ttttttttttpttttttttt',
+    ],
+    portals: [{ x: 10, y: 13, to: 'wald', tx: 11, ty: 1 }],
+    npcs: [
+      { id: 'haendler', x: 3, y: 4, kind: 'shop', name: 'Händler Bodo', sprite: 'npcShop' },
+      { id: 'wirtin',   x: 9, y: 4, kind: 'inn',  name: 'Wirtin Greta', sprite: 'npcInn' },
+      { id: 'aeltester',x: 15, y: 4, kind: 'elder', name: 'Ältester Alrik', sprite: 'npcElder' },
+    ],
+    encounters: null,
+  },
+  wald: {
+    name: 'Finsterwald', border: 't', zone: 'wald',
+    tiles: [
+      'tttttttttttptttttttttt',
+      't,,,..t....p...t..,,,t',
+      't,,....,,..p..,,...,,t',
+      't...t..,,..p..,,..t..t',
+      't.,,...t...p....,,...t',
+      't.,,......pp..t.,,...t',
+      't....t....p..........t',
+      'tt..,,,...p...,,,..t.t',
+      't...,,,...p...,,,....t',
+      't.t.......p.......t..t',
+      't....,,...pp....,....t',
+      't..t.,,....p..t.,,...t',
+      'tww........p....,,..wt',
+      'twww...t...p.........t',
+      't......,,..ppppppp...t',
+      't.,,...,,........p..#t',
+      't.,,......t..,,..p..#t',
+      't....t.......,,..ppp#t',  // Pfad endet rechts an der Höhle
+      't..............t...##t',
+      'tttttttttttttttttttttt',
+    ],
+    portals: [
+      { x: 11, y: 0, to: 'dorf', tx: 10, ty: 12 },
+      { x: 19, y: 17, to: 'hoehle', tx: 2, ty: 1 },
+    ],
+    npcs: [],
+    encounters: { chance: 0.13, list: ['schleim', 'wolf', 'pilz'], onTiles: new Set([',']) },
+  },
+  hoehle: {
+    name: 'Schattenhöhle', border: '#', zone: 'hoehle',
+    tiles: [
+      '####################',
+      '#sc......#.....c...#',
+      '#..####..#..##...#.#',
+      '#..#..#.....##.....#',
+      '#..#..#..#......##.#',
+      '#.....#..####.c.##.#',
+      '#.##..#.....#......#',
+      '#..#..####..#..###.#',
+      '#..#.....#..#..#...#',
+      '#..###...#..#..#.###',
+      '#....#..##..#......#',
+      '#.c..#..#...####...#',
+      '#....#..#..........#',
+      '###..#..#..####..###',
+      '#....#......#......#',
+      '#..###..##..#..##..#',
+      '#.......##..#..##.s#',
+      '####################',
+    ],
+    portals: [
+      { x: 1, y: 1, to: 'wald', tx: 18, ty: 17 },
+      { x: 18, y: 16, to: 'hort', tx: 6, ty: 9 },
+    ],
+    npcs: [],
+    encounters: { chance: 0.14, list: ['fledermaus', 'skelett', 'troll'], onTiles: new Set(['.', 'c']) },
+    floor: '.',
+  },
+  hort: {
+    name: 'Drachenhort', border: '#', zone: 'hort',
+    tiles: [
+      '#############',
+      '#lll.....lll#',
+      '#ll.......ll#',
+      '#...........#',
+      '#...........#',
+      '#l.........l#',
+      '#l.........l#',
+      '#...........#',
+      '#...........#',
+      '#lll.s.s.lll#',
+      '#############',
+    ],
+    portals: [{ x: 6, y: 9, to: 'hoehle', tx: 17, ty: 16 }],
+    npcs: [{ id: 'drache', x: 6, y: 3, kind: 'boss', name: '???', sprite: 'drache' }],
+    encounters: null,
+    floor: '.',
+  },
+};
+// Zeilen auf Kartenbreite auffüllen (Sicherheitsnetz)
+for (const m of Object.values(MAPS)) {
+  m.w = Math.max(...m.tiles.map(r => r.length));
+  m.h = m.tiles.length;
+  m.tiles = m.tiles.map(r => r.padEnd(m.w, m.border));
+}
+function tileAt(map, x, y) {
+  if (x < 0 || y < 0 || x >= map.w || y >= map.h) return map.border;
+  return map.tiles[y][x];
+}
+
+// ---------- Gegner ----------
+const ENEMIES = {
+  schleim:    { name: 'Schleim',      hp: 16,  atk: 5,  def: 1, xp: 8,   gold: [4, 8] },
+  wolf:       { name: 'Grauwolf',     hp: 26,  atk: 8,  def: 2, xp: 14,  gold: [7, 13] },
+  pilz:       { name: 'Knurrpilz',    hp: 22,  atk: 6,  def: 4, xp: 12,  gold: [6, 11] },
+  fledermaus: { name: 'Riesenfledermaus', hp: 24, atk: 10, def: 2, xp: 18, gold: [9, 16] },
+  skelett:    { name: 'Skelettkrieger', hp: 36, atk: 12, def: 6, xp: 26,  gold: [14, 24] },
+  troll:      { name: 'Höhlentroll',  hp: 52,  atk: 15, def: 8, xp: 40,  gold: [22, 38] },
+  drache:     { name: 'Drache Varganor', hp: 150, atk: 19, def: 10, xp: 250, gold: [280, 320], boss: true },
+};
+
+// ---------- Pixel-Sprites ----------
+// Jedes Sprite: Palette (Zeichen -> Farbe) + Zeilen. '.' = transparent.
+const SPRITES = {
+  hero: { pal: { h: '#6d4426', s: '#ffcf9e', e: '#221133', t: '#2e62c9', g: '#1d4490', b: '#5b3b1f' }, rows: [
+    '..hhhh..', '.hhhhhh.', '.hsssh..', '.sesse..', '..ssss..', '.tttttt.', 'sttggtts', '.tt..tt.', '.gg..gg.', '.bb..bb.'] },
+  npcShop: { pal: { h: '#444444', s: '#ffcf9e', e: '#221133', t: '#b07a2a', g: '#7a5118', b: '#3b2a14' }, rows: [
+    '..hhhh..', '.hhhhhh.', '.hsssh..', '.sesse..', '..ssss..', '.tttttt.', 'sttggtts', '.tt..tt.', '.gg..gg.', '.bb..bb.'] },
+  npcInn: { pal: { h: '#a33c12', s: '#ffcf9e', e: '#221133', t: '#c2356a', g: '#8e2049', b: '#3b2a14' }, rows: [
+    '..hhhh..', '.hhhhhh.', '.hsssh..', '.sesse..', '..ssss..', '.tttttt.', 'sttggtts', '.tt..tt.', '.gg..gg.', '.bb..bb.'] },
+  npcElder: { pal: { h: '#dddddd', s: '#f4c39a', e: '#221133', t: '#5a4d8a', g: '#3c3261', b: '#3b2a14' }, rows: [
+    '..hhhh..', '.hhhhhh.', '.hsssh..', '.sesse..', '..ssss..', '.tttttt.', 'sttggtts', '.tt..tt.', '.gg..gg.', '.bb..bb.'] },
+  schleim: { pal: { a: '#52c7f0', d: '#1d7fb0', w: '#ffffff', e: '#10304a', m: '#0d5a82' }, rows: [
+    '....aaaa....', '..aaaaaaaa..', '.aaaaaaaaaa.', '.aweaaaawea.', 'aaaaaaaaaaaa', 'aaaaammaaaaa', 'adaaaaaaaada', '.dddddddddd.', '..dddddddd..'] },
+  wolf: { pal: { a: '#8d97a8', d: '#5a6372', w: '#ffffff', e: '#3a1010', n: '#26262e', m: '#d8e0ea' }, rows: [
+    '.a........a.', '.aa......aa.', '.aaaaaaaaaa.', '.aweaaaawea.', '.aaaaaaaaaa.', '..aaannaaa..', '..aammmma...', '.daaaaaaaad.', '.dd.daad.dd.', '.d...dd...d.'] },
+  pilz: { pal: { c: '#d14040', s: '#ffe9d8', b: '#e8cba0', e: '#3a2010', d: '#b08850', m: '#7a4030' }, rows: [
+    '....cccc....', '..cccccccc..', '.cscccccsc..', 'cccccscccccc', 'cccccccccccc', '.bbbbbbbbbb.', '..bebbbbeb..', '..bbbmmbbb..', '..dbbbbbbd..', '...dddddd...'] },
+  fledermaus: { pal: { a: '#6a4f9a', d: '#46336a', w: '#ffffff', e: '#ff4444', f: '#9a7fd0' }, rows: [
+    'a....aa....a', 'aa..affa..aa', 'aaa.affa.aaa', 'aaaaaffaaaaa', 'daaaweewaaad', '.daaffffaad.', '..daaffaad..', '...d.aa.d...'] },
+  skelett: { pal: { w: '#e8e4da', d: '#a8a294', e: '#101418', m: '#101418' }, rows: [
+    '...wwwwww...', '..wwwwwwww..', '..wewwwwew..', '..wwwwwwww..', '...wmmmmw...', '....wwww....', '..wwwwwwww..', '.w.dwwwwd.w.', '.w..dwwd..w.', '....w..w....', '...ww..ww...'] },
+  troll: { pal: { g: '#5d9444', d: '#3c6a2a', e: '#ffd540', m: '#2a3a1a', t: '#d8d2c0', b: '#7a5a30' }, rows: [
+    '..gggggggg..', '.gggggggggg.', '.geggggggeg.', '.gggggggggg.', '..ggmttmgg..', '.gggggggggg.', 'gggbbbbbbggg', 'ggdbbbbbbdgg', '.gdbbbbbbdg.', '..dd.gg.dd..', '..gg....gg..', '..dd....dd..'] },
+  drache: { pal: { r: '#c43a2a', d: '#8a2418', y: '#ffcf4a', e: '#ffe860', w: '#f5efe0', g: '#5a1810', f: '#ff7a30' }, rows: [
+    'd...........d..', 'dd....rr....dd.', 'ddd..rrrr..ddd.', 'dddrrrrrrrrddd.', '.drrerrrrerd...', '.rrrrrrrrrrrr..', '..rryyyyyyrr...', '..rrywwwwyrr...', '.rrrryyyyrrrr..', 'rrdrrrrrrrrdrr.', 'rr.rryyyyrr.rr.', '...rrryyrrr....', '...dd.rr.dd....', '..ddd.rr.ddd...', '......ff.......'] },
+};
+
+function drawSprite(g, key, x, y, size) {
+  const sp = SPRITES[key]; if (!sp) return;
+  const rows = sp.rows, h = rows.length, w = Math.max(...rows.map(r => r.length));
+  const cell = size / Math.max(w, h);
+  const ox = x + (size - w * cell) / 2, oy = y + (size - h * cell) / 2;
+  for (let j = 0; j < h; j++) for (let i = 0; i < rows[j].length; i++) {
+    const ch = rows[j][i]; if (ch === '.') continue;
+    const col = sp.pal[ch]; if (!col) continue;
+    g.fillStyle = col;
+    g.fillRect(Math.floor(ox + i * cell), Math.floor(oy + j * cell), Math.ceil(cell), Math.ceil(cell));
+  }
+}
+
+// ---------- Spielzustand ----------
+const SAVE_KEY = 'pixel-abenteuer-save-v1';
+const WEAPONS = [
+  { name: 'Holzschwert', atk: 0, price: 0 },
+  { name: 'Eisenschwert', atk: 4, price: 70 },
+  { name: 'Flammenklinge', atk: 9, price: 220 },
+];
+const ARMORS = [
+  { name: 'Stoffweste', def: 0, price: 0 },
+  { name: 'Lederrüstung', def: 3, price: 60 },
+  { name: 'Kettenhemd', def: 7, price: 200 },
+];
+
+let G = null; // gesamter Spielstand
+function newGame() {
+  return {
+    map: 'dorf', x: 10, y: 9, dir: 'down',
+    lvl: 1, xp: 0, hp: 32, maxHp: 32, mp: 10, maxMp: 10,
+    atk: 7, def: 3, gold: 30,
+    weapon: 0, armor: 0,
+    items: { trank: 2, aether: 1 },
+    flags: { introSeen: false, dragonDead: false },
+  };
+}
+const xpNext = lvl => Math.floor(20 * Math.pow(lvl, 1.5));
+const atkTotal = () => G.atk + WEAPONS[G.weapon].atk;
+const defTotal = () => G.def + ARMORS[G.armor].def;
+
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch (e) {} }
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY); if (!raw) return null;
+    const g = JSON.parse(raw);
+    if (!g || !MAPS[g.map]) return null;
+    return Object.assign(newGame(), g);
+  } catch (e) { return null; }
+}
+
+// ---------- Modus / UI-Referenzen ----------
+let mode = 'title'; // title | explore | dialog | battle | menu | shop | gameover | victory
+const $ = id => document.getElementById(id);
+const ui = {
+  dialog: $('dialog'), dWho: $('dWho'), dText: $('dText'),
+  battle: $('battleUI'), bLog: $('bLog'), bBtns: $('bBtns'),
+  menu: $('menuUI'), shop: $('shopUI'),
+  title: $('titleScreen'), gameover: $('gameoverScreen'), victory: $('victoryScreen'),
+  hudName: $('hudName'), hudGold: $('hudGold'),
+  hpTxt: $('hpTxt'), mpTxt: $('mpTxt'),
+  hpBar: document.querySelector('#hpBar i'), mpBar: document.querySelector('#mpBar i'),
+  xpBar: document.querySelector('#xpBar i'),
+  hud: $('hud'), controls: $('controls'), btnMenu: $('btnMenu'),
+};
+function refreshHud() {
+  if (!G) return;
+  ui.hudName.textContent = 'Held · Lv ' + G.lvl;
+  ui.hudGold.textContent = G.gold + ' G';
+  ui.hpTxt.textContent = G.hp + '/' + G.maxHp;
+  ui.mpTxt.textContent = G.mp + '/' + G.maxMp;
+  ui.hpBar.style.width = (100 * G.hp / G.maxHp) + '%';
+  ui.mpBar.style.width = (100 * G.mp / G.maxMp) + '%';
+  ui.xpBar.style.width = (100 * G.xp / xpNext(G.lvl)) + '%';
+}
+
+// ---------- Dialog-System ----------
+let dialogQueue = [], dialogDone = null;
+function showDialog(who, lines, onDone) {
+  dialogQueue = lines.slice(); dialogDone = onDone || null;
+  ui.dWho.textContent = who || ''; ui.dWho.style.display = who ? '' : 'none';
+  mode = 'dialog'; ui.dialog.style.display = 'block';
+  nextDialog(true);
+}
+function nextDialog(first) {
+  if (!first) sfx.select();
+  if (dialogQueue.length === 0) {
+    ui.dialog.style.display = 'none';
+    const cb = dialogDone; dialogDone = null;
+    mode = 'explore';
+    if (cb) cb();
+    return;
+  }
+  ui.dText.textContent = dialogQueue.shift();
+}
+ui.dialog.addEventListener('pointerdown', e => { e.preventDefault(); if (mode === 'dialog') nextDialog(); });
+
+// ---------- Bewegung & Eingabe ----------
+const player = { px: 0, py: 0, tx: 0, ty: 0, moving: false, anim: 0 };
+function setPlayerTo(x, y) { G.x = x; G.y = y; player.px = x; player.py = y; player.tx = x; player.ty = y; player.moving = false; }
+
+const held = new Set();
+const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  const map = { arrowup: 'up', w: 'up', arrowdown: 'down', s: 'down', arrowleft: 'left', a: 'left', arrowright: 'right', d: 'right' };
+  if (map[k]) { held.add(map[k]); e.preventDefault(); }
+  if (k === ' ' || k === 'enter') { e.preventDefault(); pressA(); }
+  if (k === 'escape' && mode === 'menu') closeMenu();
+});
+window.addEventListener('keyup', e => {
+  const k = e.key.toLowerCase();
+  const map = { arrowup: 'up', w: 'up', arrowdown: 'down', s: 'down', arrowleft: 'left', a: 'left', arrowright: 'right', d: 'right' };
+  if (map[k]) held.delete(map[k]);
+});
+// Touch-Steuerkreuz
+for (const [id, dir] of [['dUp', 'up'], ['dDown', 'down'], ['dLeft', 'left'], ['dRight', 'right']]) {
+  const el = $(id);
+  const on = e => { e.preventDefault(); held.add(dir); el.classList.add('on'); };
+  const off = e => { e.preventDefault(); held.delete(dir); el.classList.remove('on'); };
+  el.addEventListener('pointerdown', on);
+  el.addEventListener('pointerup', off);
+  el.addEventListener('pointercancel', off);
+  el.addEventListener('pointerleave', off);
+}
+$('btnA').addEventListener('pointerdown', e => { e.preventDefault(); pressA(); });
+ui.btnMenu.addEventListener('pointerdown', e => { e.preventDefault();
+  if (mode === 'explore') openMenu(); else if (mode === 'menu') closeMenu(); });
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+function pressA() {
+  ac(); // Audio bei erster Geste freischalten
+  if (mode === 'dialog') { nextDialog(); return; }
+  if (mode !== 'explore') return;
+  // NPC vor dem Helden?
+  const [dx, dy] = DIRS[G.dir];
+  const fx = G.x + dx, fy = G.y + dy;
+  const map = MAPS[G.map];
+  const npc = map.npcs.find(n => n.x === fx && n.y === fy && !(n.kind === 'boss' && G.flags.dragonDead));
+  if (npc) interact(npc);
+}
+
+function npcBlocks(map, x, y) {
+  return map.npcs.some(n => n.x === x && n.y === y && !(n.kind === 'boss' && G.flags.dragonDead));
+}
+function walkable(map, x, y) {
+  if (BLOCKED.has(tileAt(map, x, y))) return false;
+  if (npcBlocks(map, x, y)) return false;
+  return true;
+}
+
+let fade = 0; // Karten-Übergangsblende (1 -> 0)
+function changeMap(portal) {
+  const dest = MAPS[portal.to];
+  G.map = portal.to; setPlayerTo(portal.tx, portal.ty);
+  fade = 1; sfx.select(); save();
+  if (portal.to === 'hort' && !G.flags.dragonDead) {
+    setTimeout(() => showDialog(null, ['Eine gewaltige Hitze schlägt dir entgegen. Goldmünzen knirschen unter deinen Stiefeln …', 'Etwas Riesiges regt sich in der Dunkelheit.']), 350);
+  }
+}
+
+function onArrive() {
+  const map = MAPS[G.map];
+  // Portal?
+  const p = map.portals.find(p => p.x === G.x && p.y === G.y);
+  if (p) { changeMap(p); return; }
+  // Zufallskampf?
+  const enc = map.encounters;
+  if (enc && enc.onTiles.has(tileAt(map, G.x, G.y)) && Math.random() < enc.chance) {
+    startBattle(pick(enc.list));
+  }
+}
+
+function updateExplore(dt) {
+  const SPEED = 5.2; // Kacheln pro Sekunde
+  if (player.moving) {
+    const dx = player.tx - player.px, dy = player.ty - player.py;
+    const dist = Math.hypot(dx, dy), step = SPEED * dt;
+    if (dist <= step) {
+      player.px = player.tx; player.py = player.ty;
+      player.moving = false;
+      onArrive();
+    } else {
+      player.px += dx / dist * step; player.py += dy / dist * step;
+      player.anim += dt * 10;
+    }
+  }
+  if (!player.moving && mode === 'explore') {
+    let dir = null;
+    for (const d of ['up', 'down', 'left', 'right']) if (held.has(d)) { dir = d; break; }
+    if (dir) {
+      G.dir = dir;
+      const [dx, dy] = DIRS[dir];
+      const nx = G.x + dx, ny = G.y + dy;
+      if (walkable(MAPS[G.map], nx, ny)) {
+        G.x = nx; G.y = ny; player.tx = nx; player.ty = ny; player.moving = true;
+      }
+    }
+  }
+}
+
+// ---------- Kampf ----------
+let B = null; // Kampfzustand
+function startBattle(enemyId) {
+  const base = ENEMIES[enemyId];
+  B = {
+    id: enemyId, name: base.name, boss: !!base.boss,
+    hp: base.hp, maxHp: base.hp, atk: base.atk, def: base.def,
+    xp: base.xp, gold: irnd(base.gold[0], base.gold[1]),
+    shake: 0, flash: 0, bob: Math.random() * 6, busy: false,
+    floats: [], // schwebende Schadenszahlen
+  };
+  mode = 'battle';
+  held.clear();
+  ui.battle.style.display = 'block';
+  bLog(base.boss ? '🔥 ' + base.name + ' erhebt sich vor dir!' : 'Ein wilder ' + base.name + ' erscheint!');
+  renderBattleButtons('main');
+  sfx.hit();
+}
+function bLog(t) { ui.bLog.textContent = t; }
+function addFloat(text, color) { B.floats.push({ text, color, t: 0 }); }
+
+function renderBattleButtons(view) {
+  const b = ui.bBtns; b.innerHTML = '';
+  const mk = (label, fn, disabled) => {
+    const el = document.createElement('button');
+    el.textContent = label; el.disabled = !!disabled || B.busy;
+    el.addEventListener('pointerdown', e => { e.preventDefault(); if (!el.disabled) fn(); });
+    b.appendChild(el); return el;
+  };
+  if (view === 'main') {
+    mk('⚔ Angriff', () => playerAttack());
+    mk('✨ Zauber', () => renderBattleButtons('magic'));
+    mk('🧪 Tasche', () => renderBattleButtons('items'));
+    mk('🏃 Flucht', () => playerFlee(), B.boss);
+  } else if (view === 'magic') {
+    mk('🔥 Feuerball (4 MP)', () => castFire(), G.mp < 4);
+    mk('💚 Heilung (5 MP)' + (G.lvl < 3 ? ' – ab Lv 3' : ''), () => castHeal(), G.lvl < 3 || G.mp < 5);
+    mk('↩ Zurück', () => renderBattleButtons('main'));
+  } else if (view === 'items') {
+    mk('🧪 Trank ×' + G.items.trank + ' (+35 HP)', () => useItemInBattle('trank'), G.items.trank <= 0);
+    mk('💙 Äther ×' + G.items.aether + ' (+12 MP)', () => useItemInBattle('aether'), G.items.aether <= 0);
+    mk('↩ Zurück', () => renderBattleButtons('main'));
+  }
+}
+function dmgRoll(atk, def) { return Math.max(1, Math.round(atk * rnd(0.85, 1.2) - def * 0.5)); }
+
+function playerAttack() {
+  if (B.busy) return; B.busy = true; renderBattleButtons('main');
+  const crit = Math.random() < 0.1;
+  let d = dmgRoll(atkTotal(), B.def); if (crit) d = Math.round(d * 1.8);
+  B.hp = Math.max(0, B.hp - d);
+  B.flash = 0.25; B.shake = 0.3; sfx.hit();
+  addFloat('-' + d, crit ? '#ffd540' : '#fff');
+  bLog((crit ? '💥 Kritischer Treffer! ' : 'Du triffst ') + B.name + ': ' + d + ' Schaden!');
+  afterPlayerAction();
+}
+function castFire() {
+  if (B.busy || G.mp < 4) return; B.busy = true; renderBattleButtons('main');
+  G.mp -= 4; refreshHud();
+  const d = Math.max(2, Math.round(atkTotal() * rnd(1.5, 1.9) - B.def * 0.3));
+  B.hp = Math.max(0, B.hp - d);
+  B.flash = 0.35; B.shake = 0.35; sfx.magic();
+  addFloat('-' + d, '#ff8a3a');
+  bLog('🔥 Dein Feuerball verbrennt ' + B.name + ': ' + d + ' Schaden!');
+  afterPlayerAction();
+}
+function castHeal() {
+  if (B.busy || G.mp < 5 || G.lvl < 3) return; B.busy = true; renderBattleButtons('main');
+  G.mp -= 5;
+  const h = Math.round(G.maxHp * 0.45);
+  G.hp = Math.min(G.maxHp, G.hp + h); refreshHud(); sfx.heal();
+  bLog('💚 Heilung! Du gewinnst ' + h + ' HP zurück.');
+  afterPlayerAction(true);
+}
+function useItemInBattle(which) {
+  if (B.busy) return; B.busy = true; renderBattleButtons('main');
+  if (which === 'trank' && G.items.trank > 0) {
+    G.items.trank--; G.hp = Math.min(G.maxHp, G.hp + 35); sfx.heal();
+    bLog('🧪 Du trinkst einen Trank: +35 HP.');
+  } else if (which === 'aether' && G.items.aether > 0) {
+    G.items.aether--; G.mp = Math.min(G.maxMp, G.mp + 12); sfx.heal();
+    bLog('💙 Du nutzt einen Äther: +12 MP.');
+  }
+  refreshHud();
+  afterPlayerAction(true);
+}
+function playerFlee() {
+  if (B.busy || B.boss) return; B.busy = true; renderBattleButtons('main');
+  if (Math.random() < 0.65) {
+    sfx.flee(); bLog('🏃 Du entkommst!');
+    setTimeout(() => endBattle(null), 700);
+  } else {
+    bLog('Flucht misslungen!');
+    setTimeout(enemyTurn, 750);
+  }
+}
+function afterPlayerAction(skipDeathCheck) {
+  if (!skipDeathCheck && B.hp <= 0) { setTimeout(winBattle, 650); return; }
+  setTimeout(enemyTurn, 800);
+}
+function enemyTurn() {
+  if (!B) return;
+  const d = dmgRoll(B.atk, defTotal());
+  G.hp = Math.max(0, G.hp - d);
+  refreshHud(); sfx.hurt();
+  bLog(B.name + ' greift an: ' + d + ' Schaden!');
+  if (G.hp <= 0) { setTimeout(loseBattle, 750); return; }
+  B.busy = false; renderBattleButtons('main');
+}
+function winBattle() {
+  sfx.gold();
+  G.gold += B.gold; G.xp += B.xp;
+  let msg = '🏆 ' + B.name + ' besiegt! +' + B.xp + ' XP, +' + B.gold + ' Gold.';
+  const lvls = [];
+  while (G.xp >= xpNext(G.lvl)) {
+    G.xp -= xpNext(G.lvl); G.lvl++;
+    G.maxHp += 7; G.maxMp += 3; G.atk += 2; G.def += 1;
+    G.hp = G.maxHp; G.mp = G.maxMp;
+    lvls.push(G.lvl);
+  }
+  const wasBoss = B.boss;
+  refreshHud(); bLog(msg);
+  setTimeout(() => {
+    endBattle(() => {
+      const after = () => {
+        if (wasBoss) { G.flags.dragonDead = true; save(); showVictory(); }
+        else save();
+      };
+      if (lvls.length) {
+        sfx.level();
+        showDialog(null, ['⬆ Level-Aufstieg! Du bist jetzt Level ' + G.lvl + '.', 'HP und MP wurden vollständig aufgefrischt, deine Werte sind gestiegen.'], after);
+      } else after();
+    });
+  }, 1100);
+}
+function loseBattle() {
+  sfx.lose(); bLog('💀 Du gehst zu Boden …');
+  setTimeout(() => { endBattle(null); showGameOver(); }, 1200);
+}
+function endBattle(cb) {
+  B = null; ui.battle.style.display = 'none';
+  mode = 'explore';
+  if (cb) cb();
+}
+function showGameOver() {
+  mode = 'gameover'; ui.gameover.style.display = 'flex';
+}
+$('btnRespawn').addEventListener('pointerdown', e => {
+  e.preventDefault(); sfx.select();
+  ui.gameover.style.display = 'none';
+  G.gold = Math.floor(G.gold / 2);
+  G.hp = G.maxHp; G.mp = G.maxMp;
+  G.map = 'dorf'; setPlayerTo(10, 9); G.dir = 'down';
+  fade = 1; mode = 'explore'; refreshHud(); save();
+});
+function showVictory() {
+  mode = 'victory'; ui.victory.style.display = 'flex'; sfx.win();
+}
+$('btnVictoryOk').addEventListener('pointerdown', e => {
+  e.preventDefault(); sfx.select();
+  ui.victory.style.display = 'none'; mode = 'explore';
+});
+
+// ---------- NPC-Interaktionen ----------
+function interact(npc) {
+  sfx.select();
+  if (npc.kind === 'elder') {
+    if (G.flags.dragonDead) {
+      showDialog(npc.name, ['Du hast es wirklich getan! Varganor ist Geschichte!', 'Eichenhain wird dir das nie vergessen, Held. Ruh dich aus – du hast es verdient.']);
+    } else {
+      showDialog(npc.name, [
+        'Ah, junger Held! Gut, dass du da bist.',
+        'Der Drache Varganor haust tief in der Schattenhöhle hinter dem Finsterwald. Nachts hören wir sein Brüllen bis ins Dorf …',
+        'Folge dem Weg nach Süden in den Wald, dann nach Südosten zur Höhle. Aber geh nicht unvorbereitet!',
+        'Sammle im Kampf Erfahrung, und kauf dir bei Bodo bessere Ausrüstung. Greta päppelt dich im Gasthaus wieder auf.',
+      ]);
+    }
+  } else if (npc.kind === 'inn') {
+    openInn(npc);
+  } else if (npc.kind === 'shop') {
+    openShop(npc);
+  } else if (npc.kind === 'boss') {
+    showDialog('Varganor', [
+      'WER WAGT ES, MEINEN HORT ZU BETRETEN?',
+      'Ein Menschlein? Wie … erheiternd. Dein Gold wird meinen Schatz schmücken – und deine Knochen meinen Boden!',
+    ], () => startBattle('drache'));
+  }
+}
+
+function openInn(npc) {
+  const PRICE = 12;
+  if (G.hp >= G.maxHp && G.mp >= G.maxMp) {
+    showDialog(npc.name, ['Du strotzt ja nur so vor Kraft! Komm wieder, wenn du Ruhe brauchst.']);
+    return;
+  }
+  if (G.gold < PRICE) {
+    showDialog(npc.name, ['Ein Bett kostet ' + PRICE + ' Gold, Schätzchen. So viel hast du gerade nicht dabei …']);
+    return;
+  }
+  showDialog(npc.name, ['Willkommen im Gasthaus „Zur Goldenen Eiche"! Für ' + PRICE + ' Gold schläfst du dich wieder fit.'], () => {
+    G.gold -= PRICE; G.hp = G.maxHp; G.mp = G.maxMp;
+    refreshHud(); sfx.heal(); save();
+    showDialog(npc.name, ['Gut geschlafen? HP und MP sind wieder voll. Pass auf dich auf!']);
+  });
+}
+
+// ---------- Shop ----------
+function openShop() {
+  mode = 'shop';
+  renderShop();
+  ui.shop.style.display = 'block';
+}
+function renderShop() {
+  const s = ui.shop;
+  s.innerHTML = '<h3>🛒 Bodos Waren</h3><div id="shopGold">Dein Gold: ' + G.gold + ' G</div>';
+  const addItem = (title, desc, price, canBuy, fn) => {
+    const row = document.createElement('div'); row.className = 'item';
+    const info = document.createElement('div'); info.className = 'info';
+    info.innerHTML = '<b>' + title + '</b><br><span class="muted">' + desc + '</span>';
+    const btn = document.createElement('button');
+    btn.textContent = price + ' G';
+    btn.disabled = !canBuy;
+    btn.addEventListener('pointerdown', e => { e.preventDefault(); if (!btn.disabled) { fn(); sfx.gold(); save(); renderShop(); refreshHud(); } });
+    row.appendChild(info); row.appendChild(btn); s.appendChild(row);
+  };
+  addItem('🧪 Trank', 'Stellt 35 HP wieder her. (Besitz: ' + G.items.trank + ')', 15, G.gold >= 15, () => { G.gold -= 15; G.items.trank++; });
+  addItem('💙 Äther', 'Stellt 12 MP wieder her. (Besitz: ' + G.items.aether + ')', 25, G.gold >= 25, () => { G.gold -= 25; G.items.aether++; });
+  if (G.weapon < WEAPONS.length - 1) {
+    const w = WEAPONS[G.weapon + 1];
+    addItem('⚔ ' + w.name, 'Angriff +' + w.atk + ' (ersetzt ' + WEAPONS[G.weapon].name + ')', w.price, G.gold >= w.price, () => { G.gold -= w.price; G.weapon++; });
+  }
+  if (G.armor < ARMORS.length - 1) {
+    const a = ARMORS[G.armor + 1];
+    addItem('🛡 ' + a.name, 'Verteidigung +' + a.def + ' (ersetzt ' + ARMORS[G.armor].name + ')', a.price, G.gold >= a.price, () => { G.gold -= a.price; G.armor++; });
+  }
+  const close = document.createElement('button');
+  close.textContent = '✖ Schließen';
+  close.addEventListener('pointerdown', e => { e.preventDefault(); sfx.select(); ui.shop.style.display = 'none'; mode = 'explore'; });
+  s.appendChild(close);
+}
+
+// ---------- Menü ----------
+function openMenu() {
+  mode = 'menu'; held.clear();
+  renderMenu();
+  ui.menu.style.display = 'block';
+}
+function closeMenu() { ui.menu.style.display = 'none'; mode = 'explore'; }
+function renderMenu() {
+  const m = ui.menu;
+  m.innerHTML = '<h3>📜 ' + MAPS[G.map].name + '</h3>' +
+    '<div class="stats">' +
+    'Level ' + G.lvl + ' · ' + G.xp + '/' + xpNext(G.lvl) + ' XP<br>' +
+    'HP ' + G.hp + '/' + G.maxHp + ' · MP ' + G.mp + '/' + G.maxMp + '<br>' +
+    'Angriff ' + atkTotal() + ' (' + WEAPONS[G.weapon].name + ')<br>' +
+    'Verteidigung ' + defTotal() + ' (' + ARMORS[G.armor].name + ')<br>' +
+    'Gold ' + G.gold + ' G · 🧪 ×' + G.items.trank + ' · 💙 ×' + G.items.aether +
+    '</div>';
+  const mk = (label, fn, disabled, danger) => {
+    const b = document.createElement('button');
+    b.textContent = label; b.disabled = !!disabled;
+    if (danger) b.className = 'danger';
+    b.addEventListener('pointerdown', e => { e.preventDefault(); if (!b.disabled) fn(); });
+    m.appendChild(b); return b;
+  };
+  mk('🧪 Trank benutzen (+35 HP)', () => {
+    G.items.trank--; G.hp = Math.min(G.maxHp, G.hp + 35);
+    sfx.heal(); refreshHud(); save(); renderMenu();
+  }, G.items.trank <= 0 || G.hp >= G.maxHp);
+  mk('💙 Äther benutzen (+12 MP)', () => {
+    G.items.aether--; G.mp = Math.min(G.maxMp, G.mp + 12);
+    sfx.heal(); refreshHud(); save(); renderMenu();
+  }, G.items.aether <= 0 || G.mp >= G.maxMp);
+  mk(soundOn ? '🔊 Ton: an' : '🔇 Ton: aus', () => { soundOn = !soundOn; renderMenu(); });
+  mk('🗑 Neues Spiel starten', () => {
+    if (confirm('Wirklich neu anfangen? Der Spielstand wird gelöscht.')) {
+      localStorage.removeItem(SAVE_KEY);
+      location.reload();
+    }
+  }, false, true);
+  mk('✖ Schließen', closeMenu);
+  const note = document.createElement('p');
+  note.className = 'muted'; note.style.marginTop = '10px'; note.style.textAlign = 'center';
+  note.textContent = 'Der Spielstand wird automatisch gespeichert.';
+  m.appendChild(note);
+}
+
+// ---------- Rendering ----------
+function drawTile(ch, sx, sy, x, y, t) {
+  const n = noise(x, y);
+  switch (ch) {
+    case '.': case 'f': {
+      cx.fillStyle = n > 0.5 ? '#5fa84e' : '#57a046';
+      cx.fillRect(sx, sy, TS, TS);
+      cx.fillStyle = '#4c9340';
+      if (n > 0.3) cx.fillRect(sx + TS * 0.2, sy + TS * 0.3, TS * 0.08, TS * 0.08);
+      if (n > 0.6) cx.fillRect(sx + TS * 0.65, sy + TS * 0.6, TS * 0.08, TS * 0.08);
+      if (ch === 'f') {
+        cx.fillStyle = n > 0.5 ? '#ff6f91' : '#ffd54f';
+        cx.fillRect(sx + TS * 0.3, sy + TS * 0.3, TS * 0.14, TS * 0.14);
+        cx.fillRect(sx + TS * 0.6, sy + TS * 0.55, TS * 0.14, TS * 0.14);
+        cx.fillStyle = '#fff';
+        cx.fillRect(sx + TS * 0.34, sy + TS * 0.34, TS * 0.06, TS * 0.06);
+      }
+      break;
+    }
+    case ',': {
+      cx.fillStyle = '#3f8a37'; cx.fillRect(sx, sy, TS, TS);
+      cx.fillStyle = '#2f7029';
+      const sway = Math.sin(t * 2 + x * 1.7 + y) * TS * 0.04;
+      for (let i = 0; i < 3; i++) {
+        const gx = sx + TS * (0.18 + i * 0.28) + sway;
+        cx.fillRect(gx, sy + TS * 0.25, TS * 0.1, TS * 0.6);
+      }
+      break;
+    }
+    case 't': {
+      cx.fillStyle = '#57a046'; cx.fillRect(sx, sy, TS, TS);
+      cx.fillStyle = '#5b3b1f';
+      cx.fillRect(sx + TS * 0.4, sy + TS * 0.55, TS * 0.2, TS * 0.4);
+      cx.fillStyle = '#2c6e2a';
+      cx.fillRect(sx + TS * 0.1, sy + TS * 0.18, TS * 0.8, TS * 0.5);
+      cx.fillRect(sx + TS * 0.22, sy + TS * 0.02, TS * 0.56, TS * 0.3);
+      cx.fillStyle = '#3c8a38';
+      cx.fillRect(sx + TS * 0.18, sy + TS * 0.1, TS * 0.34, TS * 0.22);
+      break;
+    }
+    case 'w': {
+      cx.fillStyle = '#2d6fb8'; cx.fillRect(sx, sy, TS, TS);
+      cx.fillStyle = '#3f86d4';
+      const off = Math.sin(t * 2.5 + x * 2 + y * 3) > 0 ? TS * 0.15 : TS * 0.45;
+      cx.fillRect(sx + TS * 0.15, sy + off, TS * 0.5, TS * 0.09);
+      cx.fillRect(sx + TS * 0.45, sy + off + TS * 0.3, TS * 0.35, TS * 0.09);
+      break;
+    }
+    case 'p': {
+      cx.fillStyle = '#c9a86a'; cx.fillRect(sx, sy, TS, TS);
+      cx.fillStyle = '#b8945a';
+      if (n > 0.4) cx.fillRect(sx + TS * 0.25, sy + TS * 0.35, TS * 0.12, TS * 0.12);
+      if (n > 0.7) cx.fillRect(sx + TS * 0.6, sy + TS * 0.62, TS * 0.12, TS * 0.12);
+      break;
+    }
+    case 'b': case 'd': {
+      cx.fillStyle = '#8a5a32'; cx.fillRect(sx, sy, TS, TS);
+      cx.fillStyle = '#a06a3c';
+      cx.fillRect(sx, sy, TS, TS * 0.18); // Dachkante
+      cx.fillStyle = '#714a28';
+      cx.fillRect(sx + TS * 0.08, sy + TS * 0.3, TS * 0.84, TS * 0.08);
+      cx.fillRect(sx + TS * 0.08, sy + TS * 0.62, TS * 0.84, TS * 0.08);
+      if (ch === 'd') {
+        cx.fillStyle = '#4a2c14';
+        cx.fillRect(sx + TS * 0.22, sy + TS * 0.25, TS * 0.56, TS * 0.75);
+        cx.fillStyle = '#ffd54f';
+        cx.fillRect(sx + TS * 0.6, sy + TS * 0.58, TS * 0.1, TS * 0.1);
+      }
+      break;
+    }
+    case '#': {
+      cx.fillStyle = '#3a3445'; cx.fillRect(sx, sy, TS, TS);
+      cx.fillStyle = '#4a4458';
+      cx.fillRect(sx + TS * 0.06, sy + TS * 0.06, TS * 0.4, TS * 0.34);
+      cx.fillRect(sx + TS * 0.52, sy + TS * 0.46, TS * 0.4, TS * 0.4);
+      cx.fillStyle = '#2a2533';
+      cx.fillRect(sx, sy + TS * 0.92, TS, TS * 0.08);
+      break;
+    }
+    case 'c': case 's': {
+      cx.fillStyle = ch === 's' ? '#6a6276' : '#564e63';
+      cx.fillRect(sx, sy, TS, TS);
+      cx.fillStyle = 'rgba(0,0,0,.12)';
+      if (n > 0.5) cx.fillRect(sx + TS * 0.2, sy + TS * 0.3, TS * 0.18, TS * 0.18);
+      if (n > 0.75) cx.fillRect(sx + TS * 0.6, sy + TS * 0.55, TS * 0.14, TS * 0.14);
+      break;
+    }
+    case 'l': {
+      const glow = 0.5 + 0.5 * Math.sin(t * 3 + x * 2 + y);
+      cx.fillStyle = '#c4451f'; cx.fillRect(sx, sy, TS, TS);
+      cx.fillStyle = 'rgba(255,180,60,' + (0.35 + glow * 0.3) + ')';
+      cx.fillRect(sx + TS * 0.12, sy + TS * 0.15, TS * 0.4, TS * 0.3);
+      cx.fillRect(sx + TS * 0.5, sy + TS * 0.55, TS * 0.35, TS * 0.28);
+      break;
+    }
+    default: {
+      cx.fillStyle = '#57a046'; cx.fillRect(sx, sy, TS, TS);
+    }
+  }
+}
+
+function drawExplore(t) {
+  const map = MAPS[G.map];
+  // Höhlenboden in der Höhle statt Gras als Standard
+  const camX = clamp(player.px * TS + TS / 2 - W / 2, -TS, map.w * TS - W + TS);
+  const camY = clamp(player.py * TS + TS / 2 - H / 2, -TS, map.h * TS - H + TS);
+  // Hintergrund außerhalb der Karte
+  cx.fillStyle = map.zone === 'hoehle' || map.zone === 'hort' ? '#171221' : '#1d3a18';
+  cx.fillRect(0, 0, W, H);
+
+  const x0 = Math.floor(camX / TS) - 1, x1 = Math.ceil((camX + W) / TS) + 1;
+  const y0 = Math.floor(camY / TS) - 1, y1 = Math.ceil((camY + H) / TS) + 1;
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+    if (x < 0 || y < 0 || x >= map.w || y >= map.h) continue;
+    drawTile(tileAt(map, x, y), Math.floor(x * TS - camX), Math.floor(y * TS - camY), x, y, t);
+  }
+
+  // NPCs
+  for (const n of map.npcs) {
+    if (n.kind === 'boss' && G.flags.dragonDead) continue;
+    const sx = n.x * TS - camX, sy = n.y * TS - camY;
+    if (n.kind === 'boss') {
+      const bob = Math.sin(t * 1.5) * TS * 0.06;
+      drawSprite(cx, 'drache', sx - TS * 0.5, sy - TS * 0.7 + bob, TS * 2);
+    } else {
+      cx.fillStyle = 'rgba(0,0,0,.25)';
+      cx.fillRect(sx + TS * 0.2, sy + TS * 0.82, TS * 0.6, TS * 0.14);
+      drawSprite(cx, n.sprite, sx + TS * 0.08, sy - TS * 0.08, TS * 0.86);
+      // kleines Hinweissymbol über Quest-NPC
+      if (n.kind === 'elder' && !G.flags.dragonDead) {
+        cx.fillStyle = '#ffd54f';
+        cx.font = 'bold ' + Math.round(TS * 0.4) + 'px monospace';
+        cx.textAlign = 'center';
+        cx.fillText('!', sx + TS / 2, sy - TS * 0.18 + Math.sin(t * 3) * 3);
+      }
+    }
+  }
+
+  // Held
+  const hx = player.px * TS - camX, hy = player.py * TS - camY;
+  const bob = player.moving ? Math.abs(Math.sin(player.anim)) * TS * 0.07 : 0;
+  cx.fillStyle = 'rgba(0,0,0,.25)';
+  cx.fillRect(hx + TS * 0.2, hy + TS * 0.82, TS * 0.6, TS * 0.14);
+  drawSprite(cx, 'hero', hx + TS * 0.08, hy - TS * 0.08 - bob, TS * 0.86);
+
+  // Gebiets-Name kurz nach Kartenwechsel
+  if (fade > 0) {
+    cx.fillStyle = 'rgba(10,5,20,' + Math.min(1, fade * 1.4) + ')';
+    cx.fillRect(0, 0, W, H);
+  }
+  if (fade > -1.6) {
+    const a = fade > 0 ? 1 : Math.max(0, 1 + (fade + 0.6));
+    cx.fillStyle = 'rgba(255,255,255,' + (a * 0.9) + ')';
+    cx.font = 'bold ' + Math.round(Math.min(W, H) * 0.05) + 'px monospace';
+    cx.textAlign = 'center';
+    cx.fillText(map.name, W / 2, H * 0.2);
+  }
+}
+
+const BATTLE_BG = {
+  dorf: ['#3a6e9e', '#57a046'],
+  wald: ['#1d3a18', '#3f8a37'],
+  hoehle: ['#171221', '#564e63'],
+  hort: ['#33100c', '#6e2418'],
+};
+function drawBattle(t) {
+  const zone = MAPS[G.map].zone;
+  const [skyC, gndC] = BATTLE_BG[zone] || BATTLE_BG.wald;
+  const g = cx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, skyC); g.addColorStop(1, '#0c0816');
+  cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+  // Boden-Podest
+  const groundY = H * 0.52;
+  cx.fillStyle = gndC;
+  cx.beginPath();
+  cx.ellipse(W / 2, groundY + H * 0.06, Math.min(W * 0.36, 260), H * 0.05, 0, 0, Math.PI * 2);
+  cx.fill();
+
+  if (B) {
+    B.bob += 0.016;
+    if (B.shake > 0) B.shake = Math.max(0, B.shake - 0.016);
+    if (B.flash > 0) B.flash = Math.max(0, B.flash - 0.016);
+    const size = Math.min(W, H) * (B.boss ? 0.46 : 0.34);
+    const ex = W / 2 - size / 2 + (B.shake > 0 ? rnd(-8, 8) : 0);
+    const ey = groundY - size + Math.sin(B.bob * 2.2) * 6 + (B.shake > 0 ? rnd(-5, 5) : 0);
+    drawSprite(cx, B.id, ex, ey, size);
+    if (B.flash > 0) {
+      cx.fillStyle = 'rgba(255,255,255,' + (B.flash * 1.8) + ')';
+      cx.fillRect(ex, ey, size, size);
+    }
+    // Name + HP-Balken des Gegners
+    const bw = Math.min(W * 0.7, 300);
+    const bx = W / 2 - bw / 2, by = H * 0.1;
+    cx.fillStyle = '#fff';
+    cx.font = 'bold ' + Math.round(Math.min(W, H) * 0.04) + 'px monospace';
+    cx.textAlign = 'center';
+    cx.fillText(B.name, W / 2, by - 8);
+    cx.fillStyle = 'rgba(0,0,0,.5)'; cx.fillRect(bx - 2, by - 2, bw + 4, 14);
+    cx.fillStyle = '#33244d'; cx.fillRect(bx, by, bw, 10);
+    cx.fillStyle = B.hp / B.maxHp > 0.4 ? '#5fd068' : '#e85050';
+    cx.fillRect(bx, by, bw * (B.hp / B.maxHp), 10);
+    // schwebende Schadenszahlen
+    for (const f of B.floats) {
+      f.t += 0.016;
+      cx.fillStyle = f.color;
+      cx.globalAlpha = Math.max(0, 1 - f.t * 1.2);
+      cx.font = 'bold ' + Math.round(Math.min(W, H) * 0.055) + 'px monospace';
+      cx.fillText(f.text, W / 2, groundY - size * 0.5 - f.t * 60);
+      cx.globalAlpha = 1;
+    }
+    B.floats = B.floats.filter(f => f.t < 0.9);
+  }
+}
+
+// ---------- Hauptschleife ----------
+let last = 0;
+function loop(ts) {
+  requestAnimationFrame(loop);
+  const t = ts / 1000;
+  const dt = Math.min(0.05, (ts - last) / 1000 || 0.016);
+  last = ts;
+
+  if (!G) return; // noch auf dem Titelbildschirm
+
+  if (mode === 'explore' || mode === 'dialog' || mode === 'menu' || mode === 'shop') {
+    if (mode === 'explore') updateExplore(dt);
+    if (fade > -2) fade -= dt * 1.2;
+    drawExplore(t);
+  } else if (mode === 'battle') {
+    drawBattle(t);
+  } else if (mode === 'gameover' || mode === 'victory') {
+    drawBattle(t); // letzter Kampf-Hintergrund hinter dem Overlay
+  }
+}
+requestAnimationFrame(loop);
+
+// ---------- Start / Titelbildschirm ----------
+function startGame(g) {
+  G = g;
+  setPlayerTo(G.x, G.y);
+  fade = 1;
+  refreshHud();
+  ui.title.style.display = 'none';
+  mode = 'explore';
+  if (!G.flags.introSeen) {
+    G.flags.introSeen = true; save();
+    setTimeout(() => showDialog(null, [
+      'Dorf Eichenhain. Seit Wochen liegt ein Schatten über dem Land: Der Drache Varganor raubt Vieh, Gold – und den Mut der Menschen.',
+      'Du bist ein junger Abenteurer mit einem Holzschwert und großen Träumen.',
+      'Sprich mit dem Ältesten Alrik (gelbes „!") – er weiß mehr. Steuere mit dem Steuerkreuz, sprich mit A.',
+    ]), 400);
+  }
+}
+const saved = load();
+if (saved) {
+  $('btnContinue').style.display = '';
+  $('btnContinue').addEventListener('pointerdown', e => { e.preventDefault(); ac(); sfx.select(); startGame(saved); });
+}
+$('btnNew').addEventListener('pointerdown', e => {
+  e.preventDefault(); ac(); sfx.select();
+  if (saved && !confirm('Es gibt einen Spielstand. Wirklich neu anfangen?')) return;
+  localStorage.removeItem(SAVE_KEY);
+  startGame(newGame());
+});
+ui.title.style.display = 'flex';
+</script>
+</body>
+</html>
