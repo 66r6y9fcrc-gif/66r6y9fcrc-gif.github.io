@@ -13,6 +13,10 @@ Ein eigenständiges Handy-Rollenspiel auf derselben Seite – spielbar unter
 
 - **3 Klassen**: Krieger, Magier, Schurke – mit eigenen Werten, Levelaufstiegs-Boni und
   Skills (z. B. Kampfschrei-Buff, Blitzsturm, Giftklinge, Schattenschritt)
+- **Animierte Figuren** (v3): Held und Dorfbewohner sind keine Pixel-Sprites mehr, sondern
+  weich gezeichnete Figuren mit flüssigen Skelett-Animationen – Atmen, Blinzeln, Laufzyklus,
+  Schwerthieb, Zaubergeste und Treffer-Reaktion; im Kampf steht der Held sichtbar dem
+  Gegner gegenüber, und die Klassenwahl zeigt lebendige Figuren-Vorschauen
 - **Loot-System**: Monster lassen prozedural generierte Ausrüstung fallen – in 4
   Raritätsstufen (Gewöhnlich/Selten/Episch/Legendär) mit zufälligen Affixen
   (ATK, DEF, HP, MP, Krit, Ausweichen); der Endboss droppt garantiert Legendäres

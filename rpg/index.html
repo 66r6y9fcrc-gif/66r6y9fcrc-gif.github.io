@@ -84,6 +84,7 @@
   .classCard b { font-size:18px; }
   .classCard .cdesc { font-weight:normal; font-size:13px; color:#cbb8ff; line-height:1.4; margin-top:4px; }
   .classCard .cstats { font-weight:normal; font-size:12px; color:#a99ad4; margin-top:4px; }
+  .cprev { width:58px; height:82px; flex:0 0 auto; background:rgba(0,0,0,.28); border-radius:10px; }
 
   #menuUI, #shopUI, #invUI { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
     width:min(440px, calc(100% - 24px)); max-height:84vh; overflow-y:auto; padding:16px; display:none; z-index:25; }
@@ -176,11 +177,14 @@
 <script>
 'use strict';
 /* ============================================================
-   Pixel-Abenteuer v2 – Mobile-Fantasy-RPG in einer Datei.
+   Pixel-Abenteuer v3 – Mobile-Fantasy-RPG in einer Datei.
    Klassen (Krieger/Magier/Schurke), prozedurales Loot mit
    Raritätsstufen, Inventar mit 4 Ausrüstungs-Slots, Oberwelt-
    Erkundung + rundenbasierte Kämpfe mit Statuseffekten.
-   Speicherung in localStorage. Keine externen Assets.
+   Held & NPCs sind keine Pixel-Sprites mehr, sondern weich
+   gezeichnete Figuren mit Skelett-Animation (Atmen, Blinzeln,
+   Gehen, Angriff, Zaubern). Speicherung in localStorage.
+   Keine externen Assets.
    ============================================================ */
 
 // ---------- Grund-Setup ----------
@@ -266,9 +270,9 @@ const MAPS = {
     ],
     portals: [{ x: 10, y: 13, to: 'wald', tx: 11, ty: 1 }],
     npcs: [
-      { id: 'haendler', x: 3, y: 4, kind: 'shop', name: 'Händler Bodo', sprite: 'npcShop' },
-      { id: 'wirtin',   x: 9, y: 4, kind: 'inn',  name: 'Wirtin Greta', sprite: 'npcInn' },
-      { id: 'aeltester',x: 15, y: 4, kind: 'elder', name: 'Ältester Alrik', sprite: 'npcElder' },
+      { id: 'haendler', x: 3, y: 4, kind: 'shop', name: 'Händler Bodo', fig: 'bodo' },
+      { id: 'wirtin',   x: 9, y: 4, kind: 'inn',  name: 'Wirtin Greta', fig: 'greta' },
+      { id: 'aeltester',x: 15, y: 4, kind: 'elder', name: 'Ältester Alrik', fig: 'alrik' },
     ],
     encounters: null,
   },
@@ -386,7 +390,6 @@ const CLASSES = {
     crit: 5, dodge: 3,
     weapons: ['schwert', 'axt'], startWeapon: 'schwert',
     skills: ['wuchtschlag', 'kampfschrei', 'klingensturm'],
-    pal: { t: '#b3342a', g: '#7a1f18' },
   },
   magier: {
     name: 'Magier', icon: '🔮',
@@ -396,7 +399,6 @@ const CLASSES = {
     crit: 5, dodge: 3,
     weapons: ['stab'], startWeapon: 'stab',
     skills: ['feuerball', 'heilung', 'blitzsturm'],
-    pal: { t: '#7a4fd0', g: '#4f2f96' },
   },
   schurke: {
     name: 'Schurke', icon: '🗡',
@@ -406,7 +408,6 @@ const CLASSES = {
     crit: 15, dodge: 10,
     weapons: ['dolch'], startWeapon: 'dolch',
     skills: ['giftklinge', 'schattenschritt', 'meucheln'],
-    pal: { t: '#3e7d52', g: '#27513a' },
   },
 };
 
@@ -523,17 +524,9 @@ function gearStatLines(it) {
   return Object.entries(it.stats).filter(([, v]) => v > 0).map(([k, v]) => STAT_FMT[k](v));
 }
 
-// ---------- Pixel-Sprites ----------
+// ---------- Pixel-Sprites (nur noch Monster) ----------
 // Jedes Sprite: Palette (Zeichen -> Farbe) + Zeilen. '.' = transparent.
 const SPRITES = {
-  hero: { pal: { h: '#6d4426', s: '#ffcf9e', e: '#221133', t: '#2e62c9', g: '#1d4490', b: '#5b3b1f' }, rows: [
-    '..hhhh..', '.hhhhhh.', '.hsssh..', '.sesse..', '..ssss..', '.tttttt.', 'sttggtts', '.tt..tt.', '.gg..gg.', '.bb..bb.'] },
-  npcShop: { pal: { h: '#444444', s: '#ffcf9e', e: '#221133', t: '#b07a2a', g: '#7a5118', b: '#3b2a14' }, rows: [
-    '..hhhh..', '.hhhhhh.', '.hsssh..', '.sesse..', '..ssss..', '.tttttt.', 'sttggtts', '.tt..tt.', '.gg..gg.', '.bb..bb.'] },
-  npcInn: { pal: { h: '#a33c12', s: '#ffcf9e', e: '#221133', t: '#c2356a', g: '#8e2049', b: '#3b2a14' }, rows: [
-    '..hhhh..', '.hhhhhh.', '.hsssh..', '.sesse..', '..ssss..', '.tttttt.', 'sttggtts', '.tt..tt.', '.gg..gg.', '.bb..bb.'] },
-  npcElder: { pal: { h: '#dddddd', s: '#f4c39a', e: '#221133', t: '#5a4d8a', g: '#3c3261', b: '#3b2a14' }, rows: [
-    '..hhhh..', '.hhhhhh.', '.hsssh..', '.sesse..', '..ssss..', '.tttttt.', 'sttggtts', '.tt..tt.', '.gg..gg.', '.bb..bb.'] },
   schleim: { pal: { a: '#52c7f0', d: '#1d7fb0', w: '#ffffff', e: '#10304a', m: '#0d5a82' }, rows: [
     '....aaaa....', '..aaaaaaaa..', '.aaaaaaaaaa.', '.aweaaaawea.', 'aaaaaaaaaaaa', 'aaaaammaaaaa', 'adaaaaaaaada', '.dddddddddd.', '..dddddddd..'] },
   wolf: { pal: { a: '#8d97a8', d: '#5a6372', w: '#ffffff', e: '#3a1010', n: '#26262e', m: '#d8e0ea' }, rows: [
@@ -562,6 +555,344 @@ function drawSprite(g, key, x, y, size, palOver) {
     g.fillStyle = col;
     g.fillRect(Math.floor(ox + i * cell), Math.floor(oy + j * cell), Math.ceil(cell), Math.ceil(cell));
   }
+}
+
+// ---------- Figuren-Renderer ----------
+// Held & NPCs werden aus weichen Formen (Kapseln, Kreise, Pfade) gezeichnet
+// und über ein kleines Skelett zeitkontinuierlich animiert: Atmen, Blinzeln,
+// Gehen, Angriff, Zaubern, Treffer-Reaktion.
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    r = Math.min(Math.abs(r) || 0, Math.abs(w) / 2, Math.abs(h) / 2);
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+    return this;
+  };
+}
+const lerp = (a, b, k) => a + (b - a) * k;
+const easeS = x => x * x * (3 - 2 * x);
+function shade(hex, f) {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = s => clamp(Math.round(((n >> s) & 255) * f), 0, 255);
+  return 'rgb(' + ch(16) + ',' + ch(8) + ',' + ch(0) + ')';
+}
+
+// Aussehen der Figuren. seed entzerrt die Idle-Animationen.
+const FIGS = {
+  krieger: { seed: 0,   skin: '#f2c79b', hair: '#6d4426', hairStyle: 'short', top: '#b3342a', pants: '#3a2c50', boots: '#4a3320', belt: '#caa14a', weapon: 'sword' },
+  magier:  { seed: 1.1, skin: '#f2c79b', hair: '#cdd6ea', hairStyle: 'short', hat: 'wizard', top: '#7a4fd0', robe: true, boots: '#2c2148', belt: '#ffd54f', weapon: 'staff' },
+  schurke: { seed: 2.2, skin: '#e8b88a', hair: '#2c2c34', hairStyle: 'short', hood: '#2f6440', top: '#3e7d52', pants: '#26323a', boots: '#1c2428', belt: '#8a6a3a', weapon: 'dagger' },
+  bodo:    { seed: 3.3, skin: '#f2c79b', hair: '#444444', hairStyle: 'short', mustache: '#3a3a3a', top: '#b07a2a', apron: '#e8e0d0', pants: '#5a4326', boots: '#3b2a14', belt: '#6a4a26', wide: 1.18 },
+  greta:   { seed: 4.4, skin: '#fad4ae', hair: '#a33c12', hairStyle: 'bun', top: '#c2356a', dress: true, apron: '#f0e8d8', boots: '#3b2a14' },
+  alrik:   { seed: 5.5, skin: '#eec39a', hair: '#dddddd', hairStyle: 'bald', beard: '#dddddd', top: '#5a4d8a', robe: true, boots: '#3b2a14', weapon: 'cane', stoop: 1 },
+};
+
+function drawWeapon(g, fig, hp, b, pose, t) {
+  const w = fig.weapon; if (!w) return;
+  if (w === 'cane') { // Gehstock: von der Hand senkrecht bis zum Boden
+    g.strokeStyle = '#7a5a34'; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(hp[0] + 2, hp[1]); g.lineTo(hp[0] + 2, -1); g.stroke();
+    g.fillStyle = '#9a7848';
+    g.beginPath(); g.arc(hp[0] + 2, hp[1] - 1.5, 2.8, 0, Math.PI * 2); g.fill();
+    return;
+  }
+  g.save(); g.translate(hp[0], hp[1]);
+  if (w === 'staff') {
+    g.rotate(-b * 0.35);
+    g.strokeStyle = '#8a5e30'; g.lineWidth = 3.5;
+    g.beginPath(); g.moveTo(0, 14); g.lineTo(0, -42); g.stroke();
+    const glow = pose === 'cast' ? 0.45 + 0.35 * Math.sin(t * 18) : 0.2 + 0.12 * Math.sin(t * 3);
+    g.fillStyle = '#bff0ff';
+    g.beginPath(); g.arc(0, -46, 4.5, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(140,210,255,' + glow.toFixed(3) + ')';
+    g.beginPath(); g.arc(0, -46, 9, 0, Math.PI * 2); g.fill();
+  } else { // sword / dagger: Klinge verlängert den Arm (Winkel b)
+    g.rotate(-b);
+    const len = w === 'dagger' ? 21 : 34;
+    g.fillStyle = '#5b3b1f'; g.beginPath(); g.roundRect(-1.8, -7, 3.6, 9, 1.8); g.fill();
+    g.fillStyle = '#caa14a'; g.beginPath(); g.roundRect(-5.5, 1, 11, 3.2, 1.6); g.fill();
+    const grad = g.createLinearGradient(-2.4, 0, 2.4, 0);
+    grad.addColorStop(0, '#f4f7fc'); grad.addColorStop(1, '#aeb8c8');
+    g.fillStyle = grad;
+    g.beginPath(); g.moveTo(-2.3, 4); g.lineTo(-2.3, len - 5); g.lineTo(0, len);
+    g.lineTo(2.3, len - 5); g.lineTo(2.3, 4); g.closePath(); g.fill();
+  }
+  g.restore();
+}
+
+function drawHeadSide(g, fig, x, y, r, blink, t) {
+  // Gesicht zeigt nach +x
+  g.fillStyle = fig.skin;
+  g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  g.fillStyle = shade(fig.skin, 0.88);
+  g.beginPath(); g.arc(x - 3, y + 1.5, 2.6, 0, Math.PI * 2); g.fill(); // Ohr
+  g.fillStyle = '#221133';
+  if (blink) g.fillRect(x + 4.5, y - 2.2, 4, 1.4);
+  else { g.beginPath(); g.ellipse(x + 6.2, y - 1.5, 1.7, 2.2, 0, 0, Math.PI * 2); g.fill(); }
+  g.strokeStyle = shade(fig.skin, 0.6); g.lineWidth = 1.2;
+  g.beginPath(); g.moveTo(x + 7.5, y + 5); g.lineTo(x + 10.5, y + 4.4); g.stroke(); // Mund
+  if (fig.beard) {
+    g.fillStyle = fig.beard;
+    g.beginPath();
+    g.moveTo(x + 9, y + 1);
+    g.quadraticCurveTo(x + 8, y + 16, x + 1, y + 14);
+    g.quadraticCurveTo(x - 7, y + 11, x - 6, y + 4);
+    g.closePath(); g.fill();
+  }
+  if (fig.mustache) { g.fillStyle = fig.mustache; g.beginPath(); g.roundRect(x + 3, y + 2.8, 8, 2.6, 1.3); g.fill(); }
+  if (fig.hat === 'wizard') {
+    const sway = Math.sin(t * 1.7 + (fig.seed || 0)) * 1.6;
+    g.fillStyle = shade(fig.top, 0.85);
+    g.beginPath(); g.ellipse(x, y - r * 0.5, r + 5.5, 4, -0.06, 0, Math.PI * 2); g.fill();
+    g.beginPath();
+    g.moveTo(x - r * 0.78, y - r * 0.58);
+    g.quadraticCurveTo(x - 3 + sway, y - r - 22, x - 6 + sway * 1.5, y - r - 21);
+    g.quadraticCurveTo(x + 3 + sway, y - r - 10, x + r * 0.78, y - r * 0.58);
+    g.closePath(); g.fill();
+    g.fillStyle = fig.belt || '#ffd54f';
+    g.beginPath(); g.roundRect(x - r * 0.72, y - r * 0.82, r * 1.44, 3.2, 1.6); g.fill();
+  } else if (fig.hood) {
+    g.fillStyle = fig.hood;
+    g.beginPath();
+    g.arc(x - 0.5, y, r + 2.2, Math.PI * 0.39, Math.PI * 1.61);
+    g.closePath(); g.fill();
+    g.beginPath(); // Zipfel
+    g.moveTo(x - 2, y - r - 1.5);
+    g.quadraticCurveTo(x - 9, y - r - 6, x - r - 5, y - r + 2);
+    g.lineTo(x - r + 1, y - 2);
+    g.closePath(); g.fill();
+  } else if (fig.hairStyle === 'bun') {
+    g.fillStyle = fig.hair;
+    g.beginPath(); g.arc(x, y - 1, r + 1.2, Math.PI * 0.85, Math.PI * 2.05); g.closePath(); g.fill();
+    g.beginPath(); g.arc(x - r * 0.85, y - r * 0.5, 5, 0, Math.PI * 2); g.fill();
+  } else if (fig.hairStyle === 'bald') {
+    g.fillStyle = fig.hair;
+    g.beginPath(); g.arc(x, y + 1, r + 0.5, Math.PI * 0.75, Math.PI * 1.3); g.closePath(); g.fill();
+  } else { // short
+    g.fillStyle = fig.hair;
+    g.beginPath(); g.arc(x, y - 1, r + 1.2, Math.PI * 0.85, Math.PI * 2.05); g.closePath(); g.fill();
+  }
+}
+
+function drawHeadFront(g, fig, x, y, r, blink, t, back) {
+  g.fillStyle = fig.skin;
+  g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  if (!back) {
+    g.fillStyle = '#221133';
+    for (const s of [-1, 1]) {
+      if (blink) g.fillRect(x + s * 4.5 - 1.7, y - 1.8, 3.4, 1.4);
+      else { g.beginPath(); g.ellipse(x + s * 4.5, y - 1, 1.7, 2.3, 0, 0, Math.PI * 2); g.fill(); }
+    }
+    g.strokeStyle = shade(fig.skin, 0.6); g.lineWidth = 1.2;
+    g.beginPath(); g.arc(x, y + 4, 2.6, Math.PI * 0.2, Math.PI * 0.8); g.stroke();
+    if (fig.beard) {
+      g.fillStyle = fig.beard;
+      g.beginPath(); g.arc(x, y + 3, r * 0.8, 0, Math.PI); g.closePath(); g.fill();
+    }
+    if (fig.mustache) { g.fillStyle = fig.mustache; g.beginPath(); g.roundRect(x - 5, y + 2.4, 10, 2.6, 1.3); g.fill(); }
+  }
+  if (fig.hat === 'wizard') {
+    const sway = Math.sin(t * 1.7 + (fig.seed || 0)) * 1.6;
+    g.fillStyle = shade(fig.top, 0.85);
+    g.beginPath(); g.ellipse(x, y - r * 0.5, r + 5.5, 4, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath();
+    g.moveTo(x - r * 0.8, y - r * 0.55);
+    g.quadraticCurveTo(x + sway, y - r - 22, x + 2 + sway * 1.5, y - r - 21);
+    g.quadraticCurveTo(x + 5 + sway, y - r - 8, x + r * 0.8, y - r * 0.55);
+    g.closePath(); g.fill();
+    g.fillStyle = fig.belt || '#ffd54f';
+    g.beginPath(); g.roundRect(x - r * 0.72, y - r * 0.82, r * 1.44, 3.2, 1.6); g.fill();
+  } else if (fig.hood) {
+    if (back) {
+      g.fillStyle = fig.hood;
+      g.beginPath(); g.arc(x, y, r + 1.5, 0, Math.PI * 2); g.fill();
+    } else {
+      g.strokeStyle = fig.hood; g.lineWidth = 5;
+      g.beginPath(); g.arc(x, y + 0.5, r, 0, Math.PI * 2); g.stroke();
+    }
+    g.fillStyle = fig.hood;
+    g.beginPath();
+    g.moveTo(x - 6, y - r + 1); g.quadraticCurveTo(x, y - r - 8, x + 6, y - r + 1);
+    g.closePath(); g.fill();
+  } else if (back) {
+    if (fig.hairStyle === 'bald') {
+      g.fillStyle = fig.hair;
+      g.beginPath(); g.arc(x, y + 2, r * 0.95, 0, Math.PI); g.closePath(); g.fill();
+    } else {
+      g.fillStyle = fig.hair;
+      g.beginPath(); g.arc(x, y, r * 0.98, 0, Math.PI * 2); g.fill();
+      if (fig.hairStyle === 'bun') { g.beginPath(); g.arc(x, y - r * 0.7, 5, 0, Math.PI * 2); g.fill(); }
+    }
+  } else if (fig.hairStyle === 'bun') {
+    g.fillStyle = fig.hair;
+    g.beginPath(); g.arc(x, y - 1.5, r + 1, Math.PI, Math.PI * 2); g.closePath(); g.fill();
+    g.beginPath(); g.arc(x, y - r - 2.5, 4.5, 0, Math.PI * 2); g.fill();
+  } else if (fig.hairStyle === 'bald') {
+    g.fillStyle = fig.hair;
+    for (const s of [-1, 1]) { g.beginPath(); g.arc(x + s * (r - 1.5), y + 2, 3, 0, Math.PI * 2); g.fill(); }
+  } else { // short
+    g.fillStyle = fig.hair;
+    g.beginPath(); g.arc(x, y - 1.5, r + 1, Math.PI, Math.PI * 2); g.closePath(); g.fill();
+  }
+}
+
+// Zeichnet eine animierte Figur. (cxp, feetY) = Fußpunkt-Mitte, h = Körperhöhe.
+// o: { dir, pose: idle|walk|attack|cast|hurt, t (Sekunden), ph (Schrittphase),
+//      pt (Posen-Fortschritt 0..1), shadow }
+function drawActor(g, fig, cxp, feetY, h, o) {
+  o = o || {};
+  const dir = o.dir || 'down', pose = o.pose || 'idle';
+  const t = (o.t || 0) + (fig.seed || 0), ph = o.ph || 0;
+  const pt = clamp(o.pt == null ? 0 : o.pt, 0, 1);
+  g.save();
+  g.translate(cxp, feetY);
+  const u = h / 100; // Figur wird in einem 100 Einheiten hohen Raum gezeichnet
+  g.scale(dir === 'left' ? -u : u, u);
+  g.lineCap = 'round'; g.lineJoin = 'round';
+
+  if (o.shadow !== false) {
+    g.fillStyle = 'rgba(0,0,0,.25)';
+    g.beginPath(); g.ellipse(0, -1, 15, 4.5, 0, 0, Math.PI * 2); g.fill();
+  }
+
+  // --- Skelett-Parameter je Pose (alle Winkel: 0 = senkrecht, + = nach vorn) ---
+  let bob = 0, br = 0, legN = 0, legF = 0, armN = 0, armF = 0,
+      lean = 0, tilt = 0, blink = false;
+  if (pose === 'walk') {
+    legN = Math.sin(ph) * 0.55; legF = -legN;
+    armN = -legN * 0.8; armF = legN * 0.8;
+    bob = Math.abs(Math.cos(ph)) * 2.4;
+  } else if (pose === 'attack') {
+    let a;
+    if (pt < 0.35) { const k = easeS(pt / 0.35); a = lerp(0.25, -2.1, k); lean = lerp(0, -0.1, k); }
+    else if (pt < 0.6) { const k = easeS((pt - 0.35) / 0.25); a = lerp(-2.1, 1.15, k); lean = lerp(-0.1, 0.22, k); }
+    else { const k = easeS((pt - 0.6) / 0.4); a = lerp(1.15, 0.25, k); lean = lerp(0.22, 0, k); }
+    armN = a; armF = -0.25 - a * 0.15;
+    legN = 0.18; legF = -0.18;
+  } else if (pose === 'cast') {
+    const k = pt < 0.25 ? easeS(pt / 0.25) : pt < 0.7 ? 1 : easeS(1 - (pt - 0.7) / 0.3);
+    armN = lerp(0.25, -2.8, k); armF = lerp(-0.2, -0.5, k);
+    lean = -0.06 * k; tilt = -0.08 * k;
+  } else if (pose === 'hurt') {
+    const k = Math.sin(pt * Math.PI);
+    lean = -0.32 * k; tilt = -0.22 * k;
+    armN = -0.9 * k; armF = -1.1 * k; legN = 0.25 * k; legF = -0.1 * k;
+  } else { // idle: Atmen, Armpendeln, Blinzeln, Kopfneigung
+    br = Math.sin(t * 2.1);
+    armN = 0.1 + Math.sin(t * 2.1 + 0.7) * 0.05; armF = -armN;
+    tilt = Math.sin(t * 0.6) * 0.03;
+    blink = (t % 3.4) < 0.13;
+    if (fig.stoop) { lean = 0.16; armN += 0.25; }
+  }
+
+  const wide = fig.wide || 1;
+  const hipY = -35, torLen = 23, legLen = 34, armLen = 24, headR = 13;
+  const lift = bob + Math.max(0, br) * 0.8; // Schulterheben beim Gehen/Atmen
+  const skirt = fig.robe || fig.dress;
+  const top = fig.top, skin = fig.skin;
+  const pants = fig.pants || shade(fig.top, 0.7);
+
+  const limb = (x, y, ang, len, wd, col) => {
+    const ex = x + Math.sin(ang) * len, ey = y + Math.cos(ang) * len;
+    g.strokeStyle = col; g.lineWidth = wd;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(ex, ey); g.stroke();
+    return [ex, ey];
+  };
+  const boot = (p, col, toe) => {
+    g.fillStyle = col;
+    g.beginPath(); g.roundRect(p[0] - (toe ? 3.5 : 4.5), p[1] - 5.5, toe ? 11 : 9, 6, 3); g.fill();
+  };
+  const hand = (p, col) => {
+    g.fillStyle = col;
+    g.beginPath(); g.arc(p[0], p[1], 3.4, 0, Math.PI * 2); g.fill();
+  };
+
+  if (dir === 'left' || dir === 'right') {
+    // ---- Profilansicht (zeigt nach +x; links = gespiegelt) ----
+    const shX = Math.sin(lean) * torLen;
+    const shY = hipY - Math.cos(lean) * torLen - lift;
+    const fa = limb(shX - 1, shY + 4, armF, armLen, 7, shade(top, 0.72)); // hinterer Arm
+    hand(fa, shade(skin, 0.8));
+    if (!skirt) {
+      const fl = limb(-1, hipY, legF, legLen, 8, shade(pants, 0.8)); // hinteres Bein
+      boot(fl, shade(fig.boots, 0.8), true);
+    }
+    g.strokeStyle = top; g.lineWidth = 15 * wide; // Rumpf
+    g.beginPath(); g.moveTo(0, hipY); g.lineTo(shX, shY); g.stroke();
+    if (skirt) { // schwingender Rock/Robe
+      const sway = pose === 'walk' ? Math.sin(ph) * 2.5 : Math.sin(t * 2.1) * 1;
+      g.fillStyle = top;
+      g.beginPath();
+      g.moveTo(-8 * wide, hipY - 6); g.lineTo(8 * wide, hipY - 6);
+      g.quadraticCurveTo(11 + sway, -10, 12 + sway, -1);
+      g.lineTo(-12 + sway, -1);
+      g.quadraticCurveTo(-11 + sway, -10, -8 * wide, hipY - 6);
+      g.fill();
+      boot([2 + (pose === 'walk' ? Math.sin(ph) * 4 : 0), -1], fig.boots, true);
+    }
+    if (fig.apron) {
+      g.strokeStyle = fig.apron; g.lineWidth = 9 * wide;
+      g.beginPath(); g.moveTo(2.5, hipY - 3); g.lineTo(shX + 3, shY + 5); g.stroke();
+    }
+    if (fig.belt && !skirt) {
+      g.strokeStyle = fig.belt; g.lineWidth = 4;
+      g.beginPath(); g.moveTo(-7.5 * wide, hipY - 3); g.lineTo(7.5 * wide, hipY - 3); g.stroke();
+    }
+    if (!skirt) {
+      const nl = limb(1, hipY, legN, legLen, 8, pants); // vorderes Bein
+      boot(nl, fig.boots, true);
+    }
+    const hdir = lean + tilt;
+    drawHeadSide(g, fig, shX + Math.sin(hdir) * (headR + 4),
+      shY - Math.cos(hdir) * (headR + 4) + 2, headR, blink, t);
+    const na = limb(shX + 1, shY + 4, armN, armLen, 7, top); // vorderer Arm
+    drawWeapon(g, fig, na, armN + 0.18, pose, t);
+    hand(na, skin);
+  } else {
+    // ---- Vorder-/Rückansicht ----
+    const back = dir === 'up';
+    const shY = hipY - torLen - lift;
+    if (skirt) {
+      const sway = pose === 'walk' ? Math.sin(ph) * 2 : Math.sin(t * 2.1) * 0.8;
+      g.fillStyle = top;
+      g.beginPath();
+      g.moveTo(-8 * wide, hipY - 6); g.lineTo(8 * wide, hipY - 6);
+      g.quadraticCurveTo(12, -8, 13 + sway, -1);
+      g.lineTo(-13 + sway, -1);
+      g.quadraticCurveTo(-12, -8, -8 * wide, hipY - 6);
+      g.fill();
+      if (pose === 'walk') boot([Math.sin(ph) * 5, -1], fig.boots, false);
+    } else {
+      for (const s of [-1, 1]) { // Beine: beim Gehen abwechselnd angehoben
+        const liftLeg = pose === 'walk' ? Math.max(0, s * Math.sin(ph)) * 10 : 0;
+        const p = limb(s * 5.5, hipY, (s === 1 ? legN : legF) * 0.15, legLen - liftLeg, 8,
+          s === 1 ? pants : shade(pants, 0.88));
+        boot(p, fig.boots, false);
+      }
+    }
+    g.strokeStyle = top; g.lineWidth = 16 * wide; // Rumpf
+    g.beginPath(); g.moveTo(0, hipY); g.lineTo(0, shY); g.stroke();
+    if (fig.apron && !back) {
+      g.strokeStyle = fig.apron; g.lineWidth = 10 * wide;
+      g.beginPath(); g.moveTo(0, hipY - 1); g.lineTo(0, shY + 5); g.stroke();
+    }
+    if (fig.belt && !skirt) {
+      g.fillStyle = fig.belt;
+      g.beginPath(); g.roundRect(-8.5 * wide, hipY - 5, 17 * wide, 4, 2); g.fill();
+    }
+    for (const s of [-1, 1]) { // Arme
+      const a = s * 0.22 + (s === 1 ? armN : armF) * 0.3;
+      const p = limb(s * 8.5 * wide, shY + 4, a, armLen, 7, s === -1 ? shade(top, 0.85) : top);
+      hand(p, skin);
+      if (s === 1 && !back) drawWeapon(g, fig, p, 0.15, pose, t);
+    }
+    drawHeadFront(g, fig, 0, shY - headR - 3, headR, blink, t, back);
+  }
+  g.restore();
 }
 
 // ---------- Spielzustand ----------
@@ -801,6 +1132,7 @@ function startBattle(enemyId) {
     pBuffTurns: 0,    // Kampfschrei-Runden des Helden
     pBuffMult: 1,
     pEvade: false,    // Schattenschritt aktiv
+    heroPose: 'idle', poseT0: 0, poseDur: 1, // Animations-Pose des Helden
   };
   mode = 'battle';
   held.clear();
@@ -811,6 +1143,10 @@ function startBattle(enemyId) {
 }
 function bLog(t) { ui.bLog.textContent = t; }
 function addFloat(text, color) { B.floats.push({ text, color, t: 0 }); }
+// Held-Pose im Kampf anstoßen (Angriffsschwung, Zaubergeste, Treffer)
+function heroDo(pose, dur) {
+  if (B) { B.heroPose = pose; B.poseT0 = performance.now(); B.poseDur = dur; }
+}
 
 function renderBattleButtons(view) {
   const b = ui.bBtns; b.innerHTML = '';
@@ -846,6 +1182,7 @@ function rollCrit(bonus) { return Math.random() * 100 < stats().crit + (bonus ||
 
 function playerAttack() {
   if (B.busy) return; B.busy = true; renderBattleButtons('main');
+  heroDo('attack', 500);
   const crit = rollCrit(0);
   let d = dmgRoll(heroAtk(), B.def); if (crit) d = Math.round(d * 1.8);
   B.hp = Math.max(0, B.hp - d);
@@ -858,6 +1195,7 @@ function useSkill(sk) {
   if (B.busy || G.mp < sk.mp || G.lvl < sk.lvl) return;
   B.busy = true; renderBattleButtons('main');
   G.mp -= sk.mp; refreshHud();
+  heroDo(sk.type === 'dmg' && !sk.magic ? 'attack' : 'cast', sk.type === 'dmg' && !sk.magic ? 500 : 750);
   if (sk.type === 'dmg') {
     const crit = rollCrit(sk.critBonus || 0);
     const defFactor = sk.magic ? 0.2 : 0.5;
@@ -942,6 +1280,7 @@ function enemyStrike() {
   } else {
     const d = dmgRoll(B.atk, stats().def);
     G.hp = Math.max(0, G.hp - d);
+    heroDo('hurt', 550);
     refreshHud(); sfx.hurt();
     bLog(B.name + ' greift an: ' + d + ' Schaden!');
     if (G.hp <= 0) { setTimeout(loseBattle, 750); return; }
@@ -1483,9 +1822,13 @@ function drawExplore(t) {
       const bob = Math.sin(t * 1.5) * TS * 0.06;
       drawSprite(cx, 'drache', sx - TS * 0.5, sy - TS * 0.7 + bob, TS * 2);
     } else {
-      cx.fillStyle = 'rgba(0,0,0,.25)';
-      cx.fillRect(sx + TS * 0.2, sy + TS * 0.82, TS * 0.6, TS * 0.14);
-      drawSprite(cx, n.sprite, sx + TS * 0.08, sy - TS * 0.08, TS * 0.86);
+      // NPC dreht sich zum Helden, wenn er direkt daneben steht
+      let nd = 'down';
+      const rx = G.x - n.x, ry = G.y - n.y;
+      if (Math.abs(rx) + Math.abs(ry) === 1) {
+        nd = rx === 1 ? 'right' : rx === -1 ? 'left' : ry === -1 ? 'up' : 'down';
+      }
+      drawActor(cx, FIGS[n.fig], sx + TS / 2, sy + TS * 0.96, TS * 1.04, { dir: nd, pose: 'idle', t });
       // kleines Hinweissymbol über Quest-NPC
       if (n.kind === 'elder' && !G.flags.dragonDead) {
         cx.fillStyle = '#ffd54f';
@@ -1496,12 +1839,11 @@ function drawExplore(t) {
     }
   }
 
-  // Held (Tunika-Farbe je Klasse)
+  // Held (animierte Figur je Klasse)
   const hx = player.px * TS - camX, hy = player.py * TS - camY;
-  const bob = player.moving ? Math.abs(Math.sin(player.anim)) * TS * 0.07 : 0;
-  cx.fillStyle = 'rgba(0,0,0,.25)';
-  cx.fillRect(hx + TS * 0.2, hy + TS * 0.82, TS * 0.6, TS * 0.14);
-  drawSprite(cx, 'hero', hx + TS * 0.08, hy - TS * 0.08 - bob, TS * 0.86, CLASSES[G.cls].pal);
+  drawActor(cx, FIGS[G.cls], hx + TS / 2, hy + TS * 0.96, TS * 1.04, {
+    dir: G.dir, pose: player.moving ? 'walk' : 'idle', t, ph: player.anim,
+  });
 
   // Gebiets-Name kurz nach Kartenwechsel
   if (fade > 0) {
@@ -1548,6 +1890,29 @@ function drawBattle(t) {
       cx.fillStyle = 'rgba(255,255,255,' + (B.flash * 1.8) + ')';
       cx.fillRect(ex, ey, size, size);
     }
+    // Held im Vordergrund links, mit Angriffs-/Zauber-/Treffer-Animation
+    const hh = Math.min(W, H) * 0.32;
+    const heroX = W * 0.2, heroY = groundY + H * 0.09;
+    cx.fillStyle = gndC;
+    cx.beginPath();
+    cx.ellipse(heroX, heroY, Math.min(W * 0.16, 110), H * 0.028, 0, 0, Math.PI * 2);
+    cx.fill();
+    let hpose = 'idle', hpt = 0;
+    if (B.heroPose !== 'idle') {
+      hpt = (performance.now() - B.poseT0) / B.poseDur;
+      if (hpt >= 1) B.heroPose = 'idle'; else hpose = B.heroPose;
+    }
+    drawActor(cx, FIGS[G.cls], heroX, heroY, hh, { dir: 'right', pose: hpose, pt: hpt, t });
+    if (hpose === 'cast') { // Funken um die erhobene Hand
+      for (let i = 0; i < 5; i++) {
+        const a = t * 6 + i * 1.26;
+        cx.fillStyle = 'rgba(160,220,255,' + (0.5 + 0.4 * Math.sin(a * 2)).toFixed(2) + ')';
+        cx.beginPath();
+        cx.arc(heroX + hh * 0.2 + Math.cos(a) * hh * 0.12,
+          heroY - hh * 1.02 + Math.sin(a * 1.3) * hh * 0.1, 2.5, 0, Math.PI * 2);
+        cx.fill();
+      }
+    }
     // Name + HP-Balken des Gegners (+ Statussymbole)
     const bw = Math.min(W * 0.7, 300);
     const bx = W / 2 - bw / 2, by = H * 0.1;
@@ -1591,6 +1956,16 @@ function loop(ts) {
   const dt = Math.min(0.05, (ts - last) / 1000 || 0.016);
   last = ts;
 
+  // Klassenwahl: kleine Live-Vorschauen mit Idle-Animation
+  if (mode === 'classpick') {
+    for (const p of classPreviews) {
+      const pg = p.cv.getContext('2d');
+      pg.setTransform(2, 0, 0, 2, 0, 0);
+      pg.clearRect(0, 0, 58, 82);
+      drawActor(pg, p.fig, 29, 77, 62, { dir: 'down', pose: 'idle', t });
+    }
+  }
+
   if (!G) return; // noch auf dem Titelbildschirm
 
   if (mode === 'explore' || mode === 'dialog' || mode === 'menu' || mode === 'shop' || mode === 'inv') {
@@ -1626,18 +2001,23 @@ function startGame(g) {
   }
 }
 
+let classPreviews = []; // animierte Figuren-Vorschauen auf den Klassen-Karten
 function showClassPick() {
   mode = 'classpick';
   ui.title.style.display = 'none';
   ui.classCards.innerHTML = '';
+  classPreviews = [];
   for (const [id, c] of Object.entries(CLASSES)) {
     const card = document.createElement('button');
     card.className = 'classCard';
     const skills = c.skills.map(sid => SKILLS[sid].icon + ' ' + SKILLS[sid].name).join(' · ');
-    card.innerHTML = '<b>' + c.icon + ' ' + c.name + '</b>' +
+    card.innerHTML = '<div style="display:flex;gap:14px;align-items:center">' +
+      '<canvas class="cprev" width="116" height="164"></canvas>' +
+      '<div style="flex:1"><b>' + c.icon + ' ' + c.name + '</b>' +
       '<div class="cdesc">' + c.desc + '</div>' +
       '<div class="cstats">HP ' + c.base.hp + ' · MP ' + c.base.mp + ' · ATK ' + c.base.atk + ' · DEF ' + c.base.def +
-      ' · Krit ' + c.crit + ' % · Ausweichen ' + c.dodge + ' %<br>' + skills + '</div>';
+      ' · Krit ' + c.crit + ' % · Ausweichen ' + c.dodge + ' %<br>' + skills + '</div></div></div>';
+    classPreviews.push({ cv: card.querySelector('canvas'), fig: FIGS[id] });
     card.addEventListener('pointerdown', e => {
       e.preventDefault(); ac(); sfx.level();
       ui.classScreen.style.display = 'none';
