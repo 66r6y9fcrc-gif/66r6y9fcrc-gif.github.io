@@ -590,6 +590,28 @@ function outDot(g, x, y, r, col) {
   g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.stroke();
 }
 function drawShield(g, sh, x, y, r) {
+  if (sh.type === 'skull') { // Totenkopf-Schild mit rotem Glühen
+    g.fillStyle = 'rgba(255,45,30,.22)';
+    g.beginPath(); g.arc(x, y, r * 1.18, 0, Math.PI * 2); g.fill();
+    outDot(g, x, y, r, sh.c);
+    g.strokeStyle = sh.rim; g.lineWidth = 3;
+    g.beginPath(); g.arc(x, y, r - 3.2, 0, Math.PI * 2); g.stroke();
+    outDot(g, x, y - r * 0.12, r * 0.52, '#ece8de'); // Schädel
+    g.fillStyle = '#ddd8cc'; // Kiefer
+    g.beginPath(); g.roundRect(x - r * 0.3, y + r * 0.18, r * 0.6, r * 0.32, 3); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 1.8; g.stroke();
+    g.lineWidth = 1.4;
+    for (const tx of [-0.15, 0, 0.15]) {
+      g.beginPath(); g.moveTo(x + tx * r, y + r * 0.2); g.lineTo(x + tx * r, y + r * 0.46); g.stroke();
+    }
+    for (const s of [-1, 1]) { // Augenhöhlen mit Glutpunkt
+      g.fillStyle = '#241a20';
+      g.beginPath(); g.arc(x + s * r * 0.22, y - r * 0.18, r * 0.15, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ff3b30';
+      g.beginPath(); g.arc(x + s * r * 0.22, y - r * 0.16, r * 0.06, 0, Math.PI * 2); g.fill();
+    }
+    return;
+  }
   outDot(g, x, y, r, sh.c);
   g.strokeStyle = sh.rim; g.lineWidth = 3;
   g.beginPath(); g.arc(x, y, r - 3.2, 0, Math.PI * 2); g.stroke();
@@ -615,6 +637,15 @@ const FIGS = {
   alrik:   { seed: 5.5, skin: '#eec39a', hair: '#dddddd', hairStyle: 'bald', eye: '#555566',
              beard: '#e6e6e6', top: '#5a4d8a', robe: true, hem: '#3c3261', boots: '#3b2a14',
              weapon: 'cane', stoop: 1 },
+  // Helden-Ritter nach den Original-Artworks des Spielers
+  axt:     { seed: 0.6, skin: '#3a3340', helmFull: 'horned', helm: '#33363f', plume: '#d8403a',
+             top: '#8c2420', pants: '#23202a', boots: '#2a2630', belt: '#3a3340',
+             weapon: 'flameaxe', cape: { c: '#a32420' },
+             pauldrons: { c: '#2e2a36', spikes: true }, plates: true },
+  schwert: { seed: 1.7, skin: '#9aa2b4', helmFull: 'skull', helm: '#c9cedb',
+             top: '#aeb6c6', pants: '#3a3f4d', boots: '#9aa2b4', belt: '#6a7184',
+             weapon: 'spikesword', shield: { c: '#bfc6d6', rim: '#8b93a6', type: 'skull' },
+             mantle: '#c23030', pauldrons: { c: '#cdd3e0' }, plates: true },
 };
 
 function drawWeapon(g, fig, hp, b, pose, t) {
@@ -640,6 +671,72 @@ function drawWeapon(g, fig, hp, b, pose, t) {
     outDot(g, 0, -53, 7.5, '#bff0ff');
     g.fillStyle = '#ffffff';
     g.beginPath(); g.arc(-2.4, -55.6, 2, 0, Math.PI * 2); g.fill();
+  } else if (w === 'flameaxe') { // riesige Doppelaxt mit Runenglut und Flamme
+    g.rotate(-b);
+    g.strokeStyle = OUT; g.lineWidth = 8; // Stiel
+    g.beginPath(); g.moveTo(0, -14); g.lineTo(0, 54); g.stroke();
+    g.strokeStyle = '#3a3340'; g.lineWidth = 4.6;
+    g.beginPath(); g.moveTo(0, -14); g.lineTo(0, 54); g.stroke();
+    outDot(g, 0, -16, 3.2, '#5a5260');
+    for (const s of [-1, 1]) { // breite Doppelblätter
+      g.beginPath();
+      g.moveTo(s * 2.5, 28);
+      g.quadraticCurveTo(s * 21, 31, s * 24, 42);
+      g.quadraticCurveTo(s * 21, 53, s * 2.5, 56);
+      g.closePath();
+      g.fillStyle = '#2c2834'; g.fill();
+      g.strokeStyle = OUT; g.lineWidth = 2.4; g.stroke();
+      const rg = 0.35 + 0.3 * Math.sin(t * 9); // glühende Rune
+      g.strokeStyle = 'rgba(255,120,60,' + rg.toFixed(3) + ')'; g.lineWidth = 4;
+      g.beginPath(); g.moveTo(s * 6, 33); g.quadraticCurveTo(s * 16, 42, s * 6, 51); g.stroke();
+      g.strokeStyle = '#ff4030'; g.lineWidth = 1.8;
+      g.beginPath(); g.moveTo(s * 6, 33); g.quadraticCurveTo(s * 16, 42, s * 6, 51); g.stroke();
+    }
+    let fl = 1 + 0.18 * Math.sin(t * 13) + 0.1 * Math.sin(t * 23); // Flamme an der Spitze
+    if (pose === 'attack') fl *= 1.4;
+    for (const [col, k] of [['rgba(255,90,20,.85)', 1], ['#ffc14a', 0.6], ['#fff3c0', 0.3]]) {
+      g.fillStyle = col;
+      g.beginPath();
+      g.moveTo(-7 * k, 57);
+      g.quadraticCurveTo(-6 * k, 57 + 16 * fl * k, 0, 57 + 22 * fl * k);
+      g.quadraticCurveTo(6 * k, 57 + 16 * fl * k, 7 * k, 57);
+      g.closePath(); g.fill();
+    }
+  } else if (w === 'spikesword') { // gezacktes Schwert mit Glutrille und Feder
+    g.rotate(-b);
+    const len = 44, bw = 8;
+    const blade = () => {
+      g.beginPath();
+      g.moveTo(-bw / 2, 6);
+      for (let yy = 6; yy < len - 8; yy += 6) { g.lineTo(-bw / 2 - 3.5, yy + 3); g.lineTo(-bw / 2, yy + 6); }
+      g.lineTo(0, len);
+      g.lineTo(bw / 2, len - 8);
+      for (let yy = len - 14; yy >= 6; yy -= 6) { g.lineTo(bw / 2 + 3.5, yy + 3); g.lineTo(bw / 2, yy); }
+      g.closePath();
+    };
+    blade(); g.fillStyle = '#cfd6e4'; g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.2; blade(); g.stroke();
+    const rg = 0.45 + 0.3 * Math.sin(t * 7); // glühende Mittelrille
+    g.strokeStyle = 'rgba(255,70,40,' + rg.toFixed(3) + ')'; g.lineWidth = 4.5;
+    g.beginPath(); g.moveTo(0, 8); g.lineTo(0, len - 8); g.stroke();
+    g.strokeStyle = '#ff3b30'; g.lineWidth = 1.8;
+    g.beginPath(); g.moveTo(0, 8); g.lineTo(0, len - 8); g.stroke();
+    g.fillStyle = '#7a8194'; // Parierstange
+    g.beginPath(); g.roundRect(-8, 1, 16, 4.6, 2.3); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.2;
+    g.beginPath(); g.roundRect(-8, 1, 16, 4.6, 2.3); g.stroke();
+    g.fillStyle = '#3a3540'; // Griff
+    g.beginPath(); g.roundRect(-2.3, -9.5, 4.6, 11.5, 2.3); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2;
+    g.beginPath(); g.roundRect(-2.3, -9.5, 4.6, 11.5, 2.3); g.stroke();
+    g.fillStyle = '#c23030'; // rote Feder am Knauf
+    g.beginPath();
+    g.moveTo(0, -11);
+    g.quadraticCurveTo(-8, -16, -10, -24);
+    g.quadraticCurveTo(-4, -20, -1, -14);
+    g.closePath(); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 1.8; g.stroke();
+    outDot(g, 0, -11, 2.8, '#8b93a6');
   } else { // sword / dagger: wuchtige Klinge mit Umriss und Mittelgrat
     g.rotate(-b);
     const len = w === 'dagger' ? 27 : 38, bw = w === 'dagger' ? 5 : 7;
@@ -665,7 +762,214 @@ function drawWeapon(g, fig, hp, b, pose, t) {
   g.restore();
 }
 
+// Vollhelme der Ritter-Helden: kein Gesicht sichtbar, nur glühende Augen
+function drawHelmFullSide(g, fig, x, y, r, t) {
+  const c = fig.helm;
+  if (fig.helmFull === 'horned') {
+    g.fillStyle = shade(c, 0.72); // hinteres Horn
+    g.beginPath();
+    g.moveTo(x - r * 0.45, y - r * 0.8);
+    g.quadraticCurveTo(x - r * 1.05, y - r * 1.2, x - r * 1.15, y - r * 1.75);
+    g.quadraticCurveTo(x - r * 0.78, y - r * 1.15, x - r * 0.82, y - r * 0.6);
+    g.closePath(); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.2; g.stroke();
+    g.fillStyle = fig.plume; // rote Helm-Mähne
+    g.beginPath();
+    g.arc(x, y - 1, r + 11, Math.PI * 1.02, Math.PI * 1.7);
+    g.arc(x, y - 1, r + 1, Math.PI * 1.7, Math.PI * 1.02, true);
+    g.closePath(); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.2; g.stroke();
+    const P = [[-1.05, -0.45], [-0.62, -1.0], [0.5, -1.02], [1.02, -0.3],
+               [0.94, 0.55], [0.4, 0.95], [-0.7, 0.95], [-1.05, 0.35]];
+    const hp = () => { // kantiger Helmkörper
+      g.beginPath();
+      P.forEach((p, i) => i ? g.lineTo(x + p[0] * r, y + p[1] * r) : g.moveTo(x + p[0] * r, y + p[1] * r));
+      g.closePath();
+    };
+    hp(); g.fillStyle = c; g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.6; hp(); g.stroke();
+    g.fillStyle = shade(c, 0.76); // dunkle Visierplatte vorn
+    g.beginPath();
+    g.moveTo(x + r * 0.3, y - r * 0.68);
+    g.lineTo(x + r * 1.02, y - r * 0.3);
+    g.lineTo(x + r * 0.94, y + r * 0.55);
+    g.lineTo(x + r * 0.34, y + r * 0.86);
+    g.closePath(); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2; g.stroke();
+    for (const sx of [-0.35, 0.05]) { // Stacheln auf der Oberkante
+      g.fillStyle = shade(c, 0.88);
+      g.beginPath();
+      g.moveTo(x + (sx - 0.1) * r, y - r * 0.96);
+      g.lineTo(x + (sx + 0.12) * r, y - r * 0.99);
+      g.lineTo(x + (sx + 0.06) * r, y - r * 1.3);
+      g.closePath(); g.fill();
+      g.strokeStyle = OUT; g.lineWidth = 1.8; g.stroke();
+    }
+    g.fillStyle = shade(c, 0.92); // vorderes Horn
+    g.beginPath();
+    g.moveTo(x + r * 0.22, y - r * 0.88);
+    g.quadraticCurveTo(x + r * 0.72, y - r * 1.25, x + r * 0.95, y - r * 1.8);
+    g.quadraticCurveTo(x + r * 0.42, y - r * 1.12, x - r * 0.02, y - r * 0.92);
+    g.closePath(); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.2; g.stroke();
+    const a = 0.4 + 0.25 * Math.sin(t * 5); // glühender Augenschlitz
+    g.fillStyle = 'rgba(255,110,20,' + a.toFixed(3) + ')';
+    g.beginPath(); g.ellipse(x + r * 0.56, y - r * 0.02, r * 0.42, r * 0.2, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#ff8c1a';
+    g.beginPath(); g.roundRect(x + r * 0.3, y - r * 0.1, r * 0.55, r * 0.17, 2); g.fill();
+    g.fillStyle = '#ffd27a';
+    g.beginPath(); g.roundRect(x + r * 0.38, y - r * 0.07, r * 0.3, r * 0.1, 1.5); g.fill();
+  } else { // 'skull'
+    outDot(g, x, y, r + 1, c); // silberne Helmkugel
+    g.fillStyle = shade(c, 0.85); // Nackenschutz
+    g.beginPath(); g.roundRect(x - r - 3, y - 2, r * 0.7, r * 0.95, 4); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.2; g.stroke();
+    g.fillStyle = shade(c, 0.9); // geschwungene Helmzier nach hinten
+    g.beginPath();
+    g.moveTo(x + r * 0.1, y - r * 0.85);
+    g.quadraticCurveTo(x - r * 0.6, y - r * 1.35, x - r * 1.25, y - r * 1.45);
+    g.quadraticCurveTo(x - r * 0.7, y - r * 0.9, x - r * 0.35, y - r * 0.7);
+    g.closePath(); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.2; g.stroke();
+    g.fillStyle = '#e8e4da'; // Totenkopf-Maske vorn
+    g.beginPath();
+    g.moveTo(x + r * 0.05, y - r * 0.55);
+    g.quadraticCurveTo(x + r * 0.95, y - r * 0.55, x + r * 1.0, y + r * 0.05);
+    g.quadraticCurveTo(x + r * 1.02, y + r * 0.6, x + r * 0.45, y + r * 0.95);
+    g.quadraticCurveTo(x + r * 0.05, y + r * 1.0, x + r * 0.02, y + r * 0.5);
+    g.closePath(); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.4; g.stroke();
+    const a = 0.35 + 0.2 * Math.sin(t * 4); // Augenhöhle mit Glut
+    g.fillStyle = '#241a20';
+    g.beginPath(); g.ellipse(x + r * 0.5, y - r * 0.02, r * 0.2, r * 0.23, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 1.6; g.stroke();
+    g.fillStyle = 'rgba(255,60,40,' + a.toFixed(3) + ')';
+    g.beginPath(); g.arc(x + r * 0.52, y, r * 0.13, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#ff3b30';
+    g.beginPath(); g.arc(x + r * 0.52, y, 1.9, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#3a3036'; // Nasenkante
+    g.beginPath();
+    g.moveTo(x + r * 0.88, y + r * 0.22);
+    g.lineTo(x + r * 0.98, y + r * 0.36); g.lineTo(x + r * 0.78, y + r * 0.38);
+    g.closePath(); g.fill();
+    g.fillStyle = '#ddd8cc'; // Zahnreihe
+    g.beginPath(); g.roundRect(x + r * 0.3, y + r * 0.55, r * 0.6, r * 0.28, 2); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 1.6; g.stroke();
+    g.lineWidth = 1.4;
+    for (const tx of [0.45, 0.6, 0.75]) {
+      g.beginPath(); g.moveTo(x + r * tx, y + r * 0.57); g.lineTo(x + r * tx, y + r * 0.81); g.stroke();
+    }
+  }
+}
+
+function drawHelmFullFront(g, fig, x, y, r, t, back) {
+  const c = fig.helm;
+  if (fig.helmFull === 'horned') {
+    for (const s of [-1, 1]) { // Hörner (vorn wie hinten sichtbar)
+      g.fillStyle = shade(c, back ? 0.78 : 0.85);
+      g.beginPath();
+      g.moveTo(x + s * r * 0.4, y - r * 0.78);
+      g.quadraticCurveTo(x + s * r * 0.95, y - r * 1.2, x + s * r * 1.18, y - r * 1.72);
+      g.quadraticCurveTo(x + s * r * 0.55, y - r * 1.08, x + s * r * 0.15, y - r * 0.9);
+      g.closePath(); g.fill();
+      g.strokeStyle = OUT; g.lineWidth = 2.2; g.stroke();
+    }
+    const P = [[-1.0, -0.35], [-0.55, -1.0], [0.55, -1.0], [1.0, -0.35],
+               [0.9, 0.5], [0.45, 0.95], [-0.45, 0.95], [-0.9, 0.5]];
+    const hp = () => { // kantiger Helmkörper
+      g.beginPath();
+      P.forEach((p, i) => i ? g.lineTo(x + p[0] * r, y + p[1] * r) : g.moveTo(x + p[0] * r, y + p[1] * r));
+      g.closePath();
+    };
+    hp(); g.fillStyle = back ? shade(c, 0.88) : c; g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.6; hp(); g.stroke();
+    g.fillStyle = fig.plume; // roter Kamm
+    g.beginPath(); g.roundRect(x - 4.5, y - r - 14, 9, 16, 4.5); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.2; g.stroke();
+    if (back) { // Mähne fällt hinten herab
+      g.fillStyle = fig.plume;
+      g.beginPath(); g.roundRect(x - 3.5, y - r * 0.9, 7, r * 1.5, 3.5); g.fill();
+      g.strokeStyle = OUT; g.lineWidth = 2; g.stroke();
+      return;
+    }
+    g.strokeStyle = shade(c, 0.8); g.lineWidth = 1.6; // Mittelgrat
+    g.beginPath(); g.moveTo(x, y - r * 0.98); g.lineTo(x, y - r * 0.3); g.stroke();
+    g.fillStyle = shade(c, 0.76); // dunkle Visierplatte
+    g.beginPath();
+    g.moveTo(x - r * 0.86, y - r * 0.28); g.lineTo(x + r * 0.86, y - r * 0.28);
+    g.lineTo(x + r * 0.44, y + r * 0.92); g.lineTo(x - r * 0.44, y + r * 0.92);
+    g.closePath(); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2; g.stroke();
+    const a = 0.4 + 0.25 * Math.sin(t * 5); // glühende Augenschlitze
+    for (const s of [-1, 1]) {
+      const ex = x + s * r * 0.4;
+      g.fillStyle = 'rgba(255,110,20,' + a.toFixed(3) + ')';
+      g.beginPath(); g.ellipse(ex, y + r * 0.02, r * 0.3, r * 0.18, s * 0.15, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ff8c1a';
+      g.beginPath(); g.roundRect(ex - r * 0.24, y - r * 0.06, r * 0.48, r * 0.16, 2); g.fill();
+      g.fillStyle = '#ffd27a';
+      g.beginPath(); g.roundRect(ex - r * 0.13, y - r * 0.03, r * 0.26, r * 0.09, 1.5); g.fill();
+    }
+  } else { // 'skull'
+    outDot(g, x, y, r + 1, c); // silberne Helmkugel
+    if (back) {
+      g.fillStyle = shade(c, 0.85); // Nackenschutz
+      g.beginPath(); g.roundRect(x - r * 0.6, y + r * 0.35, r * 1.2, r * 0.6, 4); g.fill();
+      g.strokeStyle = OUT; g.lineWidth = 2.2; g.stroke();
+      g.strokeStyle = shade(c, 0.78); g.lineWidth = 1.6; // Zierlinie
+      g.beginPath(); g.arc(x, y, r * 0.65, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
+      return;
+    }
+    for (const s of [-1, 1]) { // geschwungene Seitenzier
+      g.fillStyle = shade(c, 0.9);
+      g.beginPath();
+      g.moveTo(x + s * r * 0.55, y - r * 0.6);
+      g.quadraticCurveTo(x + s * r * 1.15, y - r * 0.95, x + s * r * 1.45, y - r * 1.4);
+      g.quadraticCurveTo(x + s * r * 0.8, y - r * 0.8, x + s * r * 0.35, y - r * 0.78);
+      g.closePath(); g.fill();
+      g.strokeStyle = OUT; g.lineWidth = 2.2; g.stroke();
+    }
+    g.strokeStyle = shade(c, 0.8); g.lineWidth = 1.7; // Stirngrat
+    g.beginPath(); g.moveTo(x, y - r * 0.95); g.lineTo(x, y - r * 0.3); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.3)'; // Glanzlicht
+    g.beginPath(); g.ellipse(x - r * 0.35, y - r * 0.6, r * 0.3, r * 0.13, -0.4, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#e8e4da'; // Totenkopf-Maske
+    g.beginPath();
+    g.moveTo(x - r * 0.92, y - r * 0.18);
+    g.lineTo(x + r * 0.92, y - r * 0.18);
+    g.quadraticCurveTo(x + r * 0.95, y + r * 0.45, x + r * 0.55, y + r * 0.75);
+    g.quadraticCurveTo(x + r * 0.3, y + r * 1.02, x, y + r * 1.04);
+    g.quadraticCurveTo(x - r * 0.3, y + r * 1.02, x - r * 0.55, y + r * 0.75);
+    g.quadraticCurveTo(x - r * 0.95, y + r * 0.45, x - r * 0.92, y - r * 0.18);
+    g.closePath(); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.4; g.stroke();
+    const a = 0.35 + 0.2 * Math.sin(t * 4); // Augenhöhlen mit Glut
+    for (const s of [-1, 1]) {
+      const ex = x + s * r * 0.38;
+      g.fillStyle = '#241a20';
+      g.beginPath(); g.ellipse(ex, y + r * 0.08, r * 0.21, r * 0.25, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = OUT; g.lineWidth = 1.6; g.stroke();
+      g.fillStyle = 'rgba(255,60,40,' + a.toFixed(3) + ')';
+      g.beginPath(); g.arc(ex, y + r * 0.1, r * 0.14, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ff3b30';
+      g.beginPath(); g.arc(ex, y + r * 0.1, 1.9, 0, Math.PI * 2); g.fill();
+    }
+    g.fillStyle = '#3a3036'; // Nasendreieck
+    g.beginPath();
+    g.moveTo(x, y + r * 0.3); g.lineTo(x - r * 0.1, y + r * 0.5); g.lineTo(x + r * 0.1, y + r * 0.5);
+    g.closePath(); g.fill();
+    g.fillStyle = '#ddd8cc'; // Zahnreihe
+    g.beginPath(); g.roundRect(x - r * 0.42, y + r * 0.6, r * 0.84, r * 0.3, 2); g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 1.6; g.stroke();
+    g.lineWidth = 1.4;
+    for (const tx of [-0.21, 0, 0.21]) {
+      g.beginPath(); g.moveTo(x + tx * r, y + r * 0.62); g.lineTo(x + tx * r, y + r * 0.88); g.stroke();
+    }
+  }
+}
+
 function drawHeadSide(g, fig, x, y, r, blink, t) {
+  if (fig.helmFull) { drawHelmFullSide(g, fig, x, y, r, t); return; }
   // Gesicht zeigt nach +x; großer Chibi-Kopf mit Umriss
   outDot(g, x, y, r, fig.skin);
   if (!fig.helm && !fig.hood) outDot(g, x - r * 0.5, y + 2, r * 0.17, shade(fig.skin, 0.92)); // Ohr
@@ -769,6 +1073,7 @@ function drawHeadSide(g, fig, x, y, r, blink, t) {
 }
 
 function drawHeadFront(g, fig, x, y, r, blink, t, back) {
+  if (fig.helmFull) { drawHelmFullFront(g, fig, x, y, r, t, back); return; }
   outDot(g, x, y, r, fig.skin);
   if (!back && !fig.helm && !fig.hood) { // Ohren
     outDot(g, x - r - 1, y + 2, r * 0.17, fig.skin);
@@ -953,9 +1258,9 @@ function drawActor(g, fig, cxp, feetY, h, o) {
   const top = fig.top, skin = fig.skin;
   const pants = fig.pants || shade(fig.top, 0.7);
   // Klingenwinkel: in Ruhe vor der Brust erhoben, beim Schlag in Armrichtung
-  const bladeB = fig.weapon === 'sword' || fig.weapon === 'dagger'
-    ? armN + lerp(2.2, 0.35, clamp((armN + 0.3) / 1.5, 0, 1))
-    : armN + 0.18;
+  const bladeB = fig.weapon === 'staff' || fig.weapon === 'cane'
+    ? armN + 0.18
+    : armN + lerp(2.2, 0.35, clamp((armN + 0.3) / 1.5, 0, 1));
 
   const limb = (x, y, ang, len, wd, col) => {
     const ex = x + Math.sin(ang) * len, ey = y + Math.cos(ang) * len;
@@ -997,19 +1302,90 @@ function drawActor(g, fig, cxp, feetY, h, o) {
       g.beginPath(); g.roundRect(-14.5 + sway * 0.6, -7.5, 29, 6.5, 3); g.stroke();
     }
   };
+  // Schwingender Umhang mit zerfetztem Saum
+  const capeSway = pose === 'walk' ? Math.sin(ph) * 4 : Math.sin(t * 1.6 + 1) * 2;
+  const drawCapeSide = (shX, shY) => {
+    const c = fig.cape.c, cs = capeSway;
+    const cp = () => {
+      g.beginPath();
+      g.moveTo(shX - 2, shY + 2);
+      g.quadraticCurveTo(-14 + cs * 0.5, shY + 14, -18 + cs, -8);
+      g.lineTo(-15 + cs, -3); g.lineTo(-11 + cs, -9); g.lineTo(-7 + cs * 0.6, -3);
+      g.lineTo(-3, -8); g.lineTo(-1, -4);
+      g.quadraticCurveTo(2, hipY, shX + 4, shY + 4);
+      g.closePath();
+    };
+    cp(); g.fillStyle = c; g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.6; cp(); g.stroke();
+    g.strokeStyle = shade(c, 0.72); g.lineWidth = 1.7; // Falte
+    g.beginPath(); g.moveTo(shX - 4, shY + 8); g.quadraticCurveTo(-9 + cs * 0.7, hipY, -10 + cs, -6); g.stroke();
+  };
+  const drawCapeFB = (shY, cover) => { // Front (hinter dem Körper) / Rückansicht (zur Kamera)
+    const c = fig.cape.c, cs = capeSway * 0.6;
+    const cp = () => {
+      g.beginPath();
+      g.moveTo(-13, shY + 3);
+      g.quadraticCurveTo(-20, hipY, -19 + cs, -4);
+      g.lineTo(-13 + cs, -9); g.lineTo(-7 + cs * 0.8, -3); g.lineTo(-1, -8);
+      g.lineTo(5 + cs * 0.8, -3); g.lineTo(11 + cs, -9); g.lineTo(17 + cs, -4);
+      g.quadraticCurveTo(20, hipY, 13, shY + 3);
+      g.closePath();
+    };
+    cp(); g.fillStyle = c; g.fill();
+    g.strokeStyle = OUT; g.lineWidth = 2.6; cp(); g.stroke();
+    if (cover) { // Faltenwurf, wenn der Umhang den Rücken bedeckt
+      g.strokeStyle = shade(c, 0.72); g.lineWidth = 1.7;
+      for (const fx of [-6, 6]) {
+        g.beginPath(); g.moveTo(fx, shY + 7); g.quadraticCurveTo(fx * 1.3, hipY, fx * 1.5 + cs, -7); g.stroke();
+      }
+    }
+  };
+  const drawMantle = (xs, my) => { // Fell-/Federkragen um die Schultern
+    xs.forEach((mx, i) => outDot(g, mx, my + (i % 2 ? 2 : 0),
+      i === (xs.length >> 1) ? 7 : 6, fig.mantle));
+  };
+  const drawPauldron = (px, py, dark) => { // Schulterplatte, optional mit Stacheln
+    const pc = fig.pauldrons.c, col = dark ? shade(pc, 0.8) : pc;
+    if (fig.pauldrons.spikes) {
+      for (const sx of [-3.5, 2.5]) {
+        g.fillStyle = shade(pc, 0.9);
+        g.beginPath();
+        g.moveTo(px + sx - 2.2, py - 3); g.lineTo(px + sx + 2.2, py - 3);
+        g.lineTo(px + sx + sx * 0.5, py - 11.5);
+        g.closePath(); g.fill();
+        g.strokeStyle = OUT; g.lineWidth = 1.8; g.stroke();
+      }
+    }
+    outDot(g, px, py, 7.5, col);
+    g.strokeStyle = shade(pc, dark ? 0.65 : 0.78); g.lineWidth = 1.5; // Plattenlinie
+    g.beginPath(); g.arc(px, py + 1.5, 4.8, Math.PI * 0.15, Math.PI * 0.85); g.stroke();
+  };
+  const drawPlates = (bx, shX2, shY2) => { // Brustplatten-Linien + Glanz
+    g.strokeStyle = shade(top, 0.72); g.lineWidth = 1.7;
+    for (const k of [0.42, 0.66]) {
+      const px = lerp(bx, shX2, k), py = lerp(hipY, shY2, k);
+      g.beginPath(); g.moveTo(px - 11 * wide, py + 2); g.quadraticCurveTo(px, py - 2, px + 11 * wide, py + 2); g.stroke();
+    }
+    g.fillStyle = 'rgba(255,255,255,.18)';
+    g.beginPath(); g.ellipse(shX2 + 2, shY2 + 10, 4.5, 2.5, -0.4, 0, Math.PI * 2); g.fill();
+  };
 
   if (dir === 'left' || dir === 'right') {
     // ---- Profilansicht (zeigt nach +x; links = gespiegelt) ----
     const shX = Math.sin(lean) * torLen;
     const shY = hipY - Math.cos(lean) * torLen - lift;
+    if (fig.cape) drawCapeSide(shX, shY); // Umhang als hinterste Ebene
     if (fig.shield) drawShield(g, fig.shield, -14, -38, 15); // Schild auf dem Rücken
     const fa = limb(shX - 3, shY + 6, armF, armLen, 9, shade(top, 0.75)); // hinterer Arm
     hand(fa, shade(skin, 0.85));
+    if (fig.pauldrons) drawPauldron(shX - 3, shY + 4, true);
     if (!skirt) {
       const fl = limb(-2, hipY, legF, legLen, 10, shade(pants, 0.8)); // hinteres Bein
       boot(fl, shade(fig.boots, 0.8), true);
     }
     torso(0, hipY, shX, shY, 26 * wide, top); // Rumpf
+    if (fig.plates) drawPlates(0, shX, shY);
+    if (fig.mantle) drawMantle([shX - 9, shX - 1, shX + 7], shY + 3);
     if (skirt) {
       drawSkirt(pose === 'walk' ? Math.sin(ph) * 3 : Math.sin(t * 2.1) * 1.2);
       boot([3 + (pose === 'walk' ? Math.sin(ph) * 4 : 0), -1], fig.boots, true);
@@ -1034,12 +1410,14 @@ function drawActor(g, fig, cxp, feetY, h, o) {
     drawHeadSide(g, fig, shX + Math.sin(hdir) * (headR * 0.62 + 5),
       shY - Math.cos(hdir) * (headR * 0.62 + 5), headR, blink, t);
     const na = limb(shX + 3, shY + 6, armN, armLen, 9, top); // vorderer Arm
+    if (fig.pauldrons) drawPauldron(shX + 3, shY + 4, false);
     drawWeapon(g, fig, na, bladeB, pose, t);
     hand(na, skin);
   } else {
     // ---- Vorder-/Rückansicht ----
     const back = dir === 'up';
     const shY = hipY - torLen - lift;
+    if (fig.cape && !back) drawCapeFB(shY, false); // Umhang hinter dem Körper
     if (skirt) {
       drawSkirt(pose === 'walk' ? Math.sin(ph) * 2.5 : Math.sin(t * 2.1) * 1);
       if (pose === 'walk') boot([Math.sin(ph) * 5, -1], fig.boots, false);
@@ -1052,6 +1430,9 @@ function drawActor(g, fig, cxp, feetY, h, o) {
       }
     }
     torso(0, hipY, 0, shY, 26 * wide, top); // Rumpf
+    if (fig.plates && !back) drawPlates(0, 0, shY);
+    if (fig.cape && back) drawCapeFB(shY, true); // Umhang bedeckt den Rücken
+    if (fig.mantle) drawMantle([-13, -6.5, 0, 6.5, 13], shY + 3);
     if (fig.apron && !back) {
       g.fillStyle = fig.apron;
       g.beginPath(); g.roundRect(-8 * wide, shY + 9, 16 * wide, hipY + 8 - (shY + 9), 5); g.fill();
@@ -1068,6 +1449,7 @@ function drawActor(g, fig, cxp, feetY, h, o) {
     for (const s of [-1, 1]) { // Arme
       const a = s * 0.24 + (s === 1 ? armN : armF) * 0.3;
       const p = limb(s * 11.5 * wide, shY + 6, a, armLen, 9, s === -1 ? shade(top, 0.85) : top);
+      if (fig.pauldrons) drawPauldron(s * 11.5 * wide, shY + 4, s === -1);
       hand(p, skin);
       if (s === -1) farHand = p;
     }
@@ -1084,76 +1466,14 @@ function drawActor(g, fig, cxp, feetY, h, o) {
   g.restore();
 }
 
-// ---------- Helden-Artworks (Original-Grafiken, wählbarer Look) ----------
-// Der Held wird als freigestelltes Artwork gezeichnet; Animationen sind
-// Transform-Effekte (Schweben, Ausfallschritt, Aufleuchten, Zurückzucken).
+// ---------- Helden-Looks (Ritter-Figuren nach den Original-Artworks) ----------
 const HERO_SKINS = {
-  axt:     { src: 'held-axt.png',     name: 'Flammenaxt-Ritter',
+  axt:     { name: 'Flammenaxt-Ritter', fig: FIGS.axt,
              desc: 'Rote Dämonenrüstung, glühende Augen und eine brennende Doppelaxt.' },
-  schwert: { src: 'held-schwert.png', name: 'Totenkopf-Ritter',
+  schwert: { name: 'Totenkopf-Ritter', fig: FIGS.schwert,
              desc: 'Graue Schreckensrüstung mit Totenschädel-Helm, Stachelschwert und Geisterschild.' },
 };
-for (const sk of Object.values(HERO_SKINS)) {
-  sk.img = new Image();
-  sk.img.onload = () => { sk.ok = true; };
-  try { sk.img.src = sk.src; } catch (e) {}
-}
-const heroSkin = () => HERO_SKINS[G && HERO_SKINS[G.skin] ? G.skin : 'axt'];
-
-// Zeichnet das Helden-Artwork. (x, feetY) = Fußpunkt-Mitte, h = Figurhöhe.
-// o wie bei drawActor; solange das Bild lädt, springt der Chibi-Renderer ein.
-function drawHeroImage(g, x, feetY, h, o) {
-  const sk = heroSkin();
-  if (!sk.ok) { drawActor(g, FIGS[G.cls], x, feetY, h, o); return; }
-  o = o || {};
-  const dir = o.dir || 'down', pose = o.pose || 'idle';
-  const t = o.t || 0, ph = o.ph || 0;
-  const pt = clamp(o.pt == null ? 0 : o.pt, 0, 1);
-  const w = h * sk.img.naturalWidth / sk.img.naturalHeight;
-  const face = dir === 'left' ? -1 : 1;
-  let dx = 0, dy = 0, rot = 0, sx2 = 1, sy2 = 1, glow = 0, flash = 0;
-  if (pose === 'walk') { // Wippen + Vorneigung + leichtes Squash/Stretch
-    const b = Math.abs(Math.sin(ph));
-    dy = -b * h * 0.05;
-    sy2 = 1 + b * 0.035; sx2 = 1 - b * 0.025;
-    rot = 0.05;
-  } else if (pose === 'attack') { // Ausholen -> Ausfallschritt nach vorn
-    if (pt < 0.35) { const k = easeS(pt / 0.35); rot = -0.16 * k; dx = -0.06 * h * k; }
-    else if (pt < 0.6) {
-      const k = easeS((pt - 0.35) / 0.25);
-      rot = lerp(-0.16, 0.2, k); dx = lerp(-0.06, 0.16, k) * h;
-      dy = -0.04 * h * Math.sin(k * Math.PI);
-    } else { const k = easeS((pt - 0.6) / 0.4); rot = lerp(0.2, 0, k); dx = lerp(0.16, 0, k) * h; }
-  } else if (pose === 'cast') { // leichtes Aufsteigen + Glühen
-    const k = pt < 0.25 ? easeS(pt / 0.25) : pt < 0.7 ? 1 : easeS(1 - (pt - 0.7) / 0.3);
-    dy = -0.07 * h * k; glow = k;
-  } else if (pose === 'hurt') { // Zurückkippen + Blitz
-    const k = Math.sin(pt * Math.PI);
-    rot = -0.2 * k; dx = -0.06 * h * k; flash = k;
-  } else { // idle: Schweben + Mini-Neigung
-    dy = Math.sin(t * 2.1) * h * 0.015 - h * 0.008;
-    rot = Math.sin(t * 0.9) * 0.02;
-  }
-  if (o.shadow !== false) {
-    g.fillStyle = 'rgba(0,0,0,.25)';
-    g.beginPath(); g.ellipse(x + dx * face * 0.5, feetY - 1, w * 0.3, h * 0.05, 0, 0, Math.PI * 2); g.fill();
-  }
-  if (flash > 0) {
-    g.fillStyle = 'rgba(255,90,90,' + (flash * 0.4).toFixed(3) + ')';
-    g.beginPath(); g.arc(x, feetY - h * 0.5, h * 0.55, 0, Math.PI * 2); g.fill();
-  }
-  if (glow > 0) {
-    g.fillStyle = 'rgba(150,200,255,' + (glow * (0.25 + 0.15 * Math.sin(t * 16))).toFixed(3) + ')';
-    g.beginPath(); g.arc(x, feetY - h * 0.55, h * 0.6, 0, Math.PI * 2); g.fill();
-  }
-  g.save();
-  g.translate(x + dx * face, feetY + dy);
-  if (dir === 'left') g.scale(-1, 1);
-  g.rotate(rot);
-  g.scale(sx2, sy2);
-  g.drawImage(sk.img, -w / 2, -h, w, h);
-  g.restore();
-}
+const heroFig = () => (HERO_SKINS[G && G.skin] || HERO_SKINS.axt).fig;
 
 // ---------- Spielzustand ----------
 const SAVE_KEY = 'pixel-abenteuer-save-v2';
@@ -2100,9 +2420,9 @@ function drawExplore(t) {
     }
   }
 
-  // Held (eigenes Artwork mit Transform-Animationen)
+  // Held: voll animierte Ritter-Figur im gewählten Look
   const hx = player.px * TS - camX, hy = player.py * TS - camY;
-  drawHeroImage(cx, hx + TS / 2, hy + TS * 0.97, TS * 1.3, {
+  drawActor(cx, heroFig(), hx + TS / 2, hy + TS * 0.97, TS * 1.3, {
     dir: G.dir, pose: player.moving ? 'walk' : 'idle', t, ph: player.anim,
   });
 
@@ -2163,14 +2483,14 @@ function drawBattle(t) {
       hpt = (performance.now() - B.poseT0) / B.poseDur;
       if (hpt >= 1) B.heroPose = 'idle'; else hpose = B.heroPose;
     }
-    drawHeroImage(cx, heroX, heroY, hh, { dir: 'right', pose: hpose, pt: hpt, t });
+    drawActor(cx, heroFig(), heroX, heroY, hh, { dir: 'right', pose: hpose, pt: hpt, t });
     if (hpose === 'cast') { // Funken um die erhobene Hand
       for (let i = 0; i < 5; i++) {
         const a = t * 6 + i * 1.26;
         cx.fillStyle = 'rgba(160,220,255,' + (0.5 + 0.4 * Math.sin(a * 2)).toFixed(2) + ')';
         cx.beginPath();
-        cx.arc(heroX + hh * 0.2 + Math.cos(a) * hh * 0.12,
-          heroY - hh * 1.02 + Math.sin(a * 1.3) * hh * 0.1, 2.5, 0, Math.PI * 2);
+        cx.arc(heroX - hh * 0.02 + Math.cos(a) * hh * 0.12,
+          heroY - hh * 0.58 + Math.sin(a * 1.3) * hh * 0.1, 2.5, 0, Math.PI * 2);
         cx.fill();
       }
     }
@@ -2223,7 +2543,7 @@ function loop(ts) {
       const pg = p.cv.getContext('2d');
       pg.setTransform(2, 0, 0, 2, 0, 0);
       pg.clearRect(0, 0, 58, 82);
-      drawActor(pg, p.fig, 29, 76, 64, { dir: 'down', pose: 'idle', t });
+      drawActor(pg, p.fig, p.x || 29, 76, p.h || 64, { dir: p.dir || 'down', pose: 'idle', t });
     }
   }
 
@@ -2289,7 +2609,7 @@ function showClassPick() {
   ui.classScreen.style.display = 'flex';
 }
 
-// Zweiter Schritt: Helden-Artwork wählen
+// Zweiter Schritt: Helden-Look wählen (lebende Figuren-Vorschau)
 function showSkinPick(cls) {
   $('classTitle').textContent = 'Wähle deinen Helden';
   ui.classCards.innerHTML = '';
@@ -2298,9 +2618,10 @@ function showSkinPick(cls) {
     const card = document.createElement('button');
     card.className = 'classCard';
     card.innerHTML = '<div style="display:flex;gap:14px;align-items:center">' +
-      '<img src="' + sk.src + '" alt="" style="height:110px;flex:0 0 auto;image-rendering:auto">' +
+      '<canvas class="cprev" width="116" height="164"></canvas>' +
       '<div style="flex:1"><b>' + sk.name + '</b>' +
       '<div class="cdesc">' + sk.desc + '</div></div></div>';
+    classPreviews.push({ cv: card.querySelector('canvas'), fig: sk.fig, x: 26, h: 56 });
     card.addEventListener('pointerdown', e => {
       e.preventDefault(); ac(); sfx.level();
       ui.classScreen.style.display = 'none';
