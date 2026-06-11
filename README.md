@@ -13,11 +13,13 @@ Ein eigenständiges Handy-Rollenspiel auf derselben Seite – spielbar unter
 
 - **3 Klassen**: Krieger, Magier, Schurke – mit eigenen Werten, Levelaufstiegs-Boni und
   Skills (z. B. Kampfschrei-Buff, Blitzsturm, Giftklinge, Schattenschritt)
-- **Eigenes Helden-Artwork** (v4): Die Spielfigur ist ein echtes, freigestelltes
-  Charakter-Artwork – wählbar beim Spielstart zwischen Flammenaxt-Ritter und
-  Totenkopf-Ritter (`rpg/held-axt.png`, `rpg/held-schwert.png`) – animiert über
-  Transform-Effekte: Schweben/Wippen, Ausfallschritt beim Angriff, Glüh-Aura beim
-  Zaubern, Zurückzucken bei Treffern
+- **Ritter-Helden nach eigenem Artwork** (v5): Die Spielfigur ist eine voll animierte
+  Skelett-Figur im Stil der eingesandten Ritter-Artworks – wählbar beim Spielstart
+  zwischen **Flammenaxt-Ritter** (Hörner-Vollhelm mit Glutaugen, roter Umhang,
+  brennende Doppelaxt mit Runenglut) und **Totenkopf-Ritter** (Schädelmaske,
+  roter Fellkragen, gezacktes Glutschwert, Totenkopf-Schild) – mit echtem
+  Laufzyklus in 4 Blickrichtungen, Axtschwung, Zaubergeste, Treffer-Reaktion
+  und wehendem Umhang; komplett prozedural gezeichnet, keine Bilddateien
 - **Animierte Chibi-Figuren** (v3.5): Dorfbewohner sind keine Pixel-Sprites mehr,
   sondern Figuren im Chibi-Game-Art-Stil – großer Kopf, große Augen, dicke Umrisslinien,
   wuchtige Waffen, Helm mit Federbusch, Riesenzauberhut, Kapuze mit Maske – mit flüssigen
