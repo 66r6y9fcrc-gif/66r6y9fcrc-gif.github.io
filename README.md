@@ -29,8 +29,11 @@ Ein eigenständiges Handy-Rollenspiel auf derselben Seite – spielbar unter
 - **Loot-System**: Monster lassen prozedural generierte Ausrüstung fallen – in 4
   Raritätsstufen (Gewöhnlich/Selten/Episch/Legendär) mit zufälligen Affixen
   (ATK, DEF, HP, MP, Krit, Ausweichen); der Endboss droppt garantiert Legendäres
-- **Inventar**: 4 Ausrüstungs-Slots (Waffe, Rüstung, Helm, Amulett), 24 Beutel-Plätze,
-  Detailansicht mit grün/rotem Stat-Vergleich zum angelegten Gegenstand
+- **Vollbild-Inventar** (v5.1): oben links die Statuswerte, daneben der animierte
+  Charakter mit 10 Ausrüstungs-Slots im Paper-Doll-Stil (Waffe, Helm, Brust, Schultern,
+  Handschuhe, Gürtel, Stiefel, Halskette, 2× Ring), untere Bildschirmhälfte als
+  Kachel-Raster mit 24 Beutel-Plätzen; Detail-Overlay mit grün/rotem Stat-Vergleich,
+  alte Spielstände werden automatisch auf die neuen Slots migriert
 - Oberwelt-Erkundung im Pixel-Look (Dorf, Finsterwald, Schattenhöhle, Drachenhort)
 - Touch-Steuerkreuz + A- und 🎒-Knopf (am PC: Pfeiltasten/WASD + Leertaste)
 - Rundenbasierte Kämpfe mit Statuseffekten (Gift, Buffs, Ausweichen, kritische Treffer)
