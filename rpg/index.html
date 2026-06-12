@@ -18,8 +18,11 @@
     display:flex; align-items:flex-start; gap:8px; pointer-events:none; z-index:5; }
   #hudBox { background:rgba(10,6,20,.78); border:2px solid #5d4a8a; border-radius:8px; padding:5px 9px;
     color:#fff; font-size:12px; line-height:1.5; min-width:138px; }
-  #hudBox .bar { height:7px; border-radius:4px; background:#33244d; overflow:hidden; margin:1px 0 3px 0; }
-  #hudBox .bar i { display:block; height:100%; border-radius:4px; transition:width .25s; }
+  #hudBox .bar { position:relative; height:12px; border-radius:5px; background:#33244d; overflow:hidden; margin:1px 0 3px 0; }
+  #hudBox .bar i { display:block; height:100%; border-radius:5px; transition:width .25s; }
+  .pct { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:9px; font-weight:bold; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.95), 0 0 3px rgba(0,0,0,.8);
+    pointer-events:none; }
   #hpBar i { background:linear-gradient(90deg,#e53935,#ff7043); }
   #mpBar i { background:linear-gradient(90deg,#1e88e5,#4fc3f7); }
   #xpBar i { background:linear-gradient(90deg,#fbc02d,#ffee58); }
@@ -34,12 +37,13 @@
     background:rgba(30,18,56,.92); color:#fff; font-size:21px; font-family:inherit;
     display:flex; align-items:center; justify-content:center; }
   #barBtns button:active { background:rgba(120,90,220,.6); }
-  #xpBarBottom { width:100%; height:6px; border-radius:3px; background:#33244d; overflow:hidden; }
+  #xpBarBottom { position:relative; width:100%; height:14px; border-radius:7px; background:#33244d; overflow:hidden; }
   #xpBarBottom i { display:block; height:100%; background:linear-gradient(90deg,#fbc02d,#ffee58); transition:width .25s; }
+  #xpBarBottom .pct { font-size:10px; }
 
   /* ---------- Touch-Steuerung ---------- */
   #controls { position:fixed; inset:0; pointer-events:none; z-index:5; }
-  #dpad { position:absolute; left:calc(14px + env(safe-area-inset-left)); bottom:calc(92px + env(safe-area-inset-bottom));
+  #dpad { position:absolute; left:calc(14px + env(safe-area-inset-left)); bottom:calc(100px + env(safe-area-inset-bottom));
     width:150px; height:150px; }
   .dbtn { position:absolute; width:50px; height:50px; pointer-events:auto;
     background:rgba(20,12,40,.65); border:2px solid #6a55a0; border-radius:12px;
@@ -49,7 +53,7 @@
   #dDown  { left:50px; top:100px; }
   #dLeft  { left:0;  top:50px; }
   #dRight { left:100px; top:50px; }
-  #btnA { position:absolute; right:calc(20px + env(safe-area-inset-right)); bottom:calc(120px + env(safe-area-inset-bottom));
+  #btnA { position:absolute; right:calc(20px + env(safe-area-inset-right)); bottom:calc(128px + env(safe-area-inset-bottom));
     width:74px; height:74px; border-radius:50%; pointer-events:auto;
     background:rgba(220,60,80,.78); border:3px solid #ff8a9a; color:#fff; font-size:22px; font-weight:bold;
     box-shadow:0 3px 12px rgba(0,0,0,.5); }
@@ -58,14 +62,14 @@
   /* ---------- Overlays / Boxen ---------- */
   .panel { background:#221638; border:3px solid #7a5fc0; border-radius:14px; color:#f0e9ff;
     box-shadow:0 8px 30px rgba(0,0,0,.6); }
-  #dialog { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(90px + env(safe-area-inset-bottom));
+  #dialog { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(98px + env(safe-area-inset-bottom));
     width:min(560px, calc(100% - 20px)); padding:12px 14px; font-size:15px; line-height:1.45;
     display:none; z-index:20; }
   #dialog .who { color:#ffd54f; font-weight:bold; margin-bottom:3px; font-size:13px; }
   #dialog .next { text-align:right; color:#a99ad4; font-size:12px; margin-top:4px; animation:blink 1s infinite; }
   @keyframes blink { 50% { opacity:.25; } }
 
-  #battleUI { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(86px + env(safe-area-inset-bottom));
+  #battleUI { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(94px + env(safe-area-inset-bottom));
     width:min(560px, calc(100% - 16px)); padding:10px; display:none; z-index:20; }
   #bLog { font-size:14px; line-height:1.4; min-height:40px; margin-bottom:8px; color:#fff; }
   #bBtns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -158,7 +162,7 @@
   <div id="hudBox">
     <div id="hudTop"><span id="hudName">Held · Lv 1</span><span id="hudGold">0 G</span></div>
     <div>HP <span id="hpTxt"></span></div>
-    <div>MP <span id="mpTxt"></span></div><div class="bar" id="mpBar"><i></i></div>
+    <div>MP <span id="mpTxt"></span></div><div class="bar" id="mpBar"><i></i><span class="pct" id="mpPct"></span></div>
   </div>
 </div>
 <div id="bottomBar">
@@ -166,7 +170,7 @@
     <button id="btnInv">🎒</button>
     <button id="btnMenu">☰</button>
   </div>
-  <div id="xpBarBottom"><i></i></div>
+  <div id="xpBarBottom"><i></i><span class="pct" id="xpPct"></span></div>
 </div>
 
 <div id="controls">
@@ -1523,11 +1527,12 @@ function drawActor(g, fig, cxp, feetY, h, o) {
   g.restore();
 }
 
-// Schwebender HP-Balken über dem Kopf: grün > 75 %, gelb > 50 %, orange > 25 %, sonst rot
+// Schwebender HP-Balken über dem Kopf: grün > 75 %, gelb > 50 %, orange > 25 %, sonst rot.
+// Im Balken steht immer die Prozentzahl.
 const hpColor = f => f > 0.75 ? '#5fd068' : f > 0.5 ? '#ffd54f' : f > 0.25 ? '#ff9333' : '#e85050';
 function drawHpBar(g, xc, y, w, frac) {
   frac = clamp(frac, 0, 1);
-  const h = Math.max(4, Math.round(w * 0.11));
+  const h = Math.max(9, Math.round(w * 0.18));
   const x = Math.round(xc - w / 2), yy = Math.round(y);
   g.fillStyle = 'rgba(0,0,0,.55)';
   g.fillRect(x - 1.5, yy - 1.5, Math.round(w) + 3, h + 3);
@@ -1535,6 +1540,23 @@ function drawHpBar(g, xc, y, w, frac) {
   g.fillRect(x, yy, Math.round(w), h);
   g.fillStyle = hpColor(frac);
   g.fillRect(x, yy, Math.round(w * frac), h);
+  const txt = Math.round(frac * 100) + '%';
+  const ty = yy + h - Math.max(2, Math.round(h * 0.18));
+  g.font = 'bold ' + (h - 2) + 'px monospace';
+  g.textAlign = 'center';
+  g.strokeStyle = 'rgba(10,5,20,.85)'; g.lineWidth = 2.5;
+  g.strokeText(txt, xc, ty);
+  g.fillStyle = '#fff';
+  g.fillText(txt, xc, ty);
+}
+// Namens-Schild, das über dem Kopf schwebt
+function drawNameTag(g, xc, y, fs, text) {
+  g.font = 'bold ' + Math.round(fs) + 'px monospace';
+  g.textAlign = 'center';
+  g.strokeStyle = 'rgba(10,5,20,.85)'; g.lineWidth = 3;
+  g.strokeText(text, xc, y);
+  g.fillStyle = '#fff';
+  g.fillText(text, xc, y);
 }
 
 // ---------- Helden-Looks (Ritter-Figuren nach den Original-Artworks) ----------
@@ -1648,6 +1670,8 @@ function refreshHud() {
   ui.mpTxt.textContent = G.mp + '/' + s.maxMp;
   ui.mpBar.style.width = (100 * G.mp / s.maxMp) + '%';
   ui.xpBar.style.width = (100 * G.xp / xpNext(G.lvl)) + '%';
+  $('mpPct').textContent = Math.round(100 * G.mp / s.maxMp) + '%';
+  $('xpPct').textContent = Math.round(100 * G.xp / xpNext(G.lvl)) + ' % XP';
 }
 
 // ---------- Dialog-System ----------
@@ -2537,6 +2561,7 @@ function drawExplore(t) {
       const bob = Math.sin(t * 1.5) * TS * 0.06;
       drawSprite(cx, 'drache', sx - TS * 0.5, sy - TS * 0.7 + bob, TS * 2);
       drawHpBar(cx, sx + TS * 0.5, sy - TS * 0.85 + bob, TS * 1.4, 1);
+      drawNameTag(cx, sx + TS * 0.5, sy - TS * 0.92 + bob, TS * 0.3, n.name);
     } else {
       // NPC dreht sich zum Helden, wenn er direkt daneben steht
       let nd = 'down';
@@ -2546,6 +2571,7 @@ function drawExplore(t) {
       }
       drawActor(cx, FIGS[n.fig], sx + TS / 2, sy + TS * 0.97, TS * 1.22, { dir: nd, pose: 'idle', t });
       drawHpBar(cx, sx + TS / 2, sy + TS * 0.97 - TS * 1.42, TS * 0.85, 1);
+      drawNameTag(cx, sx + TS / 2, sy + TS * 0.97 - TS * 1.5, TS * 0.26, n.name);
       // kleines Hinweissymbol über Quest-NPC
       if (n.kind === 'elder' && !G.flags.dragonDead) {
         cx.fillStyle = '#ffd54f';
@@ -2562,6 +2588,7 @@ function drawExplore(t) {
     dir: G.dir, pose: player.moving ? 'walk' : 'idle', t, ph: player.anim,
   });
   drawHpBar(cx, hx + TS / 2, hy + TS * 0.97 - TS * 1.55, TS * 0.95, G.hp / stats().maxHp);
+  drawNameTag(cx, hx + TS / 2, hy + TS * 0.97 - TS * 1.63, TS * 0.28, CLASSES[G.cls].name);
 
   // Gebiets-Name kurz nach Kartenwechsel
   if (fade > 0) {
@@ -2622,6 +2649,7 @@ function drawBattle(t) {
     }
     drawActor(cx, heroFig(), heroX, heroY, hh, { dir: 'right', pose: hpose, pt: hpt, t });
     drawHpBar(cx, heroX, heroY - hh * 1.22, hh * 0.55, G.hp / stats().maxHp);
+    drawNameTag(cx, heroX, heroY - hh * 1.28, hh * 0.085, CLASSES[G.cls].name);
     if (hpose === 'cast') { // Funken um die erhobene Hand
       for (let i = 0; i < 5; i++) {
         const a = t * 6 + i * 1.26;
@@ -2638,21 +2666,22 @@ function drawBattle(t) {
     if (B.poison > 0) title += ' ☠';
     cx.textAlign = 'center';
     drawHpBar(cx, ex + size / 2, ey - size * 0.12, size * 0.6, frac);
+    drawNameTag(cx, ex + size / 2, ey - size * 0.12 - 10, Math.min(W, H) * 0.04, title);
     if (B.boss) {
       // großer Boss-Balken oben (wie in Elden Ring, bis der Boss fällt)
       const bw = Math.min(W * 0.86, 460), bx = W / 2 - bw / 2, by = H * 0.16;
-      cx.fillStyle = '#fff';
-      cx.font = 'bold ' + Math.round(Math.min(W, H) * 0.045) + 'px monospace';
-      cx.fillText(title, W / 2, by - 11);
+      drawNameTag(cx, W / 2, by - 11, Math.min(W, H) * 0.045, title);
       cx.fillStyle = 'rgba(0,0,0,.6)'; cx.fillRect(bx - 3, by - 3, bw + 6, 20);
       cx.fillStyle = '#33244d'; cx.fillRect(bx, by, bw, 14);
       cx.fillStyle = hpColor(frac); cx.fillRect(bx, by, bw * frac, 14);
       cx.strokeStyle = '#caa14a'; cx.lineWidth = 2;
       cx.strokeRect(bx - 3, by - 3, bw + 6, 20);
-    } else {
+      const pct = Math.round(frac * 100) + '%'; // Prozentzahl im Boss-Balken
+      cx.font = 'bold 11px monospace';
+      cx.strokeStyle = 'rgba(10,5,20,.85)'; cx.lineWidth = 2.5;
+      cx.strokeText(pct, W / 2, by + 11);
       cx.fillStyle = '#fff';
-      cx.font = 'bold ' + Math.round(Math.min(W, H) * 0.04) + 'px monospace';
-      cx.fillText(title, ex + size / 2, ey - size * 0.12 - 10);
+      cx.fillText(pct, W / 2, by + 11);
     }
     // Buff-/Status-Anzeige des Helden
     const badges = [];
