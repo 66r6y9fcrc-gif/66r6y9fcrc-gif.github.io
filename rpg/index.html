@@ -2382,8 +2382,9 @@ function drawTile(ch, sx, sy, x, y, t) {
 
 function drawExplore(t) {
   const map = MAPS[G.map];
-  const camX = clamp(player.px * TS + TS / 2 - W / 2, -TS, map.w * TS - W + TS);
-  const camY = clamp(player.py * TS + TS / 2 - H / 2, -TS, map.h * TS - H + TS);
+  // Kamera folgt dem Helden: er steht immer exakt in der Bildschirmmitte
+  const camX = player.px * TS + TS / 2 - W / 2;
+  const camY = player.py * TS + TS / 2 - H / 2;
   // Hintergrund außerhalb der Karte
   cx.fillStyle = map.zone === 'hoehle' || map.zone === 'hort' ? '#171221' : '#1d3a18';
   cx.fillRect(0, 0, W, H);
