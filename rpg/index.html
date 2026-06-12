@@ -25,18 +25,21 @@
   #xpBar i { background:linear-gradient(90deg,#fbc02d,#ffee58); }
   #hudTop { display:flex; justify-content:space-between; gap:10px; font-weight:bold; }
   #hudGold { color:#ffd54f; }
-  /* ---------- Untere Leiste (Inventar links, Menü rechts) ---------- */
-  #bottomBar { position:fixed; left:0; right:0; bottom:0; z-index:6; display:flex;
-    justify-content:space-between; align-items:center; gap:10px;
-    padding:8px calc(12px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+  /* ---------- Untere Leiste (Inventar links, Menü rechts, XP-Streifen darunter) ---------- */
+  #bottomBar { position:fixed; left:0; right:0; bottom:0; z-index:6; display:flex; flex-direction:column; gap:7px;
+    padding:8px calc(12px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
     background:rgba(10,6,20,.88); border-top:2px solid #5d4a8a; }
-  #bottomBar button { height:46px; padding:0 18px; border-radius:12px; border:2px solid #5d4a8a;
-    background:rgba(30,18,56,.92); color:#fff; font-size:16px; font-weight:bold; font-family:inherit; }
-  #bottomBar button:active { background:rgba(120,90,220,.6); }
+  #barBtns { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  #barBtns button { width:46px; height:46px; padding:0; border-radius:12px; border:2px solid #5d4a8a;
+    background:rgba(30,18,56,.92); color:#fff; font-size:21px; font-family:inherit;
+    display:flex; align-items:center; justify-content:center; }
+  #barBtns button:active { background:rgba(120,90,220,.6); }
+  #xpBarBottom { width:100%; height:6px; border-radius:3px; background:#33244d; overflow:hidden; }
+  #xpBarBottom i { display:block; height:100%; background:linear-gradient(90deg,#fbc02d,#ffee58); transition:width .25s; }
 
   /* ---------- Touch-Steuerung ---------- */
   #controls { position:fixed; inset:0; pointer-events:none; z-index:5; }
-  #dpad { position:absolute; left:calc(14px + env(safe-area-inset-left)); bottom:calc(80px + env(safe-area-inset-bottom));
+  #dpad { position:absolute; left:calc(14px + env(safe-area-inset-left)); bottom:calc(92px + env(safe-area-inset-bottom));
     width:150px; height:150px; }
   .dbtn { position:absolute; width:50px; height:50px; pointer-events:auto;
     background:rgba(20,12,40,.65); border:2px solid #6a55a0; border-radius:12px;
@@ -46,7 +49,7 @@
   #dDown  { left:50px; top:100px; }
   #dLeft  { left:0;  top:50px; }
   #dRight { left:100px; top:50px; }
-  #btnA { position:absolute; right:calc(20px + env(safe-area-inset-right)); bottom:calc(108px + env(safe-area-inset-bottom));
+  #btnA { position:absolute; right:calc(20px + env(safe-area-inset-right)); bottom:calc(120px + env(safe-area-inset-bottom));
     width:74px; height:74px; border-radius:50%; pointer-events:auto;
     background:rgba(220,60,80,.78); border:3px solid #ff8a9a; color:#fff; font-size:22px; font-weight:bold;
     box-shadow:0 3px 12px rgba(0,0,0,.5); }
@@ -55,14 +58,14 @@
   /* ---------- Overlays / Boxen ---------- */
   .panel { background:#221638; border:3px solid #7a5fc0; border-radius:14px; color:#f0e9ff;
     box-shadow:0 8px 30px rgba(0,0,0,.6); }
-  #dialog { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(78px + env(safe-area-inset-bottom));
+  #dialog { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(90px + env(safe-area-inset-bottom));
     width:min(560px, calc(100% - 20px)); padding:12px 14px; font-size:15px; line-height:1.45;
     display:none; z-index:20; }
   #dialog .who { color:#ffd54f; font-weight:bold; margin-bottom:3px; font-size:13px; }
   #dialog .next { text-align:right; color:#a99ad4; font-size:12px; margin-top:4px; animation:blink 1s infinite; }
   @keyframes blink { 50% { opacity:.25; } }
 
-  #battleUI { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(74px + env(safe-area-inset-bottom));
+  #battleUI { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(86px + env(safe-area-inset-bottom));
     width:min(560px, calc(100% - 16px)); padding:10px; display:none; z-index:20; }
   #bLog { font-size:14px; line-height:1.4; min-height:40px; margin-bottom:8px; color:#fff; }
   #bBtns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -154,14 +157,16 @@
 <div id="hud">
   <div id="hudBox">
     <div id="hudTop"><span id="hudName">Held · Lv 1</span><span id="hudGold">0 G</span></div>
-    <div>HP <span id="hpTxt"></span></div><div class="bar" id="hpBar"><i></i></div>
+    <div>HP <span id="hpTxt"></span></div>
     <div>MP <span id="mpTxt"></span></div><div class="bar" id="mpBar"><i></i></div>
-    <div class="bar" id="xpBar"><i></i></div>
   </div>
 </div>
 <div id="bottomBar">
-  <button id="btnInv">🎒 Inventar</button>
-  <button id="btnMenu">☰ Menü</button>
+  <div id="barBtns">
+    <button id="btnInv">🎒</button>
+    <button id="btnMenu">☰</button>
+  </div>
+  <div id="xpBarBottom"><i></i></div>
 </div>
 
 <div id="controls">
@@ -1518,6 +1523,20 @@ function drawActor(g, fig, cxp, feetY, h, o) {
   g.restore();
 }
 
+// Schwebender HP-Balken über dem Kopf: grün > 75 %, gelb > 50 %, orange > 25 %, sonst rot
+const hpColor = f => f > 0.75 ? '#5fd068' : f > 0.5 ? '#ffd54f' : f > 0.25 ? '#ff9333' : '#e85050';
+function drawHpBar(g, xc, y, w, frac) {
+  frac = clamp(frac, 0, 1);
+  const h = Math.max(4, Math.round(w * 0.11));
+  const x = Math.round(xc - w / 2), yy = Math.round(y);
+  g.fillStyle = 'rgba(0,0,0,.55)';
+  g.fillRect(x - 1.5, yy - 1.5, Math.round(w) + 3, h + 3);
+  g.fillStyle = '#33244d';
+  g.fillRect(x, yy, Math.round(w), h);
+  g.fillStyle = hpColor(frac);
+  g.fillRect(x, yy, Math.round(w * frac), h);
+}
+
 // ---------- Helden-Looks (Ritter-Figuren nach den Original-Artworks) ----------
 const HERO_SKINS = {
   axt:     { name: 'Flammenaxt-Ritter', fig: FIGS.axt,
@@ -1616,8 +1635,8 @@ const ui = {
   gameover: $('gameoverScreen'), victory: $('victoryScreen'),
   hudName: $('hudName'), hudGold: $('hudGold'),
   hpTxt: $('hpTxt'), mpTxt: $('mpTxt'),
-  hpBar: document.querySelector('#hpBar i'), mpBar: document.querySelector('#mpBar i'),
-  xpBar: document.querySelector('#xpBar i'),
+  mpBar: document.querySelector('#mpBar i'),
+  xpBar: document.querySelector('#xpBarBottom i'),
   btnMenu: $('btnMenu'), btnInv: $('btnInv'),
 };
 function refreshHud() {
@@ -1627,7 +1646,6 @@ function refreshHud() {
   ui.hudGold.textContent = G.gold + ' G';
   ui.hpTxt.textContent = G.hp + '/' + s.maxHp;
   ui.mpTxt.textContent = G.mp + '/' + s.maxMp;
-  ui.hpBar.style.width = (100 * G.hp / s.maxHp) + '%';
   ui.mpBar.style.width = (100 * G.mp / s.maxMp) + '%';
   ui.xpBar.style.width = (100 * G.xp / xpNext(G.lvl)) + '%';
 }
@@ -2518,6 +2536,7 @@ function drawExplore(t) {
     if (n.kind === 'boss') {
       const bob = Math.sin(t * 1.5) * TS * 0.06;
       drawSprite(cx, 'drache', sx - TS * 0.5, sy - TS * 0.7 + bob, TS * 2);
+      drawHpBar(cx, sx + TS * 0.5, sy - TS * 0.85 + bob, TS * 1.4, 1);
     } else {
       // NPC dreht sich zum Helden, wenn er direkt daneben steht
       let nd = 'down';
@@ -2526,6 +2545,7 @@ function drawExplore(t) {
         nd = rx === 1 ? 'right' : rx === -1 ? 'left' : ry === -1 ? 'up' : 'down';
       }
       drawActor(cx, FIGS[n.fig], sx + TS / 2, sy + TS * 0.97, TS * 1.22, { dir: nd, pose: 'idle', t });
+      drawHpBar(cx, sx + TS / 2, sy + TS * 0.97 - TS * 1.42, TS * 0.85, 1);
       // kleines Hinweissymbol über Quest-NPC
       if (n.kind === 'elder' && !G.flags.dragonDead) {
         cx.fillStyle = '#ffd54f';
@@ -2541,6 +2561,7 @@ function drawExplore(t) {
   drawActor(cx, heroFig(), hx + TS / 2, hy + TS * 0.97, TS * 1.3, {
     dir: G.dir, pose: player.moving ? 'walk' : 'idle', t, ph: player.anim,
   });
+  drawHpBar(cx, hx + TS / 2, hy + TS * 0.97 - TS * 1.55, TS * 0.95, G.hp / stats().maxHp);
 
   // Gebiets-Name kurz nach Kartenwechsel
   if (fade > 0) {
@@ -2600,6 +2621,7 @@ function drawBattle(t) {
       if (hpt >= 1) B.heroPose = 'idle'; else hpose = B.heroPose;
     }
     drawActor(cx, heroFig(), heroX, heroY, hh, { dir: 'right', pose: hpose, pt: hpt, t });
+    drawHpBar(cx, heroX, heroY - hh * 1.22, hh * 0.55, G.hp / stats().maxHp);
     if (hpose === 'cast') { // Funken um die erhobene Hand
       for (let i = 0; i < 5; i++) {
         const a = t * 6 + i * 1.26;
@@ -2610,19 +2632,28 @@ function drawBattle(t) {
         cx.fill();
       }
     }
-    // Name + HP-Balken des Gegners (+ Statussymbole)
-    const bw = Math.min(W * 0.7, 300);
-    const bx = W / 2 - bw / 2, by = H * 0.1;
-    cx.fillStyle = '#fff';
-    cx.font = 'bold ' + Math.round(Math.min(W, H) * 0.04) + 'px monospace';
-    cx.textAlign = 'center';
+    // HP des Gegners schwebt über dem Kopf; Name darüber
+    const frac = B.hp / B.maxHp;
     let title = B.name;
     if (B.poison > 0) title += ' ☠';
-    cx.fillText(title, W / 2, by - 8);
-    cx.fillStyle = 'rgba(0,0,0,.5)'; cx.fillRect(bx - 2, by - 2, bw + 4, 14);
-    cx.fillStyle = '#33244d'; cx.fillRect(bx, by, bw, 10);
-    cx.fillStyle = B.hp / B.maxHp > 0.4 ? '#5fd068' : '#e85050';
-    cx.fillRect(bx, by, bw * (B.hp / B.maxHp), 10);
+    cx.textAlign = 'center';
+    drawHpBar(cx, ex + size / 2, ey - size * 0.12, size * 0.6, frac);
+    if (B.boss) {
+      // großer Boss-Balken oben (wie in Elden Ring, bis der Boss fällt)
+      const bw = Math.min(W * 0.86, 460), bx = W / 2 - bw / 2, by = H * 0.16;
+      cx.fillStyle = '#fff';
+      cx.font = 'bold ' + Math.round(Math.min(W, H) * 0.045) + 'px monospace';
+      cx.fillText(title, W / 2, by - 11);
+      cx.fillStyle = 'rgba(0,0,0,.6)'; cx.fillRect(bx - 3, by - 3, bw + 6, 20);
+      cx.fillStyle = '#33244d'; cx.fillRect(bx, by, bw, 14);
+      cx.fillStyle = hpColor(frac); cx.fillRect(bx, by, bw * frac, 14);
+      cx.strokeStyle = '#caa14a'; cx.lineWidth = 2;
+      cx.strokeRect(bx - 3, by - 3, bw + 6, 20);
+    } else {
+      cx.fillStyle = '#fff';
+      cx.font = 'bold ' + Math.round(Math.min(W, H) * 0.04) + 'px monospace';
+      cx.fillText(title, ex + size / 2, ey - size * 0.12 - 10);
+    }
     // Buff-/Status-Anzeige des Helden
     const badges = [];
     if (B.pBuffTurns > 0) badges.push('📢 ATK↑ (' + B.pBuffTurns + ')');
@@ -2630,7 +2661,7 @@ function drawBattle(t) {
     if (badges.length) {
       cx.font = Math.round(Math.min(W, H) * 0.03) + 'px monospace';
       cx.fillStyle = '#ffd54f';
-      cx.fillText(badges.join('  ·  '), W / 2, by + 32);
+      cx.fillText(badges.join('  ·  '), W / 2, H * 0.16 + 40);
     }
     // schwebende Schadenszahlen
     for (const f of B.floats) {
