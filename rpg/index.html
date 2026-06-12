@@ -86,11 +86,45 @@
   .classCard .cstats { font-weight:normal; font-size:12px; color:#a99ad4; margin-top:4px; }
   .cprev { width:58px; height:82px; flex:0 0 auto; background:rgba(0,0,0,.28); border-radius:10px; }
 
-  #menuUI, #shopUI, #invUI { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+  #menuUI, #shopUI { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
     width:min(440px, calc(100% - 24px)); max-height:84vh; overflow-y:auto; padding:16px; display:none; z-index:25; }
-  #menuUI h3, #shopUI h3, #invUI h3 { color:#ffd54f; margin-bottom:10px; text-align:center; font-size:18px; }
+  #menuUI h3, #shopUI h3 { color:#ffd54f; margin-bottom:10px; text-align:center; font-size:18px; }
   #menuUI .stats { font-size:13px; line-height:1.7; background:rgba(0,0,0,.25); border-radius:8px; padding:8px 12px; margin-bottom:10px; }
   #menuUI button, #shopUI button, #invUI button { width:100%; margin-top:8px; min-width:0; }
+
+  /* ---------- Vollbild-Inventar ---------- */
+  #invUI { position:fixed; inset:0; display:none; flex-direction:column; z-index:25; border-radius:0; border:none;
+    padding:calc(8px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom)); overflow:hidden; }
+  #invHead { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  #invHead h3 { color:#ffd54f; font-size:18px; margin:0; }
+  #invHead .gold { color:#ffd54f; font-weight:bold; font-size:14px; flex:1; text-align:right; }
+  #invHead button { width:auto; margin:0; min-width:0; padding:8px 14px; font-size:15px; }
+  #invTop { flex:1 1 50%; min-height:0; display:flex; gap:8px; }
+  #invStats { flex:0 0 32%; min-width:0; background:rgba(0,0,0,.25); border-radius:10px; padding:8px;
+    font-size:12px; line-height:1.65; overflow-y:auto; }
+  #invStats b { color:#ffd54f; }
+  #invStats button { padding:7px 4px; font-size:12px; margin-top:6px; }
+  #invChar { flex:1; min-width:0; display:flex; gap:6px; background:rgba(0,0,0,.18); border-radius:10px; padding:6px; }
+  .eqCol { display:flex; flex-direction:column; gap:6px; }
+  #invUI .eqSlot { width:52px; flex:1 1 0; min-height:0; min-width:0; margin:0; padding:2px; border-radius:10px;
+    background:rgba(0,0,0,.3); border:2px solid #4a3a72; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; font-size:17px; line-height:1.15; }
+  #invUI .eqSlot .sl { font-size:8.5px; color:#a99ad4; font-weight:normal; }
+  #invUI .eqSlot.empty { opacity:.55; }
+  #invUI .eqSlot:active, #invUI .bagTile:active { background:rgba(120,90,220,.3); }
+  #invHeroCv { flex:1; min-width:0; height:100%; object-fit:contain; }
+  #invGrid { flex:1 1 50%; min-height:0; margin-top:8px; display:grid;
+    grid-template-columns:repeat(6,1fr); grid-template-rows:repeat(4,1fr); gap:6px; }
+  #invUI .bagTile { min-width:0; margin:0; padding:0; border-radius:10px; background:rgba(0,0,0,.3);
+    border:2px solid #4a3a72; font-size:21px; display:flex; align-items:center; justify-content:center;
+    position:relative; }
+  #invUI .bagTile.empty { opacity:.35; }
+  #invUI .bagTile .lv { position:absolute; right:3px; bottom:1px; font-size:9px; color:#a99ad4; font-weight:normal; }
+  #invUI #invHead button { width:auto; margin:0; min-width:0; padding:8px 14px; font-size:15px; }
+  #invDetail { position:absolute; inset:0; z-index:5; display:flex; align-items:center; justify-content:center;
+    background:rgba(8,4,18,.72); padding:14px; }
+  #invDetail .box { width:min(420px, 100%); max-height:92%; overflow-y:auto; padding:14px;
+    background:#221638; border:3px solid #7a5fc0; border-radius:14px; }
   .itemRow { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; }
   .itemRow .info { flex:1; font-size:13px; line-height:1.35; }
   .itemRow .info b { font-size:14px; }
@@ -441,15 +475,24 @@ const RARITIES = [
   { name: 'Episch',     color: '#bf72ff', mult: 1.55, affixes: 2, weight: 13, valueMult: 4 },
   { name: 'Legendär',   color: '#ffa033', mult: 2.0,  affixes: 3, weight: 4,  valueMult: 7 },
 ];
-const SLOTS = { waffe: 'Waffe', ruestung: 'Rüstung', helm: 'Helm', amulett: 'Amulett' };
+const SLOTS = { waffe: 'Waffe', helm: 'Helm', brust: 'Brust', schultern: 'Schultern',
+  handschuhe: 'Handschuhe', guertel: 'Gürtel', stiefel: 'Stiefel', halskette: 'Halskette', ring: 'Ring' };
+// Ausrüstungs-Schlüssel am Charakter (zwei Ring-Plätze teilen sich den Item-Slot 'ring')
+const EQUIP_SLOTS = ['waffe', 'helm', 'brust', 'schultern', 'handschuhe', 'guertel', 'stiefel', 'halskette', 'ring1', 'ring2'];
+const slotKeyName = k => k === 'ring1' ? 'Ring 1' : k === 'ring2' ? 'Ring 2' : SLOTS[k];
 const BASES = {
-  schwert:  { label: 'schwert',  slot: 'waffe', cls: 'krieger', icon: '🗡', main: 'atk', scale: 2.2 },
-  axt:      { label: 'axt',      slot: 'waffe', cls: 'krieger', icon: '🪓', main: 'atk', scale: 2.4 },
-  stab:     { label: 'stab',     slot: 'waffe', cls: 'magier',  icon: '🪄', main: 'atk', scale: 2.2, bonus: 'mp' },
-  dolch:    { label: 'dolch',    slot: 'waffe', cls: 'schurke', icon: '🔪', main: 'atk', scale: 2.0, bonus: 'crit' },
-  ruestung: { label: 'rüstung',  slot: 'ruestung', cls: null, icon: '🛡', main: 'def', scale: 1.6 },
-  helm:     { label: 'helm',     slot: 'helm',     cls: null, icon: '🪖', main: 'def', scale: 0.9 },
-  amulett:  { label: 'amulett',  slot: 'amulett',  cls: null, icon: '📿', main: 'hp', scale: 3.0 },
+  schwert:    { label: 'schwert',  slot: 'waffe', cls: 'krieger', icon: '🗡', main: 'atk', scale: 2.2 },
+  axt:        { label: 'axt',      slot: 'waffe', cls: 'krieger', icon: '🪓', main: 'atk', scale: 2.4 },
+  stab:       { label: 'stab',     slot: 'waffe', cls: 'magier',  icon: '🪄', main: 'atk', scale: 2.2, bonus: 'mp' },
+  dolch:      { label: 'dolch',    slot: 'waffe', cls: 'schurke', icon: '🔪', main: 'atk', scale: 2.0, bonus: 'crit' },
+  helm:       { label: 'helm',     slot: 'helm',  cls: null, icon: '🪖', main: 'def', scale: 0.9 },
+  brust:      { label: 'brustpanzer',      slot: 'brust',      cls: null, icon: '🛡', main: 'def', scale: 1.6 },
+  schultern:  { label: 'schulterplatten',  slot: 'schultern',  cls: null, icon: '🦾', main: 'def', scale: 0.8, bonus: 'hp' },
+  handschuhe: { label: 'handschuhe',       slot: 'handschuhe', cls: null, icon: '🧤', main: 'atk', scale: 0.7 },
+  guertel:    { label: 'gürtel',           slot: 'guertel',    cls: null, icon: '🪢', main: 'hp',  scale: 1.6 },
+  stiefel:    { label: 'stiefel',          slot: 'stiefel',    cls: null, icon: '🥾', main: 'def', scale: 0.7, bonus: 'dodge' },
+  halskette:  { label: 'halskette',        slot: 'halskette',  cls: null, icon: '📿', main: 'hp',  scale: 3.0 },
+  ring:       { label: 'ring',             slot: 'ring',       cls: null, icon: '💍', main: 'atk', scale: 0.8, bonus: 'crit' },
 };
 // Material-Vorsilben nach Item-Level (Waffe / Rüstungsteile / Amulett)
 const MATS = [
@@ -482,7 +525,8 @@ function rollRarity(weights) {
 function gearName(baseId, ilvl, affix) {
   const base = BASES[baseId];
   const mat = MATS.find(m => ilvl <= m.max);
-  const pre = base.slot === 'waffe' ? mat.w : base.slot === 'amulett' ? mat.am : mat.a;
+  const pre = base.slot === 'waffe' ? mat.w
+    : (base.slot === 'halskette' || base.slot === 'ring') ? mat.am : mat.a;
   return pre + base.label + (affix ? ' ' + affix.suffix : '');
 }
 // Erzeugt ein Ausrüstungsstück. opts: { base?, slot?, rarity?, cls? }
@@ -491,18 +535,20 @@ function rollGear(ilvl, opts) {
   ilvl = clamp(Math.round(ilvl), 1, 12);
   let baseId = opts.base;
   if (!baseId) {
-    const slot = opts.slot || pick(['waffe', 'waffe', 'ruestung', 'ruestung', 'helm', 'amulett']);
+    const slot = opts.slot || pick(['waffe', 'waffe', 'brust', 'brust', 'helm', 'schultern',
+      'handschuhe', 'guertel', 'stiefel', 'halskette', 'ring', 'ring']);
     const cls = opts.cls || (G ? G.cls : null);
     const candidates = Object.keys(BASES).filter(id =>
       BASES[id].slot === slot && (!BASES[id].cls || BASES[id].cls === cls));
-    baseId = candidates.length ? pick(candidates) : 'ruestung';
+    baseId = candidates.length ? pick(candidates) : 'brust';
   }
   const base = BASES[baseId];
   const rid = opts.rarity != null ? opts.rarity : rollRarity();
   const rar = RARITIES[rid];
   const stats = { atk: 0, def: 0, hp: 0, mp: 0, crit: 0, dodge: 0 };
   stats[base.main] += Math.max(1, Math.round(base.scale * ilvl * rar.mult * rnd(0.9, 1.1)));
-  if (base.bonus) stats[base.bonus] += base.bonus === 'crit' ? 2 + Math.floor(ilvl / 3) : 2 + ilvl;
+  if (base.bonus) stats[base.bonus] += (base.bonus === 'crit' || base.bonus === 'dodge')
+    ? 2 + Math.floor(ilvl / 3) : 2 + ilvl;
   // Affixe: unterschiedliche Werte, nicht doppelt
   const pool = AFFIXES.filter(a => a.stat !== base.main);
   const rolled = [];
@@ -1490,8 +1536,9 @@ function newGame(cls, skin) {
     inv: [],
     equip: {
       waffe: rollGear(1, { base: CLASSES[cls].startWeapon, rarity: 0 }),
-      ruestung: rollGear(1, { base: 'ruestung', rarity: 0 }),
-      helm: null, amulett: null,
+      brust: rollGear(1, { base: 'brust', rarity: 0 }),
+      helm: null, schultern: null, handschuhe: null, guertel: null,
+      stiefel: null, halskette: null, ring1: null, ring2: null,
     },
     shopStock: null,
     flags: { introSeen: false, dragonDead: false },
@@ -1534,7 +1581,21 @@ function load() {
     const raw = localStorage.getItem(SAVE_KEY); if (!raw) return null;
     const g = JSON.parse(raw);
     if (!g || !MAPS[g.map] || !CLASSES[g.cls]) return null;
-    return Object.assign(newGame(g.cls), g);
+    const merged = Object.assign(newGame(g.cls), g);
+    // Alte Spielstände (4 Slots) auf das neue Ausrüstungs-Schema heben
+    const renamed = { ruestung: 'brust', amulett: 'halskette' };
+    for (const [oldK, newK] of Object.entries(renamed)) {
+      if (merged.equip[oldK] !== undefined) {
+        if (merged.equip[oldK]) merged.equip[newK] = merged.equip[oldK];
+        delete merged.equip[oldK];
+      }
+    }
+    for (const k of EQUIP_SLOTS) if (merged.equip[k] === undefined) merged.equip[k] = null;
+    const fixSlot = it => { if (it && renamed[it.slot]) it.slot = renamed[it.slot]; };
+    Object.values(merged.equip).forEach(fixSlot);
+    (merged.inv || []).forEach(fixSlot);
+    (merged.shopStock || []).forEach(fixSlot);
+    return merged;
   } catch (e) { return null; }
 }
 
@@ -2096,14 +2157,25 @@ function renderShop() {
   s.appendChild(close);
 }
 
-// ---------- Inventar ----------
-let invDetail = null; // uid des angezeigten Items oder 'slot:waffe' für angelegtes
+// ---------- Inventar (Vollbild: Werte + Charakter oben, Beutel-Kacheln unten) ----------
+let invDetail = null; // uid des angezeigten Items
+let invHeroCv = null; // Canvas der Charakter-Vorschau (animiert im loop)
 function openInv() {
   mode = 'inv'; held.clear(); invDetail = null;
   renderInv();
-  ui.inv.style.display = 'block';
+  ui.inv.style.display = 'flex';
 }
-function closeInv() { ui.inv.style.display = 'none'; mode = 'explore'; }
+function closeInv() { ui.inv.style.display = 'none'; invHeroCv = null; mode = 'explore'; }
+
+// Ring-Items: Ziel-Platz beim Anlegen (erst freier Platz, sonst Ring 1)
+function equipTargetKey(it) {
+  if (it.slot !== 'ring') return it.slot;
+  if (!G.equip.ring1) return 'ring1';
+  if (!G.equip.ring2) return 'ring2';
+  return 'ring1';
+}
+const equippedKeyOf = it =>
+  Object.keys(G.equip).find(k => G.equip[k] && G.equip[k].uid === it.uid) || null;
 
 function statDiffLines(it, equipped) {
   // Vergleich: was ändert sich, wenn `it` statt `equipped` angelegt wird
@@ -2122,47 +2194,134 @@ function statDiffLines(it, equipped) {
 
 function renderInv() {
   const v = ui.inv;
-  v.innerHTML = '<h3>🎒 Inventar</h3><div id="invCap">' + G.inv.length + '/' + INV_MAX + ' Plätze · ' + G.gold + ' G</div>';
-  const mkBtn = (label, fn, disabled, danger) => {
-    const b = document.createElement('button');
-    b.textContent = label; b.disabled = !!disabled;
-    if (danger) b.className = 'danger';
-    b.addEventListener('pointerdown', e => { e.preventDefault(); if (!b.disabled) fn(); });
-    v.appendChild(b); return b;
-  };
+  v.innerHTML = '';
+  const s = stats();
+  const c = CLASSES[G.cls];
 
-  // Detail-Ansicht eines Items
+  // Kopfzeile: Titel, Gold, Schließen
+  const head = document.createElement('div'); head.id = 'invHead';
+  head.innerHTML = '<h3>🎒 Inventar</h3><span class="gold">' + G.gold + ' G · ' +
+    G.inv.length + '/' + INV_MAX + '</span>';
+  const close = document.createElement('button');
+  close.textContent = '✖';
+  close.addEventListener('pointerdown', e => { e.preventDefault(); sfx.select(); closeInv(); });
+  head.appendChild(close);
+  v.appendChild(head);
+
+  // Obere Hälfte: Statuswerte (1/3) + Charakter mit Ausrüstungs-Slots (2/3)
+  const top = document.createElement('div'); top.id = 'invTop';
+  const st = document.createElement('div'); st.id = 'invStats';
+  st.innerHTML =
+    '<b>' + c.icon + ' ' + c.name + '</b><br>' +
+    'Level ' + G.lvl + '<br>' +
+    G.xp + '/' + xpNext(G.lvl) + ' XP<br>' +
+    'HP ' + G.hp + '/' + s.maxHp + '<br>' +
+    'MP ' + G.mp + '/' + s.maxMp + '<br>' +
+    'Angriff ' + s.atk + '<br>' +
+    'Verteidigung ' + s.def + '<br>' +
+    'Krit ' + s.crit + ' %<br>' +
+    'Ausweichen ' + s.dodge + ' %';
+  const mkUse = (icon, count, canUse, fn) => { // Vorräte direkt benutzbar
+    const b = document.createElement('button');
+    b.textContent = icon + ' ×' + count; b.disabled = !canUse;
+    b.addEventListener('pointerdown', e => { e.preventDefault(); if (!b.disabled) fn(); });
+    st.appendChild(b);
+  };
+  mkUse('🧪', G.items.trank, G.items.trank > 0 && G.hp < s.maxHp, () => {
+    G.items.trank--; G.hp = Math.min(s.maxHp, G.hp + 35);
+    sfx.heal(); refreshHud(); save(); renderInv();
+  });
+  mkUse('💙', G.items.aether, G.items.aether > 0 && G.mp < s.maxMp, () => {
+    G.items.aether--; G.mp = Math.min(s.maxMp, G.mp + 12);
+    sfx.heal(); refreshHud(); save(); renderInv();
+  });
+  top.appendChild(st);
+
+  const ch = document.createElement('div'); ch.id = 'invChar';
+  const mkSlotTile = key => {
+    const it = G.equip[key];
+    const b = document.createElement('button');
+    b.className = 'eqSlot' + (it ? '' : ' empty');
+    if (it) b.style.borderColor = rarOf(it).color;
+    b.innerHTML = '<span>' + (it ? it.icon : '▫') + '</span>' +
+      '<span class="sl">' + slotKeyName(key) + '</span>';
+    if (it) b.addEventListener('pointerdown', e => {
+      e.preventDefault(); invDetail = it.uid; sfx.select(); renderInv();
+    });
+    return b;
+  };
+  const colL = document.createElement('div'); colL.className = 'eqCol';
+  for (const k of ['helm', 'halskette', 'schultern', 'brust', 'guertel']) colL.appendChild(mkSlotTile(k));
+  const colR = document.createElement('div'); colR.className = 'eqCol';
+  for (const k of ['waffe', 'handschuhe', 'ring1', 'ring2', 'stiefel']) colR.appendChild(mkSlotTile(k));
+  const cv = document.createElement('canvas');
+  cv.id = 'invHeroCv'; cv.width = 220; cv.height = 360;
+  invHeroCv = cv;
+  ch.appendChild(colL); ch.appendChild(cv); ch.appendChild(colR);
+  top.appendChild(ch);
+  v.appendChild(top);
+
+  // Untere Hälfte: Beutel als Kachel-Raster
+  const grid = document.createElement('div'); grid.id = 'invGrid';
+  const order = { waffe: 0, helm: 1, brust: 2, schultern: 3, handschuhe: 4,
+    guertel: 5, stiefel: 6, halskette: 7, ring: 8 };
+  const items = G.inv.slice().sort((a, b) =>
+    (order[a.slot] ?? 9) - (order[b.slot] ?? 9) || b.rarity - a.rarity || b.ilvl - a.ilvl);
+  for (let i = 0; i < INV_MAX; i++) {
+    const it = items[i];
+    const tile = document.createElement('button');
+    tile.className = 'bagTile' + (it ? '' : ' empty');
+    if (it) {
+      tile.style.borderColor = rarOf(it).color;
+      tile.innerHTML = '<span>' + it.icon + '</span><span class="lv">' + it.ilvl + '</span>';
+      tile.addEventListener('pointerdown', e => {
+        e.preventDefault(); invDetail = it.uid; sfx.select(); renderInv();
+      });
+    }
+    grid.appendChild(tile);
+  }
+  v.appendChild(grid);
+
+  // Detail-Overlay über dem Inventar
   const detailItem = invDetail && (G.inv.find(x => x.uid === invDetail) ||
     Object.values(G.equip).find(x => x && x.uid === invDetail));
   if (detailItem) {
     const it = detailItem;
-    const isEquipped = Object.values(G.equip).some(x => x && x.uid === it.uid);
-    const equipped = G.equip[it.slot];
-    const box = document.createElement('div');
-    box.style.cssText = 'background:rgba(0,0,0,.25);border-radius:8px;padding:10px 12px;margin-top:6px';
+    const eqKey = equippedKeyOf(it);
+    const isEquipped = !!eqKey;
+    const equipped = G.equip[equipTargetKey(it)];
+    const ov = document.createElement('div'); ov.id = 'invDetail';
+    const box = document.createElement('div'); box.className = 'box';
     box.innerHTML =
       '<b style="color:' + rarOf(it).color + ';font-size:16px">' + it.icon + ' ' + it.name + '</b><br>' +
       '<span class="muted">' + rarOf(it).name + ' · ' + SLOTS[it.slot] + ' · Stufe ' + it.ilvl +
       (it.cls ? ' · ' + CLASSES[it.cls].name : '') + ' · Wert ' + it.value + ' G</span>' +
       '<div style="margin-top:6px">' + statDiffLines(it, isEquipped ? null : equipped) + '</div>' +
       (!isEquipped && equipped ? '<div class="muted" style="margin-top:4px">Vergleich mit: ' + equipped.name + '</div>' : '');
-    v.appendChild(box);
+    const mkBtn = (label, fn, disabled, danger) => {
+      const b = document.createElement('button');
+      b.textContent = label; b.disabled = !!disabled;
+      if (danger) b.className = 'danger';
+      b.addEventListener('pointerdown', e => { e.preventDefault(); if (!b.disabled) fn(); });
+      box.appendChild(b); return b;
+    };
     const wrongClass = it.cls && it.cls !== G.cls;
     if (isEquipped) {
       mkBtn('Ablegen', () => {
         if (G.inv.length >= INV_MAX) return;
-        G.equip[it.slot] = null; G.inv.push(it);
+        G.equip[eqKey] = null; G.inv.push(it);
         clampVitals(); sfx.equip(); save(); refreshHud();
         invDetail = null; renderInv();
       }, G.inv.length >= INV_MAX || it.slot === 'waffe');
       if (it.slot === 'waffe') {
         const p = document.createElement('p'); p.className = 'muted'; p.style.textAlign = 'center'; p.style.marginTop = '6px';
-        p.textContent = 'Die Waffe legst du ab, indem du eine andere anlegst.'; v.appendChild(p);
+        p.textContent = 'Die Waffe legst du ab, indem du eine andere anlegst.'; box.appendChild(p);
       }
     } else {
       mkBtn(wrongClass ? 'Nur für ' + CLASSES[it.cls].name : '✔ Ausrüsten', () => {
-        const old = G.equip[it.slot];
-        G.equip[it.slot] = it;
+        const key = equipTargetKey(it);
+        const old = G.equip[key];
+        G.equip[key] = it;
         G.inv = G.inv.filter(x => x.uid !== it.uid);
         if (old) G.inv.push(old);
         clampVitals(); sfx.equip(); save(); refreshHud();
@@ -2175,62 +2334,12 @@ function renderInv() {
       }, false, true);
     }
     mkBtn('↩ Zurück', () => { invDetail = null; sfx.select(); renderInv(); });
-    return;
+    ov.appendChild(box);
+    ov.addEventListener('pointerdown', e => { // Tippen daneben schließt das Detail
+      if (e.target === ov) { e.preventDefault(); invDetail = null; renderInv(); }
+    });
+    v.appendChild(ov);
   }
-
-  // Übersicht: Angelegt
-  const addItemRow = (it, tag) => {
-    const row = document.createElement('div'); row.className = 'invItem';
-    row.innerHTML = '<span>' + it.icon + '</span>' +
-      '<span class="nm"><b style="color:' + rarOf(it).color + '">' + it.name + '</b>' +
-      '<br><span class="tag">' + rarOf(it).name + ' · St. ' + it.ilvl + (tag ? ' · ' + tag : '') + '</span></span>' +
-      '<span class="tag">›</span>';
-    row.addEventListener('pointerdown', e => { e.preventDefault(); invDetail = it.uid; sfx.select(); renderInv(); });
-    ui.inv.appendChild(row);
-  };
-  const eqHead = document.createElement('div'); eqHead.className = 'slotLabel';
-  eqHead.textContent = '— Angelegt —'; v.appendChild(eqHead);
-  for (const slot of Object.keys(SLOTS)) {
-    const it = G.equip[slot];
-    if (it) addItemRow(it, SLOTS[slot]);
-    else {
-      const row = document.createElement('div'); row.className = 'invItem';
-      row.innerHTML = '<span>▫</span><span class="nm"><span class="muted">' + SLOTS[slot] + ': leer</span></span>';
-      v.appendChild(row);
-    }
-  }
-  // Verbrauchsgegenstände
-  const cHead = document.createElement('div'); cHead.className = 'slotLabel';
-  cHead.textContent = '— Vorräte —'; v.appendChild(cHead);
-  const s = stats();
-  const consum = (icon, label, count, canUse, fn) => {
-    const row = document.createElement('div'); row.className = 'itemRow';
-    row.innerHTML = '<div class="info"><b>' + icon + ' ' + label + '</b> ×' + count + '</div>';
-    const btn = document.createElement('button');
-    btn.textContent = 'Benutzen'; btn.disabled = !canUse;
-    btn.addEventListener('pointerdown', e => { e.preventDefault(); if (!btn.disabled) fn(); });
-    row.appendChild(btn); v.appendChild(row);
-  };
-  consum('🧪', 'Trank (+35 HP)', G.items.trank, G.items.trank > 0 && G.hp < s.maxHp, () => {
-    G.items.trank--; G.hp = Math.min(s.maxHp, G.hp + 35);
-    sfx.heal(); refreshHud(); save(); renderInv();
-  });
-  consum('💙', 'Äther (+12 MP)', G.items.aether, G.items.aether > 0 && G.mp < s.maxMp, () => {
-    G.items.aether--; G.mp = Math.min(s.maxMp, G.mp + 12);
-    sfx.heal(); refreshHud(); save(); renderInv();
-  });
-  // Beutel
-  const bHead = document.createElement('div'); bHead.className = 'slotLabel';
-  bHead.textContent = '— Beutel —'; v.appendChild(bHead);
-  if (!G.inv.length) {
-    const p = document.createElement('p'); p.className = 'muted'; p.style.marginTop = '6px';
-    p.textContent = 'Noch keine Beute. Monster lassen Ausrüstung fallen!'; v.appendChild(p);
-  }
-  const order = { waffe: 0, ruestung: 1, helm: 2, amulett: 3 };
-  for (const it of G.inv.slice().sort((a, b) => order[a.slot] - order[b.slot] || b.rarity - a.rarity || b.ilvl - a.ilvl)) {
-    addItemRow(it, SLOTS[it.slot]);
-  }
-  mkBtn('✖ Schließen', closeInv);
 }
 
 // ---------- Menü ----------
@@ -2244,9 +2353,9 @@ function renderMenu() {
   const m = ui.menu;
   const s = stats();
   const c = CLASSES[G.cls];
-  const eqLines = Object.keys(SLOTS).map(slot => {
+  const eqLines = EQUIP_SLOTS.map(slot => {
     const it = G.equip[slot];
-    return SLOTS[slot] + ': ' + (it ? '<span style="color:' + rarOf(it).color + '">' + it.name + '</span>' : '<span class="muted">leer</span>');
+    return slotKeyName(slot) + ': ' + (it ? '<span style="color:' + rarOf(it).color + '">' + it.name + '</span>' : '<span class="muted">leer</span>');
   }).join('<br>');
   m.innerHTML = '<h3>📜 ' + MAPS[G.map].name + '</h3>' +
     '<div class="stats">' +
@@ -2549,6 +2658,14 @@ function loop(ts) {
   }
 
   if (!G) return; // noch auf dem Titelbildschirm
+
+  // Inventar: lebende Charakter-Vorschau zwischen den Ausrüstungs-Slots
+  if (mode === 'inv' && invHeroCv) {
+    const pg = invHeroCv.getContext('2d');
+    pg.setTransform(2, 0, 0, 2, 0, 0);
+    pg.clearRect(0, 0, 110, 180);
+    drawActor(pg, heroFig(), 55, 172, 140, { dir: 'down', pose: 'idle', t });
+  }
 
   if (mode === 'explore' || mode === 'dialog' || mode === 'menu' || mode === 'shop' || mode === 'inv') {
     if (mode === 'explore') updateExplore(dt);
