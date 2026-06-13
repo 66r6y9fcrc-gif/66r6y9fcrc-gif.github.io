@@ -68,6 +68,25 @@
   #dialog .who { color:#ffd54f; font-weight:bold; margin-bottom:3px; font-size:13px; }
   #dialog .next { text-align:right; color:#a99ad4; font-size:12px; margin-top:4px; animation:blink 1s infinite; }
   @keyframes blink { 50% { opacity:.25; } }
+  #dChoices { display:none; flex-direction:column; gap:6px; margin-top:9px; }
+  #dChoices button { padding:10px 12px; font-size:14px; font-weight:bold; border-radius:10px;
+    border:2px solid #8a6fd0; background:#3a2a60; color:#fff; font-family:inherit; }
+  #dChoices button:active { background:#5a3fa0; }
+
+  /* ---------- Auftrags-Box (links, antippbar -> Auto-Wegfindung) ---------- */
+  #questTracker { position:fixed; left:calc(6px + env(safe-area-inset-left)); top:calc(92px + env(safe-area-inset-top));
+    width:33vw; max-width:236px; min-width:148px; max-height:25vh; overflow-y:auto; z-index:6;
+    background:rgba(10,6,20,.82); border:2px solid #5d4a8a; border-radius:9px; padding:5px 6px;
+    display:none; flex-direction:column; gap:4px; }
+  #questTracker .qt-head { font-size:10px; color:#ffd54f; font-weight:bold; letter-spacing:.5px; padding:0 1px; }
+  #questTracker .qt-row { background:rgba(40,26,72,.9); border:1px solid #6a55a0; border-radius:6px;
+    padding:4px 6px; font-size:11.5px; line-height:1.25; color:#f0e9ff; cursor:pointer; }
+  #questTracker .qt-row:active { background:rgba(120,90,220,.6); }
+  #questTracker .qt-row .qt-sub { display:block; font-size:10px; color:#a99ad4; margin-top:1px; }
+  #questTracker .qt-row.qt-ready { border-color:#ffd54f; }
+  #questTracker .qt-row.qt-ready .qt-sub { color:#ffd54f; }
+  #questTracker .qt-row.qt-going { border-color:#7ec8ff; background:rgba(40,60,100,.9); }
+  #questTracker .qt-hint { font-size:9.5px; color:#7ec8ff; text-align:center; }
 
   #battleUI { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(94px + env(safe-area-inset-bottom));
     width:min(560px, calc(100% - 16px)); padding:10px; display:none; z-index:20; }
@@ -186,8 +205,11 @@
 <div id="dialog" class="panel">
   <div class="who" id="dWho"></div>
   <div id="dText"></div>
-  <div class="next">▼ weiter</div>
+  <div id="dChoices"></div>
+  <div class="next" id="dNext">▼ weiter</div>
 </div>
+
+<div id="questTracker"></div>
 
 <div id="battleUI" class="panel">
   <div id="bLog"></div>
@@ -1589,6 +1611,8 @@ function newGame(cls, skin) {
     },
     shopStock: null,
     flags: { introSeen: false, dragonDead: false },
+    quests: {}, // questId -> 'active' | 'claimed'
+    kills: {},  // monsterId -> Anzahl besiegter Gegner
     hp: 0, mp: 0,
   };
   const s = statsFor(g);
@@ -1660,6 +1684,7 @@ const ui = {
   mpBar: document.querySelector('#mpBar i'),
   xpBar: document.querySelector('#xpBarBottom i'),
   btnMenu: $('btnMenu'), btnInv: $('btnInv'),
+  questTracker: $('questTracker'),
 };
 function refreshHud() {
   if (!G) return;
@@ -1675,29 +1700,65 @@ function refreshHud() {
 }
 
 // ---------- Dialog-System ----------
-let dialogQueue = [], dialogDone = null;
-function showDialog(who, lines, onDone) {
-  dialogQueue = lines.slice(); dialogDone = onDone || null;
+let dialogQueue = [], dialogDone = null, dialogChoices = null, choicesActive = false, dlgAutoTimer = null;
+function clearDlgAuto() { if (dlgAutoTimer) { clearTimeout(dlgAutoTimer); dlgAutoTimer = null; } }
+function showDialog(who, lines, onDone, choices) {
+  dialogQueue = lines.slice(); dialogDone = onDone || null; dialogChoices = choices || null;
+  choicesActive = false;
   ui.dWho.textContent = who || ''; ui.dWho.style.display = who ? '' : 'none';
+  $('dChoices').style.display = 'none'; $('dChoices').innerHTML = '';
+  $('dNext').style.display = '';
   mode = 'dialog'; ui.dialog.style.display = 'block';
   nextDialog(true);
 }
+function endDialog() {
+  clearDlgAuto();
+  ui.dialog.style.display = 'none';
+  $('dChoices').style.display = 'none';
+  choicesActive = false;
+  const cb = dialogDone; dialogDone = null;
+  mode = 'explore';
+  if (cb) cb();
+}
+function renderDialogChoices() {
+  const list = dialogChoices; dialogChoices = null; choicesActive = true;
+  $('dNext').style.display = 'none';
+  const wrap = $('dChoices'); wrap.innerHTML = ''; wrap.style.display = 'flex';
+  for (const ch of list) {
+    const b = document.createElement('button');
+    b.textContent = ch.label;
+    b.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation(); sfx.select();
+      clearDlgAuto();
+      ui.dialog.style.display = 'none'; wrap.style.display = 'none';
+      choicesActive = false;
+      const cb = dialogDone; dialogDone = null;
+      mode = 'explore';
+      if (ch.action) ch.action();
+      if (cb) cb();
+    });
+    wrap.appendChild(b);
+  }
+}
 function nextDialog(first) {
+  clearDlgAuto();
   if (!first) sfx.select();
   if (dialogQueue.length === 0) {
-    ui.dialog.style.display = 'none';
-    const cb = dialogDone; dialogDone = null;
-    mode = 'explore';
-    if (cb) cb();
+    if (dialogChoices) { renderDialogChoices(); return; }
+    endDialog();
     return;
   }
   ui.dText.textContent = dialogQueue.shift();
+  $('dNext').style.display = '';
+  // Während der Auto-Wegfindung redet der Held „von selbst" weiter
+  if (autoNav) dlgAutoTimer = setTimeout(() => { if (mode === 'dialog' && !choicesActive) nextDialog(); }, 1700);
 }
-ui.dialog.addEventListener('pointerdown', e => { e.preventDefault(); if (mode === 'dialog') nextDialog(); });
+ui.dialog.addEventListener('pointerdown', e => { e.preventDefault(); if (mode === 'dialog' && !choicesActive) nextDialog(); });
 
 // ---------- Bewegung & Eingabe ----------
 const player = { px: 0, py: 0, tx: 0, ty: 0, moving: false, anim: 0 };
 function setPlayerTo(x, y) { G.x = x; G.y = y; player.px = x; player.py = y; player.tx = x; player.ty = y; player.moving = false; }
+let autoNav = null; // { questId, wanderGoal } – aktive Auto-Wegfindung zu einem Auftragsziel
 
 const held = new Set();
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -1794,6 +1855,8 @@ function updateExplore(dt) {
     }
   }
   if (!player.moving && mode === 'explore') {
+    // Manuelle Eingabe hat Vorrang und bricht die Auto-Wegfindung ab
+    if (autoNav && held.size) stopAuto();
     let dir = null;
     for (const d of ['up', 'down', 'left', 'right']) if (held.has(d)) { dir = d; break; }
     if (dir) {
@@ -1803,8 +1866,136 @@ function updateExplore(dt) {
       if (walkable(MAPS[G.map], nx, ny)) {
         G.x = nx; G.y = ny; player.tx = nx; player.ty = ny; player.moving = true;
       }
+    } else if (autoNav) {
+      autoStep();
     }
   }
+}
+
+// ---------- Auto-Wegfindung („Tippe einen Auftrag an, der Held läuft hin") ----------
+function stopAuto() { if (autoNav) { autoNav = null; markQuestsDirty(); } }
+
+// BFS über die Portal-Graphen: kürzeste Karten-Folge von -> nach
+function findMapRoute(from, to) {
+  if (from === to) return [from];
+  const prev = { [from]: null }, q = [from];
+  while (q.length) {
+    const cur = q.shift();
+    for (const p of MAPS[cur].portals) {
+      if (!(p.to in prev)) { prev[p.to] = cur; q.push(p.to); }
+    }
+  }
+  if (!(to in prev)) return null;
+  const route = []; let c = to;
+  while (c != null) { route.unshift(c); c = prev[c]; }
+  return route;
+}
+
+// BFS auf einer Karte: Tile-Folge vom Helden bis zur ersten Kachel, die goalFn erfüllt
+function findPath(map, sx, sy, goalFn) {
+  const key = (x, y) => x + ',' + y;
+  const prev = { [key(sx, sy)]: null }, q = [[sx, sy]];
+  let goal = null;
+  while (q.length) {
+    const [x, y] = q.shift();
+    if (goalFn(x, y) && !(x === sx && y === sy)) { goal = [x, y]; break; }
+    for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+      const nx = x + dx, ny = y + dy, k = key(nx, ny);
+      if (k in prev) continue;
+      if (!walkable(map, nx, ny)) continue;
+      prev[k] = [x, y]; q.push([nx, ny]);
+    }
+  }
+  if (!goal) return null;
+  const tiles = []; let c = goal;
+  while (c && prev[key(c[0], c[1])]) { tiles.unshift(c); c = prev[key(c[0], c[1])]; }
+  return tiles;
+}
+
+// Einen Schritt in Richtung des nächsten Tiles eines Pfades gehen
+function stepToward(map, goalFn) {
+  const path = findPath(map, G.x, G.y, goalFn);
+  if (!path || !path.length) { stopAuto(); return false; }
+  const [nx, ny] = path[0];
+  const dx = nx - G.x, dy = ny - G.y;
+  G.dir = dx === 1 ? 'right' : dx === -1 ? 'left' : dy === 1 ? 'down' : 'up';
+  if (walkable(map, nx, ny)) {
+    G.x = nx; G.y = ny; player.tx = nx; player.ty = ny; player.moving = true;
+    return true;
+  }
+  stopAuto(); return false;
+}
+
+// Ein zufälliges, erreichbares Kampf-Tile in der Nähe wählen (zum Aufstöbern von Gegnern)
+function pickWanderGoal(map, enc) {
+  const key = (x, y) => x + ',' + y;
+  const dist = { [key(G.x, G.y)]: 0 }, q = [[G.x, G.y]], found = [];
+  while (q.length) {
+    const [x, y] = q.shift(); const d = dist[key(x, y)];
+    if (d >= 2 && d <= 12 && enc.onTiles.has(tileAt(map, x, y))) found.push([x, y]);
+    if (d >= 12) continue;
+    for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+      const nx = x + dx, ny = y + dy, k = key(nx, ny);
+      if (k in dist) continue;
+      if (!walkable(map, nx, ny)) continue;
+      dist[k] = d + 1; q.push([nx, ny]);
+    }
+  }
+  return found.length ? found[Math.floor(Math.random() * found.length)] : null;
+}
+
+// Ein Auto-Schritt pro freiem Bewegungs-Slot
+function autoStep() {
+  const q = QUESTS.find(x => x.id === autoNav.questId);
+  if (!q) { stopAuto(); return; }
+  const tgt = questTarget(q);
+  if (!tgt) { stopAuto(); return; }
+  const map = MAPS[G.map];
+
+  // Anderes Gebiet: zum passenden Portal laufen (der Kartenwechsel passiert beim Ankommen)
+  if (tgt.map !== G.map) {
+    const route = findMapRoute(G.map, tgt.map);
+    if (!route || route.length < 2) { stopAuto(); return; }
+    const portal = map.portals.find(p => p.to === route[1]);
+    if (!portal) { stopAuto(); return; }
+    stepToward(map, (x, y) => x === portal.x && y === portal.y);
+    return;
+  }
+
+  // Kampf-Auftrag: ins Gefahrengebiet und dort herumstreifen, bis Gegner auftauchen
+  if (tgt.kind === 'encounter') {
+    const enc = map.encounters;
+    if (!enc) { stopAuto(); return; }
+    if (!enc.onTiles.has(tileAt(map, G.x, G.y))) {
+      stepToward(map, (x, y) => enc.onTiles.has(tileAt(map, x, y)));
+    } else {
+      if (!autoNav.wanderGoal ||
+          (G.x === autoNav.wanderGoal[0] && G.y === autoNav.wanderGoal[1])) {
+        autoNav.wanderGoal = pickWanderGoal(map, enc);
+      }
+      const g = autoNav.wanderGoal;
+      if (!g) { stopAuto(); return; }
+      stepToward(map, (x, y) => x === g[0] && y === g[1]);
+    }
+    return;
+  }
+
+  // NPC/Boss: bis auf ein Nachbarfeld laufen, dann ansprechen bzw. Kampf starten
+  const tx = tgt.x, ty = tgt.y;
+  const adj = (x, y) => Math.abs(x - tx) + Math.abs(y - ty) === 1;
+  if (adj(G.x, G.y)) {
+    G.dir = tx > G.x ? 'right' : tx < G.x ? 'left' : ty > G.y ? 'down' : 'up';
+    const npc = map.npcs.find(n => n.x === tx && n.y === ty && !(n.kind === 'boss' && G.flags.dragonDead));
+    if (!npc) { stopAuto(); return; }
+    if (npc.kind === 'boss') {
+      interact(npc); // autoNav bleibt aktiv -> Kampf läuft automatisch
+    } else {
+      autoTalk(q, npc); // annehmen / Belohnung holen / Bericht
+      stopAuto();
+    }
+    return;
+  }
+  stepToward(map, adj);
 }
 
 // ---------- Kampf ----------
@@ -1823,6 +2014,7 @@ function startBattle(enemyId) {
     pBuffMult: 1,
     pEvade: false,    // Schattenschritt aktiv
     heroPose: 'idle', poseT0: 0, poseDur: 1, // Animations-Pose des Helden
+    auto: !!autoNav, // Kampf läuft automatisch ab, wenn er aus der Auto-Wegfindung stammt
   };
   mode = 'battle';
   held.clear();
@@ -1830,6 +2022,17 @@ function startBattle(enemyId) {
   bLog(base.boss ? '🔥 ' + base.name + ' erhebt sich vor dir!' : 'Ein wilder ' + base.name + ' erscheint!');
   renderBattleButtons('main');
   sfx.hit();
+  maybeAutoAct();
+}
+// Automatischer Kampf: greift selbst an, trinkt bei wenig HP einen Trank
+function maybeAutoAct() {
+  if (!B || !B.auto) return;
+  setTimeout(() => {
+    if (!B || !B.auto || B.busy || mode !== 'battle') return;
+    const s = stats();
+    if (G.hp < s.maxHp * 0.3 && G.items.trank > 0) { useItemInBattle('trank'); return; }
+    playerAttack();
+  }, 700);
 }
 function bLog(t) { ui.bLog.textContent = t; }
 function addFloat(text, color) { B.floats.push({ text, color, t: 0 }); }
@@ -1977,6 +2180,7 @@ function enemyStrike() {
   }
   if (B.pBuffTurns > 0) B.pBuffTurns--;
   B.busy = false; renderBattleButtons('main');
+  maybeAutoAct();
 }
 
 // ---------- Loot ----------
@@ -2011,6 +2215,7 @@ function rollLoot(wasBoss) {
 function winBattle() {
   sfx.gold();
   G.gold += B.gold; G.xp += B.xp;
+  if (!B.boss) { G.kills[B.id] = (G.kills[B.id] || 0) + 1; markQuestsDirty(); }
   const lootLines = rollLoot(B.boss);
   let msg = '🏆 ' + B.name + ' besiegt! +' + B.xp + ' XP, +' + B.gold + ' Gold.';
   const lvls = [];
@@ -2045,6 +2250,7 @@ function winBattle() {
   }, 1100);
 }
 function loseBattle() {
+  stopAuto();
   sfx.lose(); bLog('💀 Du gehst zu Boden …');
   setTimeout(() => { endBattle(null); showGameOver(); }, 1200);
 }
@@ -2066,6 +2272,7 @@ $('btnRespawn').addEventListener('pointerdown', e => {
   fade = 1; mode = 'explore'; refreshHud(); save();
 });
 function showVictory() {
+  stopAuto();
   mode = 'victory'; ui.victory.style.display = 'flex'; sfx.win();
 }
 $('btnVictoryOk').addEventListener('pointerdown', e => {
@@ -2073,31 +2280,197 @@ $('btnVictoryOk').addEventListener('pointerdown', e => {
   ui.victory.style.display = 'none'; mode = 'explore';
 });
 
+// ---------- Aufträge / Quests ----------
+const QUESTS = [
+  { id: 'woelfe', giver: 'aeltester', title: 'Wolfsjagd', icon: '🐺',
+    offer: ['Junger ' + 'Held, kannst du mir helfen? Die Grauwölfe im Finsterwald werden immer dreister.',
+            'Erlege drei von ihnen, und ich lohne es dir gut.'],
+    progress: ['Noch streifen zu viele Wölfe durch den Finsterwald. Pass auf dich auf!'],
+    done: ['Ausgezeichnet! Die Wölfe lassen uns nun in Ruhe. Nimm das als Dank.'],
+    obj: { type: 'kill', monster: 'wolf', count: 3 },
+    reward: { xp: 40, gold: 40 }, place: 'im Finsterwald' },
+  { id: 'pilze', giver: 'wirtin', title: 'Giftpilze beseitigen', icon: '🍄',
+    offer: ['Die Knurrpilze im Wald bereiten mir Sorgen – ihre Sporen vergiften noch unseren Brunnen!',
+            'Zertritt drei davon, und ich braue dir frische Heiltränke.'],
+    progress: ['Hast du schon Pilze erwischt? Ich mache mir noch Sorgen um den Brunnen …'],
+    done: ['Wunderbar! Hier, nimm diese Tränke – eigens für dich gebraut.'],
+    obj: { type: 'kill', monster: 'pilz', count: 3 },
+    reward: { xp: 25, trank: 2 }, place: 'im Finsterwald' },
+  { id: 'drache', giver: 'aeltester', title: 'Bezwinge Varganor', icon: '🐉',
+    offer: ['Der Drache Varganor haust tief in der Schattenhöhle hinter dem Finsterwald. Nachts hören wir sein Brüllen bis ins Dorf …',
+            'Folge dem Weg nach Süden in den Wald, dann nach Südosten zur Höhle. Bezwinge ihn – und Eichenhain ist gerettet!'],
+    progress: ['Noch lebt der Drache. Wir alle zählen auf dich, Held!'],
+    done: ['Du hast es wirklich getan! Varganor ist Geschichte! Eichenhain wird dir das nie vergessen.'],
+    obj: { type: 'flag', flag: 'dragonDead' },
+    reward: { xp: 150, gold: 100 }, requires: 'woelfe', place: 'im Drachenhort' },
+];
+
+function findNpcById(id) {
+  for (const [mapId, m] of Object.entries(MAPS))
+    for (const n of m.npcs) if (n.id === id) return { map: mapId, x: n.x, y: n.y, npc: n };
+  return null;
+}
+const questProgress = q => q.obj.type === 'kill'
+  ? Math.min(G.kills[q.obj.monster] || 0, q.obj.count) : (G.flags[q.obj.flag] ? 1 : 0);
+const questDone = q => q.obj.type === 'kill'
+  ? (G.kills[q.obj.monster] || 0) >= q.obj.count : !!G.flags[q.obj.flag];
+const questAvailable = q => !G.quests[q.id] && (!q.requires || G.quests[q.requires] === 'claimed');
+const questClaimable = q => G.quests[q.id] === 'active' && questDone(q);
+
+// Wohin führt die Auto-Wegfindung für diesen Auftrag (abhängig vom Fortschritt)?
+function questTarget(q) {
+  if (G.quests[q.id] === 'active' && !questDone(q)) {
+    if (q.obj.type === 'kill') return { map: 'wald', kind: 'encounter' };
+    if (q.obj.type === 'flag' && q.obj.flag === 'dragonDead') {
+      const b = findNpcById('drache');
+      if (b) return { map: b.map, x: b.x, y: b.y, kind: 'boss' };
+    }
+  }
+  const g = findNpcById(q.giver);
+  return g ? { map: g.map, x: g.x, y: g.y, kind: 'npc' } : null;
+}
+
+// XP gutschreiben inkl. Level-Aufstieg; gibt die neuen Level zurück
+function grantXp(amount) {
+  G.xp += amount;
+  const lvls = [];
+  while (G.xp >= xpNext(G.lvl)) {
+    G.xp -= xpNext(G.lvl); G.lvl++;
+    const s = stats(); G.hp = s.maxHp; G.mp = s.maxMp; lvls.push(G.lvl);
+  }
+  return lvls;
+}
+// Belohnung anwenden, beschreibende Zeilen zurückgeben
+function grantReward(r) {
+  const lines = [];
+  if (r.gold)  { G.gold += r.gold; lines.push('💰 +' + r.gold + ' Gold'); }
+  if (r.trank) { G.items.trank = (G.items.trank || 0) + r.trank; lines.push('🧪 +' + r.trank + ' Trank'); }
+  if (r.aether){ G.items.aether = (G.items.aether || 0) + r.aether; lines.push('💙 +' + r.aether + ' Äther'); }
+  if (r.xp) {
+    lines.push('⭐ +' + r.xp + ' XP');
+    for (const l of grantXp(r.xp)) lines.push('⬆ Level-Aufstieg! Du bist jetzt Level ' + l + '.');
+  }
+  refreshHud(); sfx.level(); save();
+  return lines;
+}
+
+// Auto-Wegfindung am Auftraggeber: annehmen oder Belohnung abholen
+function autoTalk(q, npc) {
+  if (questClaimable(q)) { interact(npc); return; }
+  if (questAvailable(q)) {
+    G.quests[q.id] = 'active'; markQuestsDirty(); save();
+    showDialog(npc.name, q.offer.concat(['(Auftrag „' + q.title + '" angenommen.)']));
+    return;
+  }
+  interact(npc);
+}
+
 // ---------- NPC-Interaktionen ----------
 function interact(npc) {
   sfx.select();
-  if (npc.kind === 'elder') {
-    if (G.flags.dragonDead) {
-      showDialog(npc.name, ['Du hast es wirklich getan! Varganor ist Geschichte!', 'Eichenhain wird dir das nie vergessen, Held. Ruh dich aus – du hast es verdient.']);
-    } else {
-      showDialog(npc.name, [
-        'Ah, junger ' + CLASSES[G.cls].name + '! Gut, dass du da bist.',
-        'Der Drache Varganor haust tief in der Schattenhöhle hinter dem Finsterwald. Nachts hören wir sein Brüllen bis ins Dorf …',
-        'Folge dem Weg nach Süden in den Wald, dann nach Südosten zur Höhle. Aber geh nicht unvorbereitet!',
-        'Besiegte Monster lassen Ausrüstung fallen – je seltener, desto mächtiger. Öffne dein Inventar (🎒) und rüste dich aus!',
-        'Bodo kauft deine Beute und hat täglich neue Waren. Greta päppelt dich im Gasthaus wieder auf.',
-      ]);
-    }
-  } else if (npc.kind === 'inn') {
-    openInn(npc);
-  } else if (npc.kind === 'shop') {
-    openShop();
-  } else if (npc.kind === 'boss') {
-    showDialog('Varganor', [
-      'WER WAGT ES, MEINEN HORT ZU BETRETEN?',
-      'Ein Menschlein? Wie … erheiternd. Dein Gold wird meinen Schatz schmücken – und deine Knochen meinen Boden!',
-    ], () => startBattle('drache'));
+  const service =
+    npc.kind === 'inn'  ? () => openInn(npc) :
+    npc.kind === 'shop' ? () => openShop() :
+    npc.kind === 'boss' ? () => showDialog('Varganor', [
+        'WER WAGT ES, MEINEN HORT ZU BETRETEN?',
+        'Ein Menschlein? Wie … erheiternd. Dein Gold wird meinen Schatz schmücken – und deine Knochen meinen Boden!',
+      ], () => startBattle('drache')) : null;
+
+  // 1) Belohnung für einen erfüllten Auftrag abholen
+  const claim = QUESTS.find(q => q.giver === npc.id && questClaimable(q));
+  if (claim) {
+    G.quests[claim.id] = 'claimed';
+    const rl = grantReward(claim.reward);
+    markQuestsDirty();
+    showDialog(npc.name, claim.done.concat(rl));
+    return;
   }
+
+  // 2) Neuen Auftrag anbieten
+  const avail = QUESTS.find(q => q.giver === npc.id && questAvailable(q));
+  if (avail) {
+    const choices = [{ label: '✓ Annehmen', action: () => {
+      G.quests[avail.id] = 'active'; markQuestsDirty(); save();
+      showDialog(npc.name, ['Hab Dank! Du findest den Auftrag jetzt in der Liste links – tipp ihn an, und dein Weg führt dich von selbst zum Ziel.']);
+    } }];
+    if (service) choices.push({ label: npc.kind === 'inn' ? '🛏 Übernachten' : '🛒 Handeln', action: service });
+    choices.push({ label: '✗ Später', action: () => {} });
+    showDialog(npc.name, avail.offer, null, choices);
+    return;
+  }
+
+  // 3) Dienst-NPCs (Wirtin/Händler/Boss) bieten ihren Dienst an
+  if (service) { service(); return; }
+
+  // 4) Auftraggeber ohne offenen Auftrag: Fortschritt oder Schlusswort
+  const prog = QUESTS.find(q => q.giver === npc.id && G.quests[q.id] === 'active');
+  if (prog) {
+    const extra = prog.obj.type === 'kill'
+      ? ['(' + (G.kills[prog.obj.monster] || 0) + '/' + prog.obj.count + ' erledigt)'] : [];
+    showDialog(npc.name, prog.progress.concat(extra));
+  } else {
+    showDialog(npc.name, G.flags.dragonDead
+      ? ['Du hast es wirklich getan! Varganor ist Geschichte! Eichenhain wird dir das nie vergessen, Held.']
+      : ['Pass gut auf dich auf da draußen, Held.']);
+  }
+}
+
+// ---------- Auftrags-Box (links, antippbar) ----------
+let questDirty = true;
+function markQuestsDirty() { questDirty = true; }
+
+// Auftrag in der Box angetippt -> Auto-Wegfindung starten (oder abbrechen)
+function startQuestAuto(qid) {
+  if (mode !== 'explore') return;
+  ac();
+  if (autoNav && autoNav.questId === qid) { stopAuto(); return; }
+  autoNav = { questId: qid, wanderGoal: null };
+  sfx.select(); markQuestsDirty();
+}
+
+// Welche Aufträge stehen aktuell in der Box? (verfügbar + angenommen, nicht abgeholt)
+function trackerQuests() {
+  return QUESTS.filter(q => {
+    const st = G.quests[q.id];
+    if (st === 'claimed') return false;
+    if (!st) return questAvailable(q);
+    return true;
+  });
+}
+
+function renderQuestTracker() {
+  const box = ui.questTracker;
+  box.innerHTML = '';
+  const list = trackerQuests();
+  if (!list.length) return;
+  const head = document.createElement('div');
+  head.className = 'qt-head'; head.textContent = '📜 AUFTRÄGE';
+  box.appendChild(head);
+  for (const q of list) {
+    const st = G.quests[q.id];
+    const row = document.createElement('div');
+    row.className = 'qt-row';
+    let sub;
+    if (!st) sub = '◆ Neuer Auftrag';
+    else if (questDone(q)) { sub = '✓ Belohnung abholen'; row.classList.add('qt-ready'); }
+    else if (q.obj.type === 'kill') sub = (G.kills[q.obj.monster] || 0) + '/' + q.obj.count + ' · ' + q.place;
+    else sub = 'offen · ' + q.place;
+    if (autoNav && autoNav.questId === q.id) { row.classList.add('qt-going'); sub = '▶ unterwegs … (tippen = Stop)'; }
+    row.innerHTML = q.icon + ' ' + q.title + '<span class="qt-sub">' + sub + '</span>';
+    row.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); startQuestAuto(q.id); });
+    box.appendChild(row);
+  }
+  if (autoNav) {
+    const hint = document.createElement('div');
+    hint.className = 'qt-hint'; hint.textContent = 'Steuerkreuz drücken bricht ab';
+    box.appendChild(hint);
+  }
+}
+
+function updateQuestTracker() {
+  const show = !!G && mode === 'explore' && trackerQuests().length > 0;
+  ui.questTracker.style.display = show ? 'flex' : 'none';
+  if (show && questDirty) { renderQuestTracker(); questDirty = false; }
 }
 
 function openInn(npc) {
@@ -2209,6 +2582,7 @@ function renderShop() {
 let invDetail = null; // uid des angezeigten Items
 let invHeroCv = null; // Canvas der Charakter-Vorschau (animiert im loop)
 function openInv() {
+  stopAuto();
   mode = 'inv'; held.clear(); invDetail = null;
   renderInv();
   ui.inv.style.display = 'flex';
@@ -2392,6 +2766,7 @@ function renderInv() {
 
 // ---------- Menü ----------
 function openMenu() {
+  stopAuto();
   mode = 'menu'; held.clear();
   renderMenu();
   ui.menu.style.display = 'block';
@@ -2414,6 +2789,20 @@ function renderMenu() {
     'Gold ' + G.gold + ' G · 🧪 ×' + G.items.trank + ' · 💙 ×' + G.items.aether +
     '</div>' +
     '<div class="stats">' + eqLines + '</div>';
+  // Auftrags-Tagebuch
+  const activeQs = QUESTS.filter(q => G.quests[q.id] === 'active');
+  const claimedQs = QUESTS.filter(q => G.quests[q.id] === 'claimed');
+  if (activeQs.length || claimedQs.length) {
+    let qhtml = '<b>📜 Aufträge</b><br>';
+    for (const q of activeQs) {
+      const prog = q.obj.type === 'kill'
+        ? ' <span class="muted">(' + (G.kills[q.obj.monster] || 0) + '/' + q.obj.count + ')</span>'
+        : (questDone(q) ? ' <span style="color:#ffd54f">✓ abholbar</span>' : '');
+      qhtml += q.icon + ' ' + q.title + prog + '<br>';
+    }
+    for (const q of claimedQs) qhtml += '<span class="muted">✔ ' + q.title + '</span><br>';
+    m.innerHTML += '<div class="stats">' + qhtml + '</div>';
+  }
   const mk = (label, fn, disabled, danger) => {
     const b = document.createElement('button');
     b.textContent = label; b.disabled = !!disabled;
@@ -2572,12 +2961,16 @@ function drawExplore(t) {
       drawActor(cx, FIGS[n.fig], sx + TS / 2, sy + TS * 0.97, TS * 1.22, { dir: nd, pose: 'idle', t });
       drawHpBar(cx, sx + TS / 2, sy + TS * 0.97 - TS * 1.42, TS * 0.85, 1);
       drawNameTag(cx, sx + TS / 2, sy + TS * 0.97 - TS * 1.5, TS * 0.26, n.name);
-      // kleines Hinweissymbol über Quest-NPC
-      if (n.kind === 'elder' && !G.flags.dragonDead) {
-        cx.fillStyle = '#ffd54f';
+      // Quest-Hinweissymbol über dem Kopf: ! = etwas zu tun, ? = Auftrag läuft noch
+      const giverQs = QUESTS.filter(q => q.giver === n.id);
+      let mark = null, mcol = '#ffd54f';
+      if (giverQs.some(q => questClaimable(q) || questAvailable(q))) mark = '!';
+      else if (giverQs.some(q => G.quests[q.id] === 'active')) { mark = '?'; mcol = '#b0b8d0'; }
+      if (mark) {
+        cx.fillStyle = mcol;
         cx.font = 'bold ' + Math.round(TS * 0.4) + 'px monospace';
         cx.textAlign = 'center';
-        cx.fillText('!', sx + TS / 2, sy - TS * 0.18 + Math.sin(t * 3) * 3);
+        cx.fillText(mark, sx + TS / 2, sy - TS * 0.18 + Math.sin(t * 3) * 3);
       }
     }
   }
@@ -2725,6 +3118,8 @@ function loop(ts) {
 
   if (!G) return; // noch auf dem Titelbildschirm
 
+  updateQuestTracker();
+
   // Inventar: lebende Charakter-Vorschau zwischen den Ausrüstungs-Slots
   if (mode === 'inv' && invHeroCv) {
     const pg = invHeroCv.getContext('2d');
@@ -2748,6 +3143,9 @@ requestAnimationFrame(loop);
 // ---------- Start / Titel / Klassenwahl ----------
 function startGame(g) {
   G = g;
+  G.quests = G.quests || {}; // alte Spielstände auf das Auftrags-Schema heben
+  G.kills = G.kills || {};
+  autoNav = null; questDirty = true;
   setPlayerTo(G.x, G.y);
   fade = 1;
   refreshHud();

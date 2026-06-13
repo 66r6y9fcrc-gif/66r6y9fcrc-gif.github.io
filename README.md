@@ -34,6 +34,11 @@ Ein eigenständiges Handy-Rollenspiel auf derselben Seite – spielbar unter
   Handschuhe, Gürtel, Stiefel, Halskette, 2× Ring), untere Bildschirmhälfte als
   Kachel-Raster mit 24 Beutel-Plätzen; Detail-Overlay mit grün/rotem Stat-Vergleich,
   alte Spielstände werden automatisch auf die neuen Slots migriert
+- **Auftrags-System** (v6): mehrere Quests (Wolfsjagd, Giftpilze, Drachenjagd) mit
+  Annehmen/Fortschritt/Belohnung, Hinweissymbolen über den Auftraggebern (! / ?) und
+  einem Quest-Tagebuch im Menü. Links eine kleine Auftrags-Box mit den aktiven Missionen –
+  **antippen, und der Held läuft per Auto-Wegfindung selbst zum Ziel** (über mehrere Karten
+  hinweg), redet automatisch mit dem NPC oder kämpft die Gegner automatisch ab
 - Oberwelt-Erkundung im Pixel-Look (Dorf, Finsterwald, Schattenhöhle, Drachenhort)
 - Touch-Steuerkreuz + A- und 🎒-Knopf (am PC: Pfeiltasten/WASD + Leertaste)
 - Rundenbasierte Kämpfe mit Statuseffekten (Gift, Buffs, Ausweichen, kritische Treffer)
