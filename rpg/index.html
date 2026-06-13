@@ -344,6 +344,7 @@ const MAPS = {
       { id: 'haendler', x: 3, y: 4, kind: 'shop', name: 'Händler Bodo', fig: 'bodo' },
       { id: 'wirtin',   x: 9, y: 4, kind: 'inn',  name: 'Wirtin Greta', fig: 'greta' },
       { id: 'aeltester',x: 15, y: 4, kind: 'elder', name: 'Ältester Alrik', fig: 'alrik' },
+      { id: 'telestein', x: 10, y: 5, kind: 'teleport', name: '✨ Teleport-Stein' },
     ],
     encounters: null,
   },
@@ -411,7 +412,7 @@ const MAPS = {
   hort: {
     name: 'Drachenhort', border: '#', zone: 'hort',
     tiles: [
-      '#############',
+      '######G######',
       '#lll.....lll#',
       '#ll.......ll#',
       '#...........#',
@@ -427,6 +428,30 @@ const MAPS = {
     npcs: [{ id: 'drache', x: 6, y: 3, kind: 'boss', name: '???', sprite: 'drache' }],
     encounters: null,
     floor: '.',
+  },
+  ruinen: {
+    name: 'Ruinen des alten Reichs', border: '#', zone: 'ruinen', floor: '.',
+    tiles: [
+      '#######################',
+      '#.....................#',
+      '#.cc.........cc......#',
+      '#.....................#',
+      '#......cc.....cc.....#',
+      '#.....................#',
+      '#.cc.........cc......#',
+      '#.....................#',
+      '#......cc.....cc.....#',
+      '#.....................#',
+      '#.cc.........cc......#',
+      '#.....................#',
+      '#......cc.....cc.....#',
+      '#.....................#',
+      '#..........s.........#',
+      '#######################',
+    ],
+    portals: [{ x: 11, y: 14, to: 'hort', tx: 6, ty: 2 }],
+    npcs: [],
+    encounters: { chance: 0.15, list: ['skelett', 'troll'], onTiles: new Set(['.', 'c']), ilvl: [9, 13] },
   },
 };
 // Zeilen auf Kartenbreite auffüllen (Sicherheitsnetz)
@@ -1828,11 +1853,29 @@ function changeMap(portal) {
   }
 }
 
+function getDynamicPortals(mapId) {
+  const r = [];
+  if (mapId === 'hort' && G.flags.dragonDead)
+    r.push({ x: 4, y: 1, to: 'dorf', tx: 10, ty: 12, _return: true });
+  return r;
+}
+
 function onArrive() {
   const map = MAPS[G.map];
-  // Portal?
+  // Dynamische Portale (flagabhängig, z. B. Rückkehr nach Bosssieg)
+  const dp = getDynamicPortals(G.map).find(p => p.x === G.x && p.y === G.y);
+  if (dp) { changeMap(dp); return; }
+  // Statische Portale
   const p = map.portals.find(p => p.x === G.x && p.y === G.y);
   if (p) { changeMap(p); return; }
+  // G-Tile: versiegeltes Tor / neue Area
+  if (tileAt(map, G.x, G.y) === 'G') {
+    if (G.flags.dragonDead)
+      changeMap({ to: 'ruinen', tx: 11, ty: 1 });
+    else
+      showDialog(null, ['Ein uralt versiegeltes Portal. Es öffnet sich erst, wenn das Böse in diesem Reich gefallen ist.']);
+    return;
+  }
   // Zufallskampf?
   const enc = map.encounters;
   if (enc && enc.onTiles.has(tileAt(map, G.x, G.y)) && Math.random() < enc.chance) {
@@ -2368,6 +2411,22 @@ function autoTalk(q, npc) {
 // ---------- NPC-Interaktionen ----------
 function interact(npc) {
   sfx.select();
+
+  // Teleport-Stein: Fast-Travel zu besiegten Boss-Gebieten
+  if (npc.kind === 'teleport') {
+    const dests = [
+      G.flags.dragonDead && { label: '🐉 Drachenhort', to: 'hort', tx: 6, ty: 7 },
+    ].filter(Boolean);
+    if (!dests.length) {
+      showDialog(npc.name, ['Dieser Stein schläft tief. Besiege erst eine mächtige Kreatur, um ihn zu erwecken.']);
+    } else {
+      const choices = dests.map(d => ({ label: d.label, action: () => changeMap(d) }));
+      choices.push({ label: '✗ Abbrechen', action: () => {} });
+      showDialog(npc.name, ['Wohin soll die Reise gehen?'], null, choices);
+    }
+    return;
+  }
+
   const service =
     npc.kind === 'inn'  ? () => openInn(npc) :
     npc.kind === 'shop' ? () => openShop() :
@@ -2920,6 +2979,29 @@ function drawTile(ch, sx, sy, x, y, t) {
       cx.fillRect(sx + TS * 0.5, sy + TS * 0.55, TS * 0.35, TS * 0.28);
       break;
     }
+    case 'G': {
+      if (G && G.flags && G.flags.dragonDead) {
+        const glow = 0.5 + 0.5 * Math.sin(t * 4);
+        cx.fillStyle = `rgb(${Math.round(60+glow*80)},${Math.round(20+glow*30)},${Math.round(120+glow*80)})`;
+        cx.fillRect(sx, sy, TS, TS);
+        cx.fillStyle = `rgba(160,80,255,${(0.5+glow*0.4).toFixed(2)})`;
+        cx.beginPath(); cx.arc(sx+TS/2, sy+TS/2, TS*0.38, 0, Math.PI*2); cx.fill();
+        cx.fillStyle = 'rgba(220,180,255,0.85)';
+        cx.beginPath(); cx.arc(sx+TS/2, sy+TS/2, TS*0.18, 0, Math.PI*2); cx.fill();
+      } else {
+        cx.fillStyle = '#2a2840'; cx.fillRect(sx, sy, TS, TS);
+        cx.fillStyle = '#1a1828';
+        cx.beginPath();
+        cx.arc(sx+TS/2, sy+TS*0.6, TS*0.35, Math.PI, 0);
+        cx.rect(sx+TS*0.15, sy+TS*0.6, TS*0.7, TS*0.35);
+        cx.fill();
+        cx.fillStyle = '#6030a0';
+        cx.font = 'bold ' + Math.round(TS*0.3) + 'px monospace';
+        cx.textAlign = 'center';
+        cx.fillText('ᚷ', sx+TS/2, sy+TS*0.58);
+      }
+      break;
+    }
     default: {
       cx.fillStyle = '#57a046'; cx.fillRect(sx, sy, TS, TS);
     }
@@ -2932,7 +3014,7 @@ function drawExplore(t) {
   const camX = player.px * TS + TS / 2 - W / 2;
   const camY = player.py * TS + TS / 2 - H / 2;
   // Hintergrund außerhalb der Karte
-  cx.fillStyle = map.zone === 'hoehle' || map.zone === 'hort' ? '#171221' : '#1d3a18';
+  cx.fillStyle = map.zone === 'hoehle' || map.zone === 'hort' || map.zone === 'ruinen' ? '#171221' : '#1d3a18';
   cx.fillRect(0, 0, W, H);
 
   const x0 = Math.floor(camX / TS) - 1, x1 = Math.ceil((camX + W) / TS) + 1;
@@ -2951,6 +3033,24 @@ function drawExplore(t) {
       drawSprite(cx, 'drache', sx - TS * 0.5, sy - TS * 0.7 + bob, TS * 2);
       drawHpBar(cx, sx + TS * 0.5, sy - TS * 0.85 + bob, TS * 1.4, 1);
       drawNameTag(cx, sx + TS * 0.5, sy - TS * 0.92 + bob, TS * 0.3, n.name);
+    } else if (n.kind === 'teleport') {
+      const active = G.flags.dragonDead;
+      const sg = 0.5 + 0.5 * Math.sin(t * (active ? 2.8 : 1.2));
+      cx.fillStyle = active ? `rgba(80,200,255,${(0.18+sg*0.22).toFixed(2)})` : 'rgba(100,90,130,0.18)';
+      cx.beginPath(); cx.ellipse(sx+TS/2, sy+TS*0.88, TS*0.38, TS*0.1, 0, 0, Math.PI*2); cx.fill();
+      cx.fillStyle = active ? `rgb(${Math.round(60+sg*80)},${Math.round(160+sg*60)},${Math.round(200+sg*55)})` : '#7a7090';
+      cx.fillRect(sx+TS*0.38, sy+TS*0.2, TS*0.24, TS*0.65);
+      cx.fillStyle = active ? `rgb(${Math.round(80+sg*100)},${Math.round(180+sg*60)},220)` : '#5a5070';
+      cx.fillRect(sx+TS*0.28, sy+TS*0.15, TS*0.44, TS*0.14);
+      cx.fillRect(sx+TS*0.28, sy+TS*0.55, TS*0.44, TS*0.1);
+      if (active) {
+        cx.fillStyle = `rgba(120,220,255,${(0.5+sg*0.4).toFixed(2)})`;
+        cx.beginPath(); cx.arc(sx+TS/2, sy+TS*0.32, TS*0.11, 0, Math.PI*2); cx.fill();
+        cx.fillStyle = '#88eeff';
+        cx.font = 'bold ' + Math.round(TS*0.38) + 'px monospace';
+        cx.textAlign = 'center';
+        cx.fillText('✨', sx+TS/2, sy - TS*0.15 + Math.sin(t*3)*3);
+      }
     } else {
       // NPC dreht sich zum Helden, wenn er direkt daneben steht
       let nd = 'down';
@@ -2983,6 +3083,20 @@ function drawExplore(t) {
   drawHpBar(cx, hx + TS / 2, hy + TS * 0.97 - TS * 1.55, TS * 0.95, G.hp / stats().maxHp);
   drawNameTag(cx, hx + TS / 2, hy + TS * 0.97 - TS * 1.63, TS * 0.28, CLASSES[G.cls].name);
 
+  // Dynamische Portal-Overlays (Rückkehr-Portal im Hort nach Bosssieg)
+  for (const dp of getDynamicPortals(G.map)) {
+    if (!dp._return) continue;
+    const dpsx = Math.floor(dp.x * TS - camX), dpsy = Math.floor(dp.y * TS - camY);
+    const gw = 0.5 + 0.5 * Math.sin(t * 3.5);
+    cx.fillStyle = `rgba(60,180,255,${(0.25+gw*0.35).toFixed(2)})`;
+    cx.beginPath(); cx.arc(dpsx+TS/2, dpsy+TS/2, TS*0.42, 0, Math.PI*2); cx.fill();
+    cx.fillStyle = 'rgba(180,230,255,0.9)';
+    cx.font = 'bold ' + Math.round(TS*0.26) + 'px monospace';
+    cx.textAlign = 'center';
+    cx.fillText('↑Dorf', dpsx+TS/2, dpsy+TS*0.4);
+    cx.fillText('⟲', dpsx+TS/2, dpsy+TS*0.72);
+  }
+
   // Gebiets-Name kurz nach Kartenwechsel
   if (fade > 0) {
     cx.fillStyle = 'rgba(10,5,20,' + Math.min(1, fade * 1.4) + ')';
@@ -3002,6 +3116,7 @@ const BATTLE_BG = {
   wald: ['#1d3a18', '#3f8a37'],
   hoehle: ['#171221', '#564e63'],
   hort: ['#33100c', '#6e2418'],
+  ruinen: ['#1a1430', '#4a3860'],
 };
 function drawBattle(t) {
   const zone = MAPS[G.map].zone;
